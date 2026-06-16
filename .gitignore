@@ -1,0 +1,11 @@
+.gradle
+
+/.kotlin/
+/.idea/
+/jars/
+/build/
+
+/out/
+*.iml
+
+*.zip

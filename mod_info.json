@@ -1,0 +1,25 @@
+{
+  "id": "patch_lib", #Mod ID, should be lowercase
+  "name": "! PatchLib !", #Display Name
+  "author": "Lukas04", 
+  "utility": false,
+  "version": "1.0.0",
+  "description": "Provides utilities for mods to patch core starsector code directly, overwriting or appending it",
+  "gameVersion": "0.98a-RC8",
+  "jars": [ "jars/PatchLib.jar" ],
+  "modPlugin": "patch_lib.PatchLibModPlugin",
+  "dependencies": [
+    {
+      "id": "lw_lazylib",
+      "name": "LazyLib"
+    },
+    {
+      "id": "MagicLib",
+      "name": "MagicLib"
+    },
+	{
+      "id": "lunalib",
+      "name": "LunaLib"
+    },
+  ],
+}
