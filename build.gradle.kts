@@ -100,6 +100,9 @@ dependencies {
     addStarsectorCoreDependencies()
 }
 
+//Provide the core dir for the agent subproject to resolve the starsector dependencies from it.
+extra["starsectorCoreDir"] = starsectorLayout().gameWorkingDir.absolutePath
+
 fun DependencyHandler.addStarsectorCoreDependencies() {
 
     //Starsectors core jars live in different folders per OS, so look them up through the layout.

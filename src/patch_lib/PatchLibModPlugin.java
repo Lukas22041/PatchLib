@@ -2,7 +2,7 @@ package patch_lib;
 
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
-import patch_lib.agent.PatchLibAgentInit;
+import patch_lib.agent.PatchLibAgentManager;
 
 public class PatchLibModPlugin extends BaseModPlugin {
 
@@ -45,7 +45,7 @@ public class PatchLibModPlugin extends BaseModPlugin {
         //Starts the agents mod scan & patches.
         //Should be called before most other mods have their onApplicationLoad called, due to the ! at the start of the mods name, bringing it earlier in to load.
         //Purposefully called from the mods code, as it prevents the agent from running any patches if the mod is disabled.
-        PatchLibAgentInit.init();
+        PatchLibAgentManager.getInstance().init();
     }
 
     @Override
