@@ -1,39 +1,63 @@
 package patch_lib;
 
 import com.fs.starfarer.api.BaseModPlugin;
+import com.fs.starfarer.api.Global;
+import patch_lib.agent.PatchLibAgentInit;
 
 public class PatchLibModPlugin extends BaseModPlugin {
 
-    /*This method is run right at the end of starsectors loading.
-    * It is most useful for loading data that only really needs to be setup once. */
-    @Override
-    public void onApplicationLoad() throws Exception {
-        throw new RuntimeException("Template mod loaded!" +
-                "\nThis crash is used to test if your mod setup works correctly (it does)." +
-                "\nFix it by removing the \"RuntimeException\" lines in your mod plugin.");
+    /** Checks if the agent has loaded and is the same version as the mod */
+    public void checkAgentInstall() {
+        String agentVersion = System.getProperty("patch_lib.agent.version");
+        String patchLibVersion = Global.getSettings().getModManager().getModSpec("patch_lib").getVersion();
+
+        if (agentVersion == null) {
+            throw new RuntimeException(
+                    "PatchLib could not successfully launch. " +
+                    "This either happens because of a wrongful mod installation or because a Starsector update reset the mods required installation. " +
+                    "Check PatchLib's forum thread for installation instructions.");
+
+            //System.exit(0);
+        }
+
+        if (!agentVersion.equals(patchLibVersion)) {
+
+            String fileLocation = System.getProperty("user.dir");
+
+            throw new RuntimeException(
+                    "PatchLib could not start due to a mismatch in the mods and agents version.\n\n" +
+                            "" +
+                            "Mod Version: " + patchLibVersion + "\n" +
+                            "Agent Version: " + agentVersion + "\n\n" +
+                            "" +
+                            "In most cases, this can be fixed by copying the \"PatchLibAgent.jar\" file from the PatchLib mod folder in to \"" + fileLocation + "\"" +
+                            ".") ;
+
+            //System.exit(0);
+        }
+
     }
 
-    /*This method is run in two cases:
-    * - At the end of the creation of a new save
-    * - When an existing save finished loading
-    * This method is most useful for adding transient listeners/scripts and for enabling mid-save compatibility,
-    * like adding star systems to an existing save if the mod was just added. */
+    @Override
+    public void onApplicationLoad() throws Exception {
+        checkAgentInstall();
+
+        //Starts the agents mod scan & patches.
+        //Should be called before most other mods have their onApplicationLoad called, due to the ! at the start of the mods name, bringing it earlier in to load.
+        //Purposefully called from the mods code, as it prevents the agent from running any patches if the mod is disabled.
+        PatchLibAgentInit.init();
+    }
+
     @Override
     public void onGameLoad(boolean newGame) {
 
     }
 
-    /*Runs when a save is created.
-    * This method specifically runs before procedural generation, so any base-game procedural content is not accessible yet.
-    * It is recommended to start placing your modded star systems from here,
-    * as starsectors procgen will avoid placing stars and hyperspace storms nearby existing systems, preventing overlap.*/
     @Override
     public void onNewGame() {
 
     }
 
-    /*Runs after onNewGame, after the economy has finished loading.
-    * This method can be useful for accessing other mods star systems, assuming those have placed their systems in onNewGame. */
     @Override
     public void onNewGameAfterEconomyLoad() {
 

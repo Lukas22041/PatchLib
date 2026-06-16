@@ -94,6 +94,8 @@ dependencies {
     addModJars(modDependencies)
     otherDependencies.forEach { addCompileOnlyJar(it) }
 
+    compileOnly(project(":agent"))
+
     //Loads basic starsector dependencies.
     addStarsectorCoreDependencies()
 }
@@ -186,8 +188,23 @@ tasks.test {
 }
 
 tasks.jar {
+    dependsOn(":agent:shadowJar")
+    finalizedBy("installAgent")
     destinationDirectory.set(file("$rootDir/jars"))
     archiveFileName.set(jarName)
+}
+
+//Copies the built agent jar into starsector-core (the game's working dir) for quicker local testing.
+tasks.register("installAgent") {
+    group = "starsector"
+    description = "Installs the agent jar into the Starsector core folder for testing."
+    val agentJar = project(":agent").tasks.named("shadowJar", Jar::class).flatMap { it.archiveFile }
+    inputs.file(agentJar)
+    val destDir = starsectorLayout().gameWorkingDir
+    doLast {
+        val src = agentJar.get().asFile
+        src.copyTo(File(destDir, src.name), overwrite = true)
+    }
 }
 
 fun DependencyHandler.addModJars(jarNames: List<String>) {
@@ -584,6 +601,9 @@ tasks.register<Zip>("packageMod") {
     from(tasks.jar) {
         into("jars") // Optional: place inside a jar folder in the zip
     }
+
+    // 1b. Include the java agent jar at the top level of the zip.
+    from(project(":agent").tasks.named("shadowJar"))
 
     // 2. Include the files and folders listed in packageIncludes.
     // Directories are placed into a same-named folder; files go at the folder root.
