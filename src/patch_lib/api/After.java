@@ -17,7 +17,8 @@ public @interface After {
     Class<?> returnType() default Unset.class;
     String returnTypeName() default "";
 
-    /** Order in which patches are executed, lower numbers are run first.*/
+    /** Order in which patches are executed, lower numbers are run first.
+     Two patches with the same priority are ordered based on mod name */
     int priority() default 0;
 
     MethodType methodType() default MethodType.ANY;

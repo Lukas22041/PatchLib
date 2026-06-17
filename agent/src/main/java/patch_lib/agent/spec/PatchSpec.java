@@ -1,7 +1,9 @@
 package patch_lib.agent.spec;
 
+import com.fs.starfarer.api.ModSpecAPI;
+
 public record PatchSpec(
-        String modId,
+        ModSpecAPI sourceMod,
         String handlerClass,
         String handlerMethod,
         PatchType patchType,

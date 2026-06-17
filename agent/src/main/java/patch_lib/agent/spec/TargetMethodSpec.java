@@ -6,7 +6,7 @@ public record TargetMethodSpec(
         String[] parameters,
         int parameterCount,
         String returnType,
-        MatchMethodType matchMethodType,
+        MethodType methodType,
         boolean staticOnly
 ) {
 

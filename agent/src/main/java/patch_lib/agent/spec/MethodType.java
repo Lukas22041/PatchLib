@@ -1,5 +1,5 @@
 package patch_lib.agent.spec;
 
-public enum MatchMethodType {
+public enum MethodType {
     METHOD, CONSTRUCTOR, ANY
 }
