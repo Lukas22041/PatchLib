@@ -13,13 +13,14 @@ import java.lang.annotation.Target;
 public @interface Patch {
 
     //Either provide a class reference or the whole class name with package
-    Class<?> targetClass() default Object.class;
+    Class<?> targetClass() default Unset.class;
     String targetClassName() default "";
 
-    Class<?> targetSubtype() default Object.class;
+    Class<?> targetSubtype() default Unset.class;
     String targetSubtypeName() default "";
 
     String targetPackage() default "";
+    boolean includeSubpackages() default false;
 
     MethodMatch[] methodMatches() default {};
 }

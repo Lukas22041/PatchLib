@@ -5,13 +5,13 @@ import java.lang.annotation.RetentionPolicy;
 
 @Retention(RetentionPolicy.CLASS)
 public @interface MethodMatch {
-    String targetMethodName() default "";
+    String methodName() default "";
 
     Class<?>[] parameters() default {};
     String[] parameterNames() default {};
     int parameterCount() default -1;
 
-    Class<?> returnType() default UnsetReturnType.class;
+    Class<?> returnType() default Unset.class;
     String returnTypeName() default "";
 
     MethodType methodType() default MethodType.ANY;

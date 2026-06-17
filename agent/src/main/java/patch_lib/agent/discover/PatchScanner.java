@@ -2,11 +2,10 @@ package patch_lib.agent.discover;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModSpecAPI;
-import com.fs.starfarer.api.combat.ShipAPI;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.pool.TypePool;
 import patch_lib.agent.PatchLibLogger;
-import patch_lib.agent.data.PatchSpec;
+import patch_lib.agent.spec.PatchSpec;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,24 +17,31 @@ import java.util.jar.JarFile;
 
 public class PatchScanner {
 
+    private static final String PATCH = "patch_lib.api.Patch";
+    private static final String BEFORE = "patch_lib.api.Before";
+    private static final String AFTER = "patch_lib.api.After";
+    private static final String UNSET = "patch_lib.api.Unset";
+
+    record JarPair(ModSpecAPI mod, File jar) { }
+
     public void scan() {
 
         //Collect the jars of every enabled mod
         List<ModSpecAPI> enabledMods = Global.getSettings().getModManager().getEnabledModsCopy();
-        List<File> jars = enabledMods.stream()
+        List<JarPair> jarPairs = enabledMods.stream()
                 .flatMap( spec ->
                         spec.getJars().stream()
-                                .map( jar -> new File(spec.getPath(), jar)) )
+                                .map( jar -> new JarPair(spec, new File(spec.getPath(), jar))) )
                 .toList();
 
         PatchLibLogger.debug("Starting annotation scan in the following jars: ");
-        jars.forEach(jar -> PatchLibLogger.debug(" - " + jar.getPath()));
+        jarPairs.forEach(jar -> PatchLibLogger.debug(" - " + jar.jar.getPath()));
 
         //Create the class file locators for scanning the bytes of the classes
         List<ClassFileLocator> locators = new ArrayList<>();
         try {
-            for (File jar : jars) {
-                locators.add(ClassFileLocator.ForJarFile.of(jar));
+            for (JarPair jarPair : jarPairs) {
+                locators.add(ClassFileLocator.ForJarFile.of(jarPair.jar));
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -47,15 +53,15 @@ public class PatchScanner {
             //Type pool for grabbing information from classes. Set to "FAST" so that method bodies are skipped in parsing.
             TypePool pool = new TypePool.Default(new TypePool.CacheProvider.Simple(), locator, TypePool.Default.ReaderMode.FAST);
 
-            for (File jar : jars) {
-                try (JarFile jarFile = new JarFile(jar)) {
+            for (JarPair jarPair : jarPairs) {
+                try (JarFile jarFile = new JarFile(jarPair.jar)) {
                     Enumeration<JarEntry> entries = jarFile.entries();
 
                     //Iterate over every class in the jar
                     while (entries.hasMoreElements()) {
                         JarEntry entry = entries.nextElement();
 
-                        //Skip none-classes
+                        //Skip non-classes
                         if (entry.isDirectory() || !entry.getName().endsWith(".class")) continue;
 
                     }

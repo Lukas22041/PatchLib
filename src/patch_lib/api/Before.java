@@ -8,13 +8,13 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
 public @interface Before {
-    String targetMethodName() default "";
+    String methodName() default "";
 
     Class<?>[] parameters() default {};
     String[] parameterNames() default {};
     int parameterCount() default -1;
 
-    Class<?> returnType() default UnsetReturnType.class;
+    Class<?> returnType() default Unset.class;
     String returnTypeName() default "";
 
     /** Order in which patches are executed, lower numbers are run first.*/
