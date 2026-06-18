@@ -46,7 +46,7 @@ public class AnnotationReader {
     static String readType(AnnotationDescription annotation, String member, String fallback) {
         for (MethodDescription.InDefinedShape m : annotation.getAnnotationType().getDeclaredMethods()) {
             if (m.getName().equals(member)) {
-                String name = annotation.getValue(m).resolve(TypeDescription.class).getName();
+                String name = annotation.getValue(m).resolve(TypeDescription.class).getActualName();
                 return name.equals(PatchScanner.UNSET) ? fallback : name;
             }
         }
@@ -59,7 +59,7 @@ public class AnnotationReader {
                 Object[] raw = annotation.getValue(m).resolve(Object[].class);   // elements are TypeDescription
                 String[] names = new String[raw.length];
                 for (int i = 0; i < raw.length; i++)
-                    names[i] = ((TypeDescription) raw[i]).getName();
+                    names[i] = ((TypeDescription) raw[i]).getActualName();
                 return names;
             }
         }

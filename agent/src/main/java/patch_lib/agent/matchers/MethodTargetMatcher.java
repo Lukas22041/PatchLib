@@ -2,12 +2,8 @@ package patch_lib.agent.matchers;
 
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.method.ParameterList;
-import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.matcher.ElementMatcher;
-import patch_lib.agent.spec.PatchSpec;
 import patch_lib.agent.spec.TargetMethodSpec;
-
-import java.util.List;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
@@ -30,7 +26,7 @@ public class MethodTargetMatcher {
                 ParameterList<?> parameterList = methodDesc.getParameters();
                 if (parameterList.size() != params.length) return false;
                 for (int i = 0; i < params.length; i++)
-                    if (!parameterList.get(i).getType().asErasure().getName().equals(params[i])) return false;
+                    if (!parameterList.get(i).getType().asErasure().getActualName().equals(params[i])) return false;
                 return true;
             });
         } else if (methodSpec.parameterCount() >= 0) {

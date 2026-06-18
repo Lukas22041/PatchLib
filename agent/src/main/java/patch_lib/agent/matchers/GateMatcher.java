@@ -34,10 +34,10 @@ public class GateMatcher {
         ElementMatcher.Junction<TypeDescription> gate = none();
 
         if (!exactNames.isEmpty())
-            gate = gate.or((TypeDescription t) -> exactNames.contains(t.getName()));
+            gate = gate.or((TypeDescription t) -> exactNames.contains(t.getActualName()));
 
         if (!subtypeNames.isEmpty())
-            gate = gate.or(hasSuperType(type -> subtypeNames.contains(type.getName())));
+            gate = gate.or(hasSuperType(type -> subtypeNames.contains(type.getActualName())));
 
         for (TargetClassSpec spec : other)
             gate = gate.or(ClassTargetMatcher.create(spec));
