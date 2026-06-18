@@ -23,6 +23,4 @@ public class PatchContext {
     /** Skip the original body and use this as the return value. */
     public void skipOriginal(Object returnValue) { this.skipOriginal = true; this.returnValue = returnValue; }
 
-
-
 }

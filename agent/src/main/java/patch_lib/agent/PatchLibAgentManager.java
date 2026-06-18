@@ -32,7 +32,6 @@ public class PatchLibAgentManager {
         PatchScanner scanner = new PatchScanner();
         List<PatchSpec> patchSpecs = scanner.scan();
 
-        PatchInstaller
     }
 
 }

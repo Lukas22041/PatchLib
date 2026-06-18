@@ -96,6 +96,9 @@ dependencies {
 
     compileOnly(project(":agent"))
 
+    //Mod API. Bundled in to the agent, so it is loaded by the agents system class loader. Available for mods as reference.
+    compileOnly(project(":api"))
+
     //Loads basic starsector dependencies.
     addStarsectorCoreDependencies()
 }
@@ -192,6 +195,7 @@ tasks.test {
 
 tasks.jar {
     dependsOn(":agent:shadowJar")
+    dependsOn(":api:jar")
     finalizedBy("installAgent")
     destinationDirectory.set(file("$rootDir/jars"))
     archiveFileName.set(jarName)
@@ -603,6 +607,10 @@ tasks.register<Zip>("packageMod") {
     // 1. Include the compiled jar from the build task
     from(tasks.jar) {
         into("jars") // Optional: place inside a jar folder in the zip
+    }
+
+    from(project(":api").tasks.named("jar")) {
+        into("jars")
     }
 
     // 1b. Include the java agent jar at the top level of the zip.
