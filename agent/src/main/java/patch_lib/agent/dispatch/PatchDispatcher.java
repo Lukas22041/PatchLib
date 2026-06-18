@@ -7,7 +7,7 @@ public class PatchDispatcher {
         return null;
     }
 
-    public static Object exit(int siteId, PatchContext context, Object returned, Throwable thrown) {
+    public static Object exit(int siteId, PatchContext context, Object returned) {
         return null;
     }
 }
