@@ -3,8 +3,11 @@ package patch_lib.agent;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import patch_lib.agent.discover.PatchScanner;
+import patch_lib.agent.patch.PatchInstaller;
+import patch_lib.agent.spec.PatchSpec;
 
 import java.lang.instrument.Instrumentation;
+import java.util.List;
 
 public class PatchLibAgentManager {
 
@@ -23,11 +26,13 @@ public class PatchLibAgentManager {
 
     public static PatchLibAgentManager getInstance() { return instance; }
 
-    public void init() {
+    public void init(ClassLoader loader) {
         PatchLibLogger.debug("PatchLib agent started.");
 
         PatchScanner scanner = new PatchScanner();
-        scanner.scan();
+        List<PatchSpec> patchSpecs = scanner.scan();
+
+        PatchInstaller
     }
 
 }

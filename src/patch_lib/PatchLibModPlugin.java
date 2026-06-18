@@ -45,7 +45,7 @@ public class PatchLibModPlugin extends BaseModPlugin {
         //Starts the agents mod scan & patches.
         //Should be called before most other mods have their onApplicationLoad called, due to the ! at the start of the mods name, bringing it earlier in to load.
         //Purposefully called from the mods code, as it prevents the agent from running any patches if the mod is disabled.
-        PatchLibAgentManager.getInstance().init();
+        PatchLibAgentManager.getInstance().init(this.getClass().getClassLoader());
     }
 
     @Override
