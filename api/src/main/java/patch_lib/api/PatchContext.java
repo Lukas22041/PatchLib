@@ -30,7 +30,7 @@ public class PatchContext {
     public void setReturnValue(Object newReturnValue) { this.returnValue = newReturnValue; }
 
     public boolean isSkipOriginal() { return skipOriginal; }
-    /** Skip the original body and use this as the return value. */
+    /** Skip the original body and use this as the return value. Does not have an effect on constructors*/
     public void skipOriginal(Object returnValue) { this.skipOriginal = true; this.returnValue = returnValue; }
 
     /** Utility for retrieving a typed read/writeable arg of the original called method.

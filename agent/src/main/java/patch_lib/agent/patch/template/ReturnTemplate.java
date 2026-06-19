@@ -21,7 +21,7 @@ public final class ReturnTemplate {
         return context.isSkipOriginal();
     }
 
-    @Advice.OnMethodExit(onThrowable = Throwable.class)
+    @Advice.OnMethodExit(/*onThrowable = Throwable.class*/)
     public static void exit(
             @DispatchIdMarker int siteId,
             @Advice.Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object returned,

@@ -25,7 +25,6 @@ public class PatchScanner {
     static final String PATCH = "patch_lib.api.patch.Patch";
     static final String BEFORE = "patch_lib.api.patch.Before";
     static final String AFTER = "patch_lib.api.patch.After";
-    static final String EXCEPT = "patch_lib.api.Except";
     static final String UNSET = "patch_lib.api.match.Unset";
 
     record JarPair(ModSpecAPI mod, File jar) { }
@@ -106,7 +105,6 @@ public class PatchScanner {
                                 PatchType patchType = switch (methodAnnotationName) {
                                     case BEFORE -> PatchType.BEFORE;
                                     case AFTER -> PatchType.AFTER;
-                                    case EXCEPT -> PatchType.EXCEPT;
                                     default -> PatchType.BEFORE;
                                 };
 

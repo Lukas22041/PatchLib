@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.CampaignClockAPI;
 import patch_lib.api.patch.After;
 import patch_lib.api.patch.Patch;
 import patch_lib.api.PatchContext;
+import patch_lib.api.ref.Ref;
 
 @Patch(targetSubtype = CampaignClockAPI.class)
 public class TestPatch {
