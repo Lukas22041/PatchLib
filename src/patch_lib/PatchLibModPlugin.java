@@ -3,39 +3,41 @@ package patch_lib;
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import patch_lib.agent.PatchLibAgentManager;
+import patch_lib.install.InstallerLauncher;
 
 public class PatchLibModPlugin extends BaseModPlugin {
 
-    /** Checks if the agent has loaded and is the same version as the mod */
+    //Attempts to check if the java agent is installed
+    static {
+        try {
+            String agentVersion = System.getProperty("patch_lib.agent.version");
+            String modVersion = Global.getSettings().getModManager().getModSpec("patch_lib").getVersion();
+            evaluate(agentVersion, modVersion);
+        } catch (Throwable t) {
+
+        }
+    }
+
+    /** Checks that the agent loaded and matches the mod version. Authoritative second round,
+     * in case the early static check could not run yet. */
     public void checkAgentInstall() {
         String agentVersion = System.getProperty("patch_lib.agent.version");
-        String patchLibVersion = Global.getSettings().getModManager().getModSpec("patch_lib").getVersion();
+        String modVersion = Global.getSettings().getModManager().getModSpec("patch_lib").getVersion();
+        evaluate(agentVersion, modVersion);
+    }
 
+    //Opens the installer and quits the game if the agent is missing or a different version.
+    private static void evaluate(String agentVersion, String modVersion) {
+        //The agent never loaded. Usually a fresh install or a Starsector update that reset the launcher file.
         if (agentVersion == null) {
-            throw new RuntimeException(
-                    "PatchLib could not successfully launch. " +
-                    "This either happens because of a wrongful mod installation or because a Starsector update reset the mods required installation. " +
-                    "Check PatchLib's forum thread for installation instructions.");
-
-            //System.exit(0);
+            InstallerLauncher.launchAndExit(InstallerLauncher.Reason.MISSING_AGENT, modVersion, null);
+            return; // launchAndExit calls System.exit on success
         }
 
-        if (!agentVersion.equals(patchLibVersion)) {
-
-            String fileLocation = System.getProperty("user.dir");
-
-            throw new RuntimeException(
-                    "PatchLib could not start due to a mismatch in the mods and agents version.\n\n" +
-                            "" +
-                            "Mod Version: " + patchLibVersion + "\n" +
-                            "Agent Version: " + agentVersion + "\n\n" +
-                            "" +
-                            "In most cases, this can be fixed by copying the \"PatchLibAgent.jar\" file from the PatchLib mod folder in to \"" + fileLocation + "\"" +
-                            ".") ;
-
-            //System.exit(0);
+        //The agent loaded but is a different version than the mod. Usually a mod update.
+        if (!agentVersion.equals(modVersion)) {
+            InstallerLauncher.launchAndExit(InstallerLauncher.Reason.VERSION_MISMATCH, modVersion, agentVersion);
         }
-
     }
 
     @Override

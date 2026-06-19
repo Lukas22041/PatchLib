@@ -50,6 +50,7 @@ java {
 
 tasks.shadowJar {
     archiveFileName.set("PatchLibAgent.jar")
+    destinationDirectory.set(file("$rootDir/jars"))
     relocate("net.bytebuddy", "patch_lib.bytebuddy")
     manifest {
         attributes(

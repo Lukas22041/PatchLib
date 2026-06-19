@@ -196,6 +196,7 @@ tasks.test {
 tasks.jar {
     dependsOn(":agent:shadowJar")
     dependsOn(":api:jar")
+    dependsOn(":installer:shadowJar")
     finalizedBy("installAgent")
     destinationDirectory.set(file("$rootDir/jars"))
     archiveFileName.set(jarName)
@@ -613,8 +614,14 @@ tasks.register<Zip>("packageMod") {
         into("jars")
     }
 
-    // 1b. Include the java agent jar at the top level of the zip.
-    from(project(":agent").tasks.named("shadowJar"))
+    // 1b. Include the java agent jar and the installer jar in the jars folder.
+    // The agent is copied into the game working dir by the installer; the installer is launched by the mod.
+    from(project(":agent").tasks.named("shadowJar")) {
+        into("jars")
+    }
+    from(project(":installer").tasks.named("shadowJar")) {
+        into("jars")
+    }
 
     // 2. Include the files and folders listed in packageIncludes.
     // Directories are placed into a same-named folder; files go at the folder root.
