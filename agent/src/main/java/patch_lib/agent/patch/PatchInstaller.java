@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PatchInstaller {
 
@@ -49,6 +50,7 @@ public class PatchInstaller {
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION) //Enables transforming existing classes & registers itself for future re-transformations
                 .with(AgentBuilder.TypeStrategy.Default.DECORATE) //Prevents bytebuddy from making changes to the classes shape, which would be incompatible with retransformation
                 .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
+                .with(new AgentBuilder.PoolStrategy.WithTypePoolCache.Simple(new ConcurrentHashMap<>())) //Caches discovered types, prevents recursive subtype lookup from being very slow
                 .with(new AgentBuilder.Listener.Adapter() {
                     @Override
                     public void onError(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded, Throwable throwable) {

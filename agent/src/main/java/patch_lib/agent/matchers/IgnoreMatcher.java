@@ -15,6 +15,8 @@ public class IgnoreMatcher {
                 .or(nameStartsWith("jdk."))
                 .or(nameStartsWith("sun."))
                 .or(nameStartsWith("com.sun."))
+                .or(nameStartsWith("kotlin."))
+                .or(nameStartsWith("kotlinx."))
                 .or(nameStartsWith("patch_lib.agent."))
                 .or(nameStartsWith("patch_lib.bytebuddy."))
                 .or(nameStartsWith("patch_lib.api."));
