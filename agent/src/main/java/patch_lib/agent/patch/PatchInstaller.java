@@ -13,10 +13,13 @@ import patch_lib.agent.PatchLibLogger;
 import patch_lib.agent.PatchRegistry;
 import patch_lib.agent.PatchSite;
 import patch_lib.agent.dispatch.DispatchIdMarker;
+import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.ModSpecAPI;
 import patch_lib.agent.matchers.ClassTargetMatcher;
 import patch_lib.agent.matchers.GateMatcher;
 import patch_lib.agent.matchers.IgnoreMatcher;
 import patch_lib.agent.matchers.MethodTargetMatcher;
+import patch_lib.agent.matchers.SubtypeIndex;
 import patch_lib.agent.patch.template.ConstructorTemplate;
 import patch_lib.agent.patch.template.ReturnTemplate;
 import patch_lib.agent.patch.template.VoidTemplate;
@@ -24,13 +27,16 @@ import patch_lib.agent.spec.PatchSpec;
 import patch_lib.agent.spec.PatchType;
 import patch_lib.api.PatchContext;
 
+import java.io.File;
 import java.lang.instrument.Instrumentation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PatchInstaller {
@@ -45,6 +51,8 @@ public class PatchInstaller {
         //Create all the data that will be used for the install process once
         List<InstallData> data = setupData(specs, handlerLoader);
 
+        SubtypeIndex subtypeIndex = SubtypeIndex.build(specs);
+
         new AgentBuilder.Default()
                 .disableClassFormatChanges()
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION) //Enables transforming existing classes & registers itself for future re-transformations
@@ -58,7 +66,7 @@ public class PatchInstaller {
                     }
                 })
                 .ignore(IgnoreMatcher.create()) //Ignore attempts to patch core JVM, bytebuddy and PatchLib methods.
-                .type(GateMatcher.create(specs)) //Filter out classes that aren't relevant to any patch
+                .type(GateMatcher.create(specs, subtypeIndex)) //Filter out classes that aren't relevant to any patch
 
                 //Transform is called in three scenarios for classes that get through the two filters above
                 // - Once for every already loaded class on install

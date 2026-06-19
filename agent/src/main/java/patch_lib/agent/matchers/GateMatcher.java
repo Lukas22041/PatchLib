@@ -10,13 +10,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static net.bytebuddy.matcher.ElementMatchers.hasSuperType;
 import static net.bytebuddy.matcher.ElementMatchers.none;
 
 public class GateMatcher {
 
     /** Gates installs to only targets that are mentioned by atleast one spec*/
-    public static ElementMatcher.Junction<TypeDescription> create(List<PatchSpec> patches) {
+    public static ElementMatcher.Junction<TypeDescription> create(List<PatchSpec> patches, SubtypeIndex subtypeIndex) {
 
         //Build a cheap filter, only one of the three is checked, based on if their in the spec or not.
         //Creates a quick filter for simple patches. Only targeting one is fine since its the entry-gate, the exact match is still checked later at install time.
@@ -37,7 +36,7 @@ public class GateMatcher {
             gate = gate.or((TypeDescription t) -> exactNames.contains(t.getActualName()));
 
         if (!subtypeNames.isEmpty())
-            gate = gate.or(hasSuperType(type -> subtypeNames.contains(type.getActualName())));
+            gate = gate.or((TypeDescription type) -> subtypeIndex.contains(type.getName()));
 
         for (TargetClassSpec spec : other)
             gate = gate.or(ClassTargetMatcher.create(spec));

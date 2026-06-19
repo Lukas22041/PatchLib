@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /** Annotation to mark a class as a patch. Without it, other annotations are ignored.
- * By default, a patch without any filter set matches ALL classes. You should always filter to as few potential targets as possible.
+ * By default, a patch without any filter set matches all classes. You should always filter to as few potential targets as possible.
  * Every non-default filter used is AND-ed together. */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.CLASS)

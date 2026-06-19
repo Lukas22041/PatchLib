@@ -9,15 +9,21 @@ import static net.bytebuddy.matcher.ElementMatchers.*;
  * Also prevents patches to bytebuddy and patchlib itself*/
 public class IgnoreMatcher {
 
+    private static final String[] IGNORED_PREFIXES = {
+            "java.", "javax.", "jdk.", "sun.", "com.sun.",
+            "kotlin.", "kotlinx.",
+            "patch_lib.",
+    };
+
     public static ElementMatcher.Junction<TypeDescription> create() {
-        return nameStartsWith("java.")
-                .or(nameStartsWith("javax."))
-                .or(nameStartsWith("jdk."))
-                .or(nameStartsWith("sun."))
-                .or(nameStartsWith("com.sun."))
-                .or(nameStartsWith("kotlin."))
-                .or(nameStartsWith("kotlinx."))
-                .or(nameStartsWith("patch_lib."));
+        ElementMatcher.Junction<TypeDescription> matcher = none();
+        for (String prefix : IGNORED_PREFIXES) matcher = matcher.or(nameStartsWith(prefix));
+        return matcher;
+    }
+
+    public static boolean isIgnored(String binaryName) {
+        for (String prefix : IGNORED_PREFIXES) if (binaryName.startsWith(prefix)) return true;
+        return false;
     }
 
 }
