@@ -18,6 +18,10 @@ public final class ReturnTemplate {
             @Advice.Local("context") PatchContext context) {
 
         context = PatchDispatcher.enter(siteId, owner, self, args);
+
+        //Assign the args back in to the method, which applies any changes made to them
+        args = context.getArgs();
+
         return context.isSkipOriginal();
     }
 

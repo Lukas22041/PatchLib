@@ -1,6 +1,7 @@
 package patch_lib.agent.patch.template;
 
 import net.bytebuddy.asm.Advice;
+import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import patch_lib.agent.dispatch.DispatchIdMarker;
 import patch_lib.agent.dispatch.PatchDispatcher;
 import patch_lib.api.PatchContext;
@@ -11,8 +12,13 @@ public final class ConstructorTemplate {
     @Advice.OnMethodEnter //Cant skip constructors
     public static PatchContext enter(@DispatchIdMarker int siteId,
                                      @Advice.Origin Class<?> owner,
-                                     @Advice.AllArguments Object[] args) {
-        return PatchDispatcher.enter(siteId, owner, null, args); //Self not available before the constructor ran.
+                                     @Advice.AllArguments(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object[] args) {
+        PatchContext context = PatchDispatcher.enter(siteId, owner, null, args); //Self not available before the constructor ran.
+
+        //Assign the args back in to the method, which applies any changes made to them
+        args = context.getArgs();
+
+        return context;
     }
 
     @Advice.OnMethodExit
