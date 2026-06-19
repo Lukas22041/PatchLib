@@ -12,12 +12,13 @@ public final class VoidTemplate {
     @Advice.OnMethodEnter(skipOn = Advice.OnNonDefaultValue.class)
     public static boolean enter(
             @DispatchIdMarker int siteId,
+            @Advice.Origin Class<?> owner,
             @Advice.This(optional = true) Object self,
             @Advice.AllArguments(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object[] args,
             @Advice.Local("context") PatchContext context
         ) {
 
-        context = PatchDispatcher.enter(siteId, self, args);
+        context = PatchDispatcher.enter(siteId, owner, self, args);
         return context.isSkipOriginal();
     }
 

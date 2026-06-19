@@ -8,9 +8,9 @@ import patch_lib.api.PatchContext;
 
 public class PatchDispatcher {
 
-    public static PatchContext enter(int siteId, Object self, Object[] args) {
+    public static PatchContext enter(int siteId, Class<?> owner, Object self, Object[] args) {
         PatchSite site = PatchRegistry.site(siteId);
-        PatchContext context = new PatchContext(self, args);
+        PatchContext context = new PatchContext(owner, self, args);
         for (Patch patch : site.beforePatches()) {
             invoke(patch, context);
         }

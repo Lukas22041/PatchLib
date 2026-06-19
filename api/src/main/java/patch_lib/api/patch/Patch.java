@@ -1,4 +1,7 @@
-package patch_lib.api;
+package patch_lib.api.patch;
+
+import patch_lib.api.match.MethodMatch;
+import patch_lib.api.match.Unset;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

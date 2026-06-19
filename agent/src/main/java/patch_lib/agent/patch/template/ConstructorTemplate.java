@@ -10,8 +10,9 @@ import patch_lib.api.PatchContext;
 public final class ConstructorTemplate {
     @Advice.OnMethodEnter //Cant skip constructors
     public static PatchContext enter(@DispatchIdMarker int siteId,
+                                     @Advice.Origin Class<?> owner,
                                      @Advice.AllArguments Object[] args) {
-        return PatchDispatcher.enter(siteId, null, args); //Self not available before the constructor ran.
+        return PatchDispatcher.enter(siteId, owner, null, args); //Self not available before the constructor ran.
     }
 
     @Advice.OnMethodExit

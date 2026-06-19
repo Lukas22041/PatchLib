@@ -22,11 +22,11 @@ import java.util.jar.JarFile;
 /** Scans all loaded mod jars for patch annotations and creates the patch specs */
 public class PatchScanner {
 
-    static final String PATCH = "patch_lib.api.Patch";
-    static final String BEFORE = "patch_lib.api.Before";
-    static final String AFTER = "patch_lib.api.After";
+    static final String PATCH = "patch_lib.api.patch.Patch";
+    static final String BEFORE = "patch_lib.api.patch.Before";
+    static final String AFTER = "patch_lib.api.patch.After";
     static final String EXCEPT = "patch_lib.api.Except";
-    static final String UNSET = "patch_lib.api.Unset";
+    static final String UNSET = "patch_lib.api.match.Unset";
 
     record JarPair(ModSpecAPI mod, File jar) { }
 
