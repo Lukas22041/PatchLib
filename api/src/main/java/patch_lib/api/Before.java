@@ -5,16 +5,21 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/** Patches a method for after it has executed */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
 public @interface Before {
     String methodName() default "";
 
     Class<?>[] parameters() default {};
+    /**Uses actual class names, with type erasure.
+     * Examples: "int", "int[]", "java.lang.Integer", "java.lang.Integer[]", "java.util.List" */
     String[] parameterNames() default {};
     int parameterCount() default -1;
 
     Class<?> returnType() default Unset.class;
+    /**Uses actual class names, with type erasure.
+     * Examples: "int", "int[]", "java.lang.Integer", "java.lang.Integer[]", "java.util.List" */
     String returnTypeName() default "";
 
     /** Order in which patches are executed, lower numbers are run first.

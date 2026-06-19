@@ -1,8 +1,5 @@
 package patch_lib.agent;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-
 import java.lang.instrument.Instrumentation;
 
 /** The program entry for the agent.
@@ -11,7 +8,7 @@ import java.lang.instrument.Instrumentation;
 public class PreMain {
 
     public static void premain(String args, Instrumentation instrumentation) {
-        PatchLibLogger.debug("PatchLib premain started.");
+        PatchLibLogger.info("PatchLib premain started.");
 
         String version = PreMain.class.getPackage().getImplementationVersion();
         System.setProperty("patch_lib.agent.version", version);

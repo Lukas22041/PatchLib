@@ -40,9 +40,9 @@ public class PatchScanner {
                                 .map( jar -> new JarPair(spec, new File(spec.getPath(), jar))) )
                 .toList();
 
-        PatchLibLogger.debug("Starting annotation scan in the following jars: ");
-        jarPairs.forEach(jar -> PatchLibLogger.debug(" - " + jar.jar.getPath()));
-        PatchLibLogger.debug("Finished grabbing jars ");
+        PatchLibLogger.info("Starting annotation scan in the following jars: ");
+        jarPairs.forEach(jar -> PatchLibLogger.info(" - " + jar.jar.getPath()));
+        PatchLibLogger.info("Finished grabbing jars ");
 
         //Create the class file locators for scanning the bytes of the classes
         List<ClassFileLocator> locators = new ArrayList<>();
@@ -55,7 +55,7 @@ public class PatchScanner {
             throw new RuntimeException(e);
         }
 
-        PatchLibLogger.debug("Starting patch search");
+        PatchLibLogger.info("Starting patch search");
         List<PatchSpec> patches = new ArrayList<>();
         try (ClassFileLocator locator = new ClassFileLocator.Compound(locators);) {
 
@@ -121,13 +121,13 @@ public class PatchScanner {
                                 );
 
                                 patches.add(patchSpec);
-                                PatchLibLogger.debug("Discovered Patch  -  Class: " + binaryName + "; Handler Method: " + handledMethod.getName() + ";" );
+                                PatchLibLogger.info("Discovered Patch  -  Class: " + binaryName + "; Handler Method: " + handledMethod.getName() + ";" );
 
                             }
 
 
                         } catch (Exception ex) {
-                            PatchLibLogger.debug("Failed to scan " + binaryName + ": " + ex);
+                            PatchLibLogger.info("Failed to scan " + binaryName + ": " + ex);
                         }
                     }
                 }
@@ -136,8 +136,8 @@ public class PatchScanner {
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-        PatchLibLogger.debug("Finished patch search");
-        PatchLibLogger.debug("Discovered " + patches.size() + " patch");
+        PatchLibLogger.info("Finished patch search");
+        PatchLibLogger.info("Discovered " + patches.size() + " patch");
 
         return patches;
     }

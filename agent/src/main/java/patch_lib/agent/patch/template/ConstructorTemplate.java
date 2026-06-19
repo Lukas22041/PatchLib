@@ -8,10 +8,10 @@ import patch_lib.api.PatchContext;
 /** A template of code that bytebuddy inserts for targeted constructors.
  * Constructors can not be skipped and do not have "self" available in "enter", which makes them require their own template. */
 public final class ConstructorTemplate {
-    @Advice.OnMethodEnter                                   // no skipOn — you can't not-construct
+    @Advice.OnMethodEnter //Cant skip constructors
     public static PatchContext enter(@DispatchIdMarker int siteId,
                                      @Advice.AllArguments Object[] args) {
-        return PatchDispatcher.enter(siteId, null, args);       // self not available yet
+        return PatchDispatcher.enter(siteId, null, args); //Self not available before the constructor ran.
     }
 
     @Advice.OnMethodExit
