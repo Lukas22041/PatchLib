@@ -4,6 +4,9 @@ import patch_lib.api.query.FieldQuery;
 import patch_lib.api.query.MethodQuery;
 import patch_lib.api.ref.MethodRef;
 import patch_lib.api.ref.Ref;
+import patch_lib.api.store.PatchStore;
+
+import java.util.Map;
 
 public class PatchContext {
 
@@ -19,10 +22,10 @@ public class PatchContext {
         this.args = args;
     }
 
-    public Object self() { return self; }
+    public Object getSelf() { return self; }
     public void setSelf(Object self) { this.self = self; }   // constructor template only (self isn't available on enter)
 
-    public Object[] args() { return args; }
+    public Object[] getArgs() { return args; }
     public Object getArg(int index) { return args[index]; }
     public void setArg(int index, Object newValue) { args[index] = newValue; }
 
@@ -42,4 +45,11 @@ public class PatchContext {
 
     /** Reflection utility for receiving a method from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
     public MethodRef getMethod(MethodQuery query) { return ClassMembers.method(owner, self, query); }
+
+    /**A transient data store for per-instance data This data is not stored in the save. It is shared across all patches with access to this instance.
+     * Useful for communicating across patches, or if something like a timer is needed. It should use unique keys, not something generic like "target" which multiple mods may use.
+     * Throws an IllegalStateException if used on a static method or in @Before on a constructor method, as they have no instance data.  */
+    public Map<String, Object> getData() {
+        return PatchStore.getOrCreate(getSelf());
+    }
 }
