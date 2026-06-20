@@ -13,17 +13,13 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-final class ClassMembers {
+final class PatchReflection {
 
-    private ClassMembers() { }
+    private PatchReflection() { }
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    public static <T> Ref<T> arg(Object[] args, int index) {
-        return new ArgRef<>(args, index);
-    }
-
-    public static <T> Ref<T> field(Class<?> owner, Object target, FieldQuery query) {
+    static <T> Ref<T> field(Class<?> owner, Object target, FieldQuery query) {
         for (Class<?> c = owner; c != null; c = c.getSuperclass())
             for (Field f : c.getDeclaredFields())
                 if (query.matches(f)) {
@@ -33,7 +29,7 @@ final class ClassMembers {
         throw new RuntimeException("No field matching the query on " + owner.getName() + " or its supertypes");
     }
 
-    public static MethodRef method(Class<?> owner, Object target, MethodQuery query) {
+    static MethodRef method(Class<?> owner, Object target, MethodQuery query) {
         for (Class<?> c = owner; c != null; c = c.getSuperclass())
             for (Method m : c.getDeclaredMethods())
                 if (query.matches(m)) {
@@ -43,7 +39,21 @@ final class ClassMembers {
         throw new RuntimeException("No method matching the query on " + owner.getName() + " or its supertypes");
     }
 
-    private static MethodHandle bind(Method m, Object target) {
+    static boolean hasMethod(Class<?> owner, MethodQuery query) {
+        for (Class<?> c = owner; c != null; c = c.getSuperclass())
+            for (Method m : c.getDeclaredMethods())
+                if (query.matches(m)) return true;
+        return false;
+    }
+
+    static boolean hasField(Class<?> owner, FieldQuery query) {
+        for (Class<?> c = owner; c != null; c = c.getSuperclass())
+            for (Field f : c.getDeclaredFields())
+                if (query.matches(f)) return true;
+        return false;
+    }
+
+    static MethodHandle bind(Method m, Object target) {
         try {
             MethodHandle handle = LOOKUP.unreflect(m);
             return Modifier.isStatic(m.getModifiers()) || target == null ? handle : handle.bindTo(target);

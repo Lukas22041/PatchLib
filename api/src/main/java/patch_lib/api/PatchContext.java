@@ -2,6 +2,7 @@ package patch_lib.api;
 
 import patch_lib.api.query.FieldQuery;
 import patch_lib.api.query.MethodQuery;
+import patch_lib.api.ref.ArgRef;
 import patch_lib.api.ref.MethodRef;
 import patch_lib.api.ref.Ref;
 import patch_lib.api.store.PatchStore;
@@ -38,13 +39,31 @@ public class PatchContext {
 
     /** Utility for retrieving a typed read/writeable arg of the original called method.
      * Changing an arg in a @Before patch means that the original method will be called and use the modified arguments. */
-    public <T> Ref<T> getArgRef(int index) { return ClassMembers.arg(args, index); }
+    public <T> Ref<T> getArgRef(int index) {
+        return new ArgRef<>(args, index);
+    }
 
     /** Reflection utility for reading/writing a typed field from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
-    public <T> Ref<T> getField(FieldQuery query) { return ClassMembers.field(owner, self, query); }
+    public <T> Ref<T> getField(FieldQuery query) { return PatchReflection.field(owner, self, query); }
+
+    /** Reflection utility for reading/writing a typed field from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
+    public <T> Ref<T> getField(Object instance, FieldQuery query) { return PatchReflection.field(instance.getClass(), instance, query); }
+
 
     /** Reflection utility for receiving a method from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
-    public MethodRef getMethod(MethodQuery query) { return ClassMembers.method(owner, self, query); }
+    public MethodRef getMethod(MethodQuery query) { return PatchReflection.method(owner, self, query); }
+
+    /** Reflection utility for receiving a method from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
+    public MethodRef getMethod(Object instance, MethodQuery query) { return PatchReflection.method(instance.getClass(), instance, query); }
+
+
+    public boolean hasMethod(MethodQuery query) { return PatchReflection.hasMethod(owner, query); }
+
+    public boolean hasMethod(Object instance, MethodQuery query) { return PatchReflection.hasMethod(instance.getClass(), query); }
+
+    public boolean hasField(FieldQuery query) { return PatchReflection.hasField(owner, query); }
+
+    public boolean hasField(Object instance, FieldQuery query) { return PatchReflection.hasField(instance.getClass(), query); }
 
     /**A transient data store for per-instance data This data is not stored in the save. It is shared across all patches with access to this instance.
      * Useful for communicating across patches, or if something like a timer is needed. It should use unique keys, not something generic like "target" which multiple mods may use.

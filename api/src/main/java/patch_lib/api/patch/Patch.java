@@ -15,15 +15,17 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.CLASS)
 public @interface Patch {
 
-    //Either provide a class reference or the whole class name with package
     Class<?> targetClass() default Unset.class;
     String targetClassName() default "";
 
     Class<?> targetSubtype() default Unset.class;
     String targetSubtypeName() default "";
 
+    /** Can be used to filter to a specific package, like "com.fs". */
     String targetPackage() default "";
+    /** Makes targetPackage recursive, allowing deeper subfolders of the target package */
     boolean includeSubpackages() default false;
 
+    /** Match based on the shape of methods within the class */
     MethodMatch[] methodMatches() default {};
 }

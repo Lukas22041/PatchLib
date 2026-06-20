@@ -17,13 +17,13 @@ public @interface After {
 
     Class<?>[] parameters() default {};
     /**Uses actual class names, with type erasure.
-     * Examples: "int", "int[]", "java.lang.Integer", "java.lang.Integer[]", "java.util.List" */
+     * Examples: "int", "int[]", "java.lang.Integer", "java.lang.Integer[]", "java.util.List", "void" */
     String[] parameterNames() default {};
     int parameterCount() default -1;
 
     Class<?> returnType() default Unset.class;
     /**Uses actual class names, with type erasure.
-     * Examples: "int", "int[]", "java.lang.Integer", "java.lang.Integer[]", "java.util.List" */
+     * Examples: "int", "int[]", "java.lang.Integer", "java.lang.Integer[]", "java.util.List", "void" */
     String returnTypeName() default "";
 
     /** Order in which patches are executed, lower numbers are run first.
