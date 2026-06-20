@@ -3,6 +3,7 @@ package patch_lib.agent.matchers;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.matcher.ElementMatcher;
 import patch_lib.agent.spec.TargetClassSpec;
+import patch_lib.agent.spec.TargetFieldSpec;
 import patch_lib.agent.spec.TargetMethodSpec;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
@@ -36,6 +37,10 @@ public class ClassTargetMatcher {
 
         for (TargetMethodSpec methodSpec : classSpec.methodMatches()) {
             matcher = matcher.and(declaresMethod(MethodTargetMatcher.create(methodSpec)));
+        }
+
+        for (TargetFieldSpec fieldSpec : classSpec.fieldMatches()) {
+            matcher = matcher.and(declaresField(FieldTargetMatcher.create(fieldSpec)));
         }
 
         return matcher;

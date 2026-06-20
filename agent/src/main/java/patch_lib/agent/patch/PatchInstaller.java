@@ -34,9 +34,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PatchInstaller {
@@ -59,6 +57,11 @@ public class PatchInstaller {
                 .with(AgentBuilder.TypeStrategy.Default.DECORATE) //Prevents bytebuddy from making changes to the classes shape, which would be incompatible with retransformation
                 .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
                 .with(new AgentBuilder.PoolStrategy.WithTypePoolCache.Simple(new ConcurrentHashMap<>())) //Caches discovered types, prevents recursive subtype lookup from being very slow
+                //Default is "HYBRID". On Hybrid, ByteBuddy uses Reflection to get information about class shapes.
+                //The issue is that with the Reflection approach, it can load not-yet loaded classes,
+                //and due to ByteBuddy's circular dependency prevention, that class gets completely unpatched.
+                //POOL_FIRST instead reads the original bytes, which is slightly worse in performance and makes multi-javaagent work not possible, but prevents this issue.
+                .with(AgentBuilder.DescriptionStrategy.Default.POOL_FIRST)
                 .with(new AgentBuilder.Listener.Adapter() {
                     @Override
                     public void onError(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded, Throwable throwable) {

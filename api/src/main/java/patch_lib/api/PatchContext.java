@@ -32,6 +32,7 @@ public class PatchContext {
     public void setArg(int index, Object newValue) { args[index] = newValue; }
 
     public Object getReturnValue() { return returnValue; }
+    public <T> T getInferredReturnValue() { return (T) returnValue; }
     public void setReturnValue(Object newReturnValue) { this.returnValue = newReturnValue; }
 
     public boolean isSkipOriginal() { return skipOriginal; }

@@ -1,5 +1,6 @@
 package patch_lib.api.patch;
 
+import patch_lib.api.match.FieldMatch;
 import patch_lib.api.match.MethodMatch;
 import patch_lib.api.match.Unset;
 
@@ -28,4 +29,7 @@ public @interface Patch {
 
     /** Match based on the shape of methods within the class */
     MethodMatch[] methodMatches() default {};
+
+    /** Match based on the shape of fields within the class */
+    FieldMatch[] fieldMatches() default {};
 }

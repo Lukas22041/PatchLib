@@ -157,12 +157,39 @@ public class PatchScanner {
             methodMatches[i] = createMethodSpec(matchAnnotations[i]);
         }
 
+        //Matchers for searching classes by contained fields.
+        AnnotationDescription[] fieldMatchAnnotations = AnnotationReader.readAnnotationArray(annotation, "fieldMatches");
+        TargetFieldSpec[] fieldMatches = new TargetFieldSpec[fieldMatchAnnotations.length];
+        for (int i = 0; i < fieldMatchAnnotations.length; i++) {
+            fieldMatches[i] = createFieldSpec(fieldMatchAnnotations[i]);
+        }
+
         return new TargetClassSpec(
                 !targetClass.isEmpty() ? targetClass : targetClassName,
                 !targetSubtype.isEmpty() ? targetSubtype : targetSubtypeName,
                 targetPackage,
                 includeSubpackages,
-                methodMatches
+                methodMatches,
+                fieldMatches
+        );
+    }
+
+    private TargetFieldSpec createFieldSpec(AnnotationDescription annotation) {
+        String fieldName = AnnotationReader.readString(annotation, "fieldName", "");
+
+        String fieldType = AnnotationReader.readType(annotation, "fieldType", "");
+        String fieldTypeName = AnnotationReader.readString(annotation, "fieldTypeName", "");
+
+        String fieldSubtype = AnnotationReader.readType(annotation, "fieldSubtype", "");
+        String fieldSubtypeName = AnnotationReader.readString(annotation, "fieldSubtypeName", "");
+
+        boolean staticOnly = AnnotationReader.readBoolean(annotation, "staticOnly", false);
+
+        return new TargetFieldSpec(
+                fieldName,
+                !fieldType.isEmpty() ? fieldType : fieldTypeName,
+                !fieldSubtype.isEmpty() ? fieldSubtype : fieldSubtypeName,
+                staticOnly
         );
     }
 
