@@ -46,6 +46,7 @@ public class PatchScanner {
         //Create the class file locators for scanning the bytes of the classes
         List<ClassFileLocator> locators = new ArrayList<>();
         locators.add(ClassFileLocator.ForClassLoader.ofSystemLoader()); //Required to read JVM and game Classes that appear on the annotations
+        locators.add(ClassFileLocator.ForClassLoader.of(PatchScanner.class.getClassLoader()));
         try {
             for (JarPair jarPair : jarPairs) {
                 locators.add(ClassFileLocator.ForJarFile.of(jarPair.jar));
