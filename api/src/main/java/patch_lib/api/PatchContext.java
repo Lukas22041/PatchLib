@@ -18,7 +18,8 @@ public class PatchContext {
     private boolean skipOriginal;
 
     public PatchContext(Class<?> owner, Object self, Object[] args) {
-        this.owner = owner;
+        //Should always use the class of the actual instance, but @Before on Constructors and static methods have no instance, so in those cases the class of the patched method is used.
+        this.owner = (self != null) ? self.getClass() : owner;
         this.self = self;
         this.args = args;
     }
@@ -55,7 +56,6 @@ public class PatchContext {
 
     /** Reflection utility for receiving a method from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
     public MethodRef getMethod(Object instance, MethodQuery query) { return PatchReflection.method(instance.getClass(), instance, query); }
-
 
     public boolean hasMethod(MethodQuery query) { return PatchReflection.hasMethod(owner, query); }
 
