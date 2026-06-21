@@ -29,8 +29,10 @@ If you are a mod author and your mod is set up with [Wisps IntelliJ template](ht
 The issue is that wisps template has the vmparams for booting the game included in its run configurations, so if you make use of those, they will be missing the -javagent flag.
 So either:
 
-- Add `-javaagent:PatchLibAgent.jar` to the VM options of your run config yourself, right after `-noverify`, or
+- Add `-javaagent:PatchLibAgent.jar` to the VM options of your run config yourself or
 - Download the two premade run configs below and drop them into your mods `.run` folder.
+
+
 
 -> [Run Starsector (PatchLib)](https://github.com/Lukas22041/PatchLib/blob/master/readme/Run%20Starsector_PatchLib.run.xml)  
 -> [Run Starsector w/o Launcher (PatchLib)](https://github.com/Lukas22041/PatchLib/blob/master/readme/Run_Starsector_w_o_Launcher_PatchLib.run.xml)
