@@ -41,7 +41,7 @@ Either way the agent jar still needs to sit in `starsector-core`, the same as th
 
 > If you do not do this step, the the run configurations will repeatedly start the installer, instead of actually starting the game.
 
-## 2. Guide for mod authors 
+# 2. Guide for mod authors 
 
 Full documentation is on the [wiki](https://github.com/Lukas22041/PatchLib/wiki).
 
