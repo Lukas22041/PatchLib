@@ -6,7 +6,7 @@ import patch_lib.api.patch.Patch;
 import patch_lib.api.PatchContext;
 import patch_lib.api.ref.Ref;
 
-@Patch(targetSubtype = CampaignClockAPI.class)
+/*@Patch(targetSubtype = CampaignClockAPI.class)
 public class TestPatch {
 
     @After(methodName = "getCycle")
@@ -14,4 +14,4 @@ public class TestPatch {
         context.setReturnValue((int) context.getReturnValue() + 1000);
     }
 
-}
+}*/
