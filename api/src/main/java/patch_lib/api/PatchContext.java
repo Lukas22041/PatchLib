@@ -5,9 +5,8 @@ import patch_lib.api.query.MethodQuery;
 import patch_lib.api.ref.ArgRef;
 import patch_lib.api.ref.MethodRef;
 import patch_lib.api.ref.Ref;
+import patch_lib.api.store.PatchData;
 import patch_lib.api.store.PatchStore;
-
-import java.util.Map;
 
 public class PatchContext {
 
@@ -25,6 +24,7 @@ public class PatchContext {
     }
 
     public Object getSelf() { return self; }
+    public <T> T getInferredSelf() {  return (T) self; }
     public void setSelf(Object self) { this.self = self; }   // constructor template only (self isn't available on enter)
 
     public Object[] getArgs() { return args; }
@@ -69,7 +69,7 @@ public class PatchContext {
     /**A transient data store for per-instance data This data is not stored in the save. It is shared across all patches with access to this instance.
      * Useful for communicating across patches, or if something like a timer is needed. It should use unique keys, not something generic like "target" which multiple mods may use.
      * Throws an IllegalStateException if used on a static method or in @Before on a constructor method, as they have no instance data.  */
-    public Map<String, Object> getData() {
-        return PatchStore.getOrCreate(getSelf());
+    public PatchData getData() {
+        return new PatchData(PatchStore.getOrCreate(getSelf()));
     }
 }
