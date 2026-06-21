@@ -32,16 +32,16 @@ So either:
 - Add `-javaagent:PatchLibAgent.jar` to the VM options of your run config yourself or
 - Download the two premade run configs below and drop them into your mods `.run` folder.
 
-
-
 -> [Run Starsector (PatchLib)](https://github.com/Lukas22041/PatchLib/blob/master/readme/Run%20Starsector_PatchLib.run.xml)  
 -> [Run Starsector w/o Launcher (PatchLib)](https://github.com/Lukas22041/PatchLib/blob/master/readme/Run_Starsector_w_o_Launcher_PatchLib.run.xml)
+
+<img src="readme/IntellijSetup.png" alt="IntelliJ setup" width="600">
 
 Either way the agent jar still needs to sit in `starsector-core`, the same as the manual install above, but the installer will have also done this already for you.
 
 > If you do not do this step, the the run configurations will repeatedly start the installer, instead of actually starting the game.
 
-## 2. Guide for Modmakers
+## 2. Guide for mod authors 
 
 Full documentation is on the [wiki](https://github.com/Lukas22041/PatchLib/wiki).
 
