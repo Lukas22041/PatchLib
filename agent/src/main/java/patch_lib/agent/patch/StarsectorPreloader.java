@@ -22,7 +22,6 @@ public final class StarsectorPreloader {
     public static void preload(ClassLoader loader) {
         PatchLibLogger.info("Starting game class preload.");
         long start = System.nanoTime();
-        long metaBefore = metaspaceUsedBytes();
 
         int loaded = 0;
         int skipped = 0;
@@ -59,20 +58,7 @@ public final class StarsectorPreloader {
         }
 
         long ms = (System.nanoTime() - start) / 1000000;
-        long metaMb = Math.max(0, metaspaceUsedBytes() - metaBefore) / (1024 * 1024);
-        PatchLibLogger.info("Preloaded " + loaded + " game classes (" + skipped + " skipped) in " + ms + " ms, ~" + metaMb + " MB metaspace");
+        PatchLibLogger.info("Preloaded " + loaded + " game classes (" + skipped + " skipped) in " + ms + " ms");
     }
 
-    /** Used bytes in the JVM's Metaspace pool - where a loaded class's metadata lives. With initialize=false there
-     * are no heap objects from the load, so metaspace is essentially the whole footprint. */
-    private static long metaspaceUsedBytes() {
-        long used = 0;
-        for (MemoryPoolMXBean pool : ManagementFactory.getMemoryPoolMXBeans()) {
-            //Only the "Metaspace" pool; "Compressed Class Space" is a region within it, so summing both double-counts.
-            if (pool.getName() != null && pool.getName().contains("Metaspace")) {
-                used += pool.getUsage().getUsed();
-            }
-        }
-        return used;
-    }
 }

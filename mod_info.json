@@ -3,7 +3,7 @@
   "name": "! PatchLib !", #Display Name
   "author": "Lukas04", 
   "utility": false,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Provides utilities for mods to patch core starsector code directly, overwriting or appending it",
   "gameVersion": "0.98a-RC8",
   "jars": [ "jars/PatchLib.jar" ],
