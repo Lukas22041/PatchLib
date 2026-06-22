@@ -12,7 +12,10 @@ public class IgnoreMatcher {
     private static final String[] IGNORED_PREFIXES = {
             "java.", "javax.", "jdk.", "sun.", "com.sun.",
             "kotlin.", "kotlinx.",
-            "patch_lib.",
+            "patch_lib.", //Ignore PatchLib itself and its bundled Bytebuddy
+            "org.apache.log4j.",
+            "com.azul.", "org.graalvm", "com.oracle.", "oracle.", //Ignore specific JVMs
+            "org.codehaus.janino.", "org.codehaus.commons." //Ignore Janino
     };
 
     public static ElementMatcher.Junction<TypeDescription> create() {

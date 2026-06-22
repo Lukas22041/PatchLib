@@ -54,14 +54,18 @@ public class PatchInstaller {
         new AgentBuilder.Default()
                 .disableClassFormatChanges()
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION) //Enables transforming existing classes & registers itself for future re-transformations
+
+                //The POOL_FIRST description strategy can rarely cause classes to be class-loaded through its own checks, bytebuddys circular dependency
+                //check prevents those from being modified during retransform. This toggle ensures those cases are ran through install afterward.
+                .with(AgentBuilder.RedefinitionStrategy.DiscoveryStrategy.Reiterating.INSTANCE)
+
+                //POOL_FIRST gathers data from target classed through reading its bytes by default. For classes where it can not do that (usually just Janino loaded classes),
+                //it falls back to using Reflection instead. Bytebuddy uses HYBRID by default, which would use Reflection for everything. That is not possible in this case, as that
+                //causes starsectors reflection block to occur on annotated classes.
+                .with(AgentBuilder.DescriptionStrategy.Default.POOL_FIRST)
                 .with(AgentBuilder.TypeStrategy.Default.DECORATE) //Prevents bytebuddy from making changes to the classes shape, which would be incompatible with retransformation
                 .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
                 .with(new AgentBuilder.PoolStrategy.WithTypePoolCache.Simple(new ConcurrentHashMap<>())) //Caches discovered types, prevents recursive subtype lookup from being very slow
-                //Default is "HYBRID". On Hybrid, ByteBuddy uses Reflection to get information about class shapes.
-                //The issue is that with the Reflection approach, it can load not-yet loaded classes,
-                //and due to ByteBuddy's circular dependency prevention, that class gets completely unpatched.
-                //POOL_FIRST instead reads the original bytes, which is slightly worse in performance and makes multi-javaagent work not possible, but prevents this issue.
-                .with(AgentBuilder.DescriptionStrategy.Default.POOL_FIRST)
                 .with(new AgentBuilder.Listener.Adapter() {
                     @Override
                     public void onError(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded, Throwable throwable) {

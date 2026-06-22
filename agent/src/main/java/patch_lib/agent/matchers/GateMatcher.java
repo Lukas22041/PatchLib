@@ -1,5 +1,7 @@
 package patch_lib.agent.matchers;
 
+import com.fs.starfarer.api.Global;
+import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.matcher.ElementMatcher;
 import patch_lib.agent.spec.PatchSpec;
@@ -10,12 +12,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static net.bytebuddy.matcher.ElementMatchers.none;
+import static net.bytebuddy.matcher.ElementMatchers.hasSuperType;
 
 public class GateMatcher {
 
-    /** Gates installs to only targets that are mentioned by atleast one spec*/
-    public static ElementMatcher.Junction<TypeDescription> create(List<PatchSpec> patches, SubtypeIndex subtypeIndex) {
+    /** Gates installs to only targets that are mentioned by at least one spec. */
+    public static AgentBuilder.RawMatcher create(List<PatchSpec> patches, SubtypeIndex subtypeIndex) {
 
         //Build a cheap filter, only one of the three is checked, based on if their in the spec or not.
         //Creates a quick filter for simple patches. Only targeting one is fine since its the entry-gate, the exact match is still checked later at install time.
@@ -30,18 +32,40 @@ public class GateMatcher {
             else other.add(spec);
         }
 
-        ElementMatcher.Junction<TypeDescription> gate = none();
+        List<ElementMatcher<TypeDescription>> otherMatchers = new ArrayList<>();
+        for (TargetClassSpec spec : other) otherMatchers.add(ClassTargetMatcher.create(spec));
 
-        if (!exactNames.isEmpty())
-            gate = gate.or((TypeDescription t) -> exactNames.contains(t.getActualName()));
+        return (type, classLoader, module, classBeingRedefined, protectionDomain) -> {
 
-        if (!subtypeNames.isEmpty())
-            gate = gate.or((TypeDescription type) -> subtypeIndex.contains(type.getName()));
+            //Fallback for Janino loaded classes, which don't have a source jar
+            ElementMatcher.Junction<TypeDescription> liveSubtype = subtypeNames.isEmpty()
+                    ? null
+                    : hasSuperType(matchedType -> subtypeNames.contains(matchedType.getActualName()));
 
-        for (TargetClassSpec spec : other)
-            gate = gate.or(ClassTargetMatcher.create(spec));
+            if (!exactNames.isEmpty() && exactNames.contains(type.getActualName())) return true;
 
-        return gate;
+            if (!subtypeNames.isEmpty()) {
+                if (subtypeIndex.contains(type.getName())) return true;
+                //Script classes are never in the jar index; do the (scoped) live check for them instead.
+                if (liveSubtype != null && isScriptLoader(classLoader) && liveSubtype.matches(type)) return true;
+            }
+
+            for (ElementMatcher<TypeDescription> matcher : otherMatchers) {
+                if (matcher.matches(type)) return true;
+            }
+            return false;
+        };
+    }
+
+
+    private static boolean isScriptLoader(ClassLoader loader) {
+        if (loader == null) return false;
+        try {
+            return loader == Global.getSettings().getScriptClassLoader();
+        } catch (Throwable t) {
+            //Settings/script loader not initialised yet (very early class loads), no loose scripts exist at that point.
+            return false;
+        }
     }
 
 }
