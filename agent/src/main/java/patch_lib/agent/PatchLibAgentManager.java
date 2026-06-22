@@ -2,6 +2,7 @@ package patch_lib.agent;
 
 import patch_lib.agent.discover.PatchScanner;
 import patch_lib.agent.patch.PatchInstaller;
+import patch_lib.agent.patch.StarsectorPreloader;
 import patch_lib.agent.spec.PatchSpec;
 
 import java.lang.instrument.Instrumentation;
@@ -32,6 +33,7 @@ public class PatchLibAgentManager {
 
         PatchInstaller.install(instrumentation, patchSpecs, loader);
 
+        StarsectorPreloader.preload(loader);
     }
 
 }
