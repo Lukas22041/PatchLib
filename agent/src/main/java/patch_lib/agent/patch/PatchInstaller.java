@@ -25,7 +25,9 @@ import patch_lib.agent.patch.template.ReturnTemplate;
 import patch_lib.agent.patch.template.VoidTemplate;
 import patch_lib.agent.spec.PatchSpec;
 import patch_lib.agent.spec.PatchType;
-import patch_lib.api.PatchContext;
+import patch_lib.api.AfterContext;
+import patch_lib.api.BeforeContext;
+import patch_lib.api.ExceptContext;
 
 import java.io.File;
 import java.lang.instrument.Instrumentation;
@@ -157,13 +159,20 @@ public class PatchInstaller {
                 .map(data -> new Patch(data.spec, data.handlerMethod))
                 .toArray(Patch[]::new);
 
-        return new PatchSite(before, after);
+        Patch[] except = dataList.stream()
+                .filter(data -> data.spec().patchType() == PatchType.EXCEPT)
+                .sorted(comparator)
+                .map(data -> new Patch(data.spec, data.handlerMethod))
+                .toArray(Patch[]::new);
+
+        return new PatchSite(before, after, except);
     }
 
     private static MethodHandle createMethodHandle(PatchSpec spec, ClassLoader loader) {
+        Class<?> expectedContext = expectedContext(spec.patchType());
         try {
             Class<?> handlerClass = Class.forName(spec.handlerClass(), false, loader);
-            Method handlerMethod = handlerClass.getDeclaredMethod(spec.handlerMethod(), PatchContext.class);
+            Method handlerMethod = handlerClass.getDeclaredMethod(spec.handlerMethod(), expectedContext);
             handlerMethod.setAccessible(true);
             return MethodHandles.lookup().unreflect(handlerMethod);
 
@@ -171,12 +180,21 @@ public class PatchInstaller {
             PatchLibLogger.error("Could not resolve class for " + spec.handlerClass() + ", skipping patch");
             return null;
         } catch (NoSuchMethodException e) {
-            PatchLibLogger.error("Could not resolve method handle for " + spec.handlerClass() + " (" + spec.handlerMethod() + ")" + ", skipping patch");
+            PatchLibLogger.error("A " + spec.patchType() + " patch must take a single " + expectedContext.getSimpleName()
+                    + " parameter, but " + spec.handlerClass() + " (" + spec.handlerMethod() + ") does not, skipping patch");
             return null;
         } catch (IllegalAccessException e) {
             PatchLibLogger.error("Could not make method accessible for class " + spec.handlerClass() + " (" + spec.handlerMethod() + ")" + ", skipping patch");
             return null;
         }
+    }
+
+    private static Class<?> expectedContext(PatchType patchType) {
+        return switch (patchType) {
+            case BEFORE -> BeforeContext.class;
+            case AFTER -> AfterContext.class;
+            case EXCEPT -> ExceptContext.class;
+        };
     }
 
     private static Class<?> pickTemplate(MethodDescription method) {

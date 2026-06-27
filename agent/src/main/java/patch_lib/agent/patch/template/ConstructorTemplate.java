@@ -21,11 +21,20 @@ public final class ConstructorTemplate {
         return context;
     }
 
-    @Advice.OnMethodExit
+    @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void exit(@DispatchIdMarker int siteId,
-                            @Advice.This Object self,
+                            @Advice.This(optional = true) Object self,
+                            @Advice.Thrown(readOnly = false, typing = Assigner.Typing.DYNAMIC) Throwable thrown,
                             @Advice.Enter PatchContext context) {
-        context.setSelf(self);
-        PatchDispatcher.exit(siteId, context, null);
+
+        //Exception
+        if (thrown != null) {
+            context.setAllowSuppress(false);
+            thrown = PatchDispatcher.except(siteId, context, thrown);
+        } else {
+            //Normal completion.
+            context.setSelf(self);
+            PatchDispatcher.exit(siteId, context, null);
+        }
     }
 }

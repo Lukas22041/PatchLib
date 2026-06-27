@@ -26,12 +26,23 @@ public final class VoidTemplate {
         return context.isSkipOriginal();
     }
 
-    @Advice.OnMethodExit(/*onThrowable = Throwable.class*/)
+    @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void exit(
             @DispatchIdMarker int siteId,
-            /*@Advice.Thrown(readOnly = false, typing = Assigner.Typing.DYNAMIC) Throwable thrown,*/
+            @Advice.Thrown(readOnly = false, typing = Assigner.Typing.DYNAMIC) Throwable thrown,
             @Advice.Local("context") PatchContext context) {
-        PatchDispatcher.exit(siteId, context, null);
+
+        //Exception
+        if (thrown != null) {
+            thrown = PatchDispatcher.except(siteId, context, thrown);
+            if (thrown == null) {
+                PatchDispatcher.exit(siteId, context, null);
+            }
+        }
+        //No Exception
+        else {
+            PatchDispatcher.exit(siteId, context, null);
+        }
     }
 
 }

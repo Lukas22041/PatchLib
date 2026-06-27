@@ -25,6 +25,7 @@ public class PatchScanner {
     static final String PATCH = "patch_lib.api.patch.Patch";
     static final String BEFORE = "patch_lib.api.patch.Before";
     static final String AFTER = "patch_lib.api.patch.After";
+    static final String EXCEPT = "patch_lib.api.patch.Except";
     static final String UNSET = "patch_lib.api.match.Unset";
 
     record JarPair(ModSpecAPI mod, File jar) { }
@@ -97,7 +98,10 @@ public class PatchScanner {
                                 if (methodAnnotation == null) {
                                     methodAnnotation = getAnnotation(handledMethod.getDeclaredAnnotations(), AFTER);
                                 }
-                                if (methodAnnotation == null) continue; //Skip if neither exist
+                                if (methodAnnotation == null) {
+                                    methodAnnotation = getAnnotation(handledMethod.getDeclaredAnnotations(), EXCEPT);
+                                }
+                                if (methodAnnotation == null) continue; //Skip if none exist
 
                                 TargetMethodSpec methodSpec = createMethodSpec(methodAnnotation);
                                 int priority = AnnotationReader.readInt(methodAnnotation, "priority", 0);
@@ -106,6 +110,7 @@ public class PatchScanner {
                                 PatchType patchType = switch (methodAnnotationName) {
                                     case BEFORE -> PatchType.BEFORE;
                                     case AFTER -> PatchType.AFTER;
+                                    case EXCEPT -> PatchType.EXCEPT;
                                     default -> PatchType.BEFORE;
                                 };
 

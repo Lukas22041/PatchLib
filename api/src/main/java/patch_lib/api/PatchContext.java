@@ -8,13 +8,16 @@ import patch_lib.api.ref.Ref;
 import patch_lib.api.store.PatchData;
 import patch_lib.api.store.PatchStore;
 
-public class PatchContext {
+public class PatchContext implements BeforeContext, AfterContext, ExceptContext {
 
     private Class<?> owner;
     private Object self;
     private final Object[] args;
     private Object returnValue;
     private boolean skipOriginal;
+    private Throwable thrown;
+    private boolean suppress;
+    private boolean allowSuppress = true;
 
     public PatchContext(Class<?> owner, Object self, Object[] args) {
         //Should always use the class of the actual instance, but @Before on Constructors and static methods have no instance, so in those cases the class of the patched method is used.
@@ -23,21 +26,73 @@ public class PatchContext {
         this.args = args;
     }
 
-    public Object getSelf() { return self; }
-    public <T> T getInferredSelf() {  return (T) self; }
-    public void setSelf(Object self) { this.self = self; }   // constructor template only (self isn't available on enter)
+    public Object getSelf() {
+        return self;
+    }
+    public <T> T getInferredSelf() {
+        return (T) self;
+    }
 
-    public Object[] getArgs() { return args; }
-    public Object getArg(int index) { return args[index]; }
-    public void setArg(int index, Object newValue) { args[index] = newValue; }
+    /** Required for Constructors */
+    public void setSelf(Object self) {
+        this.self = self;
+    }
 
-    public Object getReturnValue() { return returnValue; }
-    public <T> T getInferredReturnValue() { return (T) returnValue; }
-    public void setReturnValue(Object newReturnValue) { this.returnValue = newReturnValue; }
+    public Object[] getArgs() {
+        return args;
+    }
+    public Object getArg(int index) {
+        return args[index];
+    }
+    public void setArg(int index, Object newValue) {
+        args[index] = newValue;
+    }
 
-    public boolean isSkipOriginal() { return skipOriginal; }
+    public Object getReturnValue() {
+        return returnValue;
+    }
+    public <T> T getInferredReturnValue() {
+        return (T) returnValue;
+    }
+    public void setReturnValue(Object newReturnValue) {
+        this.returnValue = newReturnValue;
+    }
+
+    public boolean isSkipOriginal() {
+        return skipOriginal;
+    }
     /** Skip the original body and use this as the return value. Does not have an effect on constructors*/
-    public void skipOriginal(Object returnValue) { this.skipOriginal = true; this.returnValue = returnValue; }
+    public void skipOriginal(Object returnValue) {
+        this.skipOriginal = true; this.returnValue = returnValue;
+    }
+
+    public Throwable getThrown() { return thrown; }
+    public <T extends Throwable> T getInferredThrown() { return (T) thrown; }
+
+    public void initThrown(Throwable thrown) {
+        this.thrown = thrown; this.suppress = false;
+    }
+
+    public void replaceThrown(Throwable newThrown) {
+        this.thrown = newThrown; this.suppress = false;
+    }
+
+    public void suppressException(Object returnValue) {
+        if (!allowSuppress) {
+            throw new IllegalStateException("Can not suppress an exception thrown from a constructor, as it would leave a partially constructed object. Use replaceThrown or let the exception propagate instead.");
+        }
+        this.thrown = null;
+        this.suppress = true;
+        this.returnValue = returnValue;
+    }
+
+    public void setAllowSuppress(boolean allowSuppress) {
+        this.allowSuppress = allowSuppress;
+    }
+
+    public boolean isSuppressed() {
+        return suppress;
+    }
 
     /** Utility for retrieving a typed read/writeable arg of the original called method.
      * Changing an arg in a @Before patch means that the original method will be called and use the modified arguments. */

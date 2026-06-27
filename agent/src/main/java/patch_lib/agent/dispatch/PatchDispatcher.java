@@ -6,6 +6,8 @@ import patch_lib.agent.PatchRegistry;
 import patch_lib.agent.PatchSite;
 import patch_lib.api.PatchContext;
 
+/** Class that handles dispatching patches. PatchInstaller inserts bytecode in to every patched class,
+ * which uses this dispatcher to delegate work to the patch handlers. */
 public class PatchDispatcher {
 
     public static PatchContext enter(int siteId, Class<?> owner, Object self, Object[] args) {
@@ -29,6 +31,15 @@ public class PatchDispatcher {
             invoke(patch, context);
         }
         return context.getReturnValue();
+    }
+
+    public static Throwable except(int siteId, PatchContext context, Throwable thrown) {
+        PatchSite site = PatchRegistry.site(siteId);
+        context.initThrown(thrown);
+        for (Patch patch : site.exceptPatches()) {
+            invoke(patch, context);
+        }
+        return context.getThrown();
     }
 
     private static void invoke(Patch patch, PatchContext context) {

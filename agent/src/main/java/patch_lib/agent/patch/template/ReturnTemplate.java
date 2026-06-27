@@ -25,14 +25,23 @@ public final class ReturnTemplate {
         return context.isSkipOriginal();
     }
 
-    @Advice.OnMethodExit(/*onThrowable = Throwable.class*/)
+    @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void exit(
             @DispatchIdMarker int siteId,
             @Advice.Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object returned,
-            /*@Advice.Thrown(readOnly = false, typing = Assigner.Typing.DYNAMIC) Throwable thrown,*/
+            @Advice.Thrown(readOnly = false, typing = Assigner.Typing.DYNAMIC) Throwable thrown,
             @Advice.Local("context") PatchContext context) {
 
-        Object result = PatchDispatcher.exit(siteId, context, returned);
-        returned = result;
+        //Exception
+        if (thrown != null) {
+            thrown = PatchDispatcher.except(siteId, context, thrown);
+            if (thrown == null) {
+                returned = PatchDispatcher.exit(siteId, context, context.getReturnValue());
+            }
+        }
+        //No Exception
+        else {
+            returned = PatchDispatcher.exit(siteId, context, returned);
+        }
     }
 }
