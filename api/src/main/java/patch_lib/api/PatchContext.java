@@ -26,9 +26,13 @@ public class PatchContext implements BeforeContext, AfterContext, ExceptContext 
         this.args = args;
     }
 
+    /** Get the instance that the patched method is called on. Can be null on @Before constructors and on all static methods */
     public Object getSelf() {
         return self;
     }
+
+    /** Get the instance that the patched method is called on. Can be null on @Before constructors and on all static methods
+     * Automatically casts the value to the variable/method parameters type that you call it for. */
     public <T> T getInferredSelf() {
         return (T) self;
     }
@@ -38,45 +42,63 @@ public class PatchContext implements BeforeContext, AfterContext, ExceptContext 
         this.self = self;
     }
 
+    /**Gets the passed in arguments. Writing to a spot in the array will replace the original value */
     public Object[] getArgs() {
         return args;
     }
+
+    /**Gets a read-only argument from the passed in arguments of the method.
+     * While you can not replace the instance itself with this, you can still modify the member variables of the object. */
     public Object getArg(int index) {
         return args[index];
     }
+
+    /** Writes a new value to an arg */
     public void setArg(int index, Object newValue) {
         args[index] = newValue;
     }
 
+    /** Retrieves the return value from the original method  */
     public Object getReturnValue() {
         return returnValue;
     }
+
+    /** Retrieves the return value from the original method. If multiple patches run on the same method, this can hold another patches return value.
+     * Automatically casts the value to the variable/method parameters type that you call it for. */
     public <T> T getInferredReturnValue() {
         return (T) returnValue;
     }
+
+    /** Replaces the return value from the original method. */
     public void setReturnValue(Object newReturnValue) {
         this.returnValue = newReturnValue;
     }
 
+    /** Checks if something has skipped the original method in @Before */
     public boolean isSkipOriginal() {
         return skipOriginal;
     }
-    /** Skip the original body and use this as the return value. Does not have an effect on constructors*/
+
+    /** Skip the original body and use this as the return value. Does not have an effect on constructors. Use "null" for void methods. */
     public void skipOriginal(Object returnValue) {
-        this.skipOriginal = true; this.returnValue = returnValue;
+        this.skipOriginal = true;
+        this.returnValue = returnValue;
     }
 
+    /** Gets the exception that was thrown on the patched method. Can be null if another patch supressed the exception, and can also be another patches replaced exception. */
     public Throwable getThrown() { return thrown; }
-    public <T extends Throwable> T getInferredThrown() { return (T) thrown; }
 
     public void initThrown(Throwable thrown) {
         this.thrown = thrown; this.suppress = false;
     }
 
+    /** Replaces the thrown exception with your own */
     public void replaceThrown(Throwable newThrown) {
         this.thrown = newThrown; this.suppress = false;
     }
 
+    /** Suppresses an exception, requires passing a return value. Use "null" for void methods.
+     * This method will throw an IllegalStateException if used in a constructor. */
     public void suppressException(Object returnValue) {
         if (!allowSuppress) {
             throw new IllegalStateException("Can not suppress an exception thrown from a constructor, as it would leave a partially constructed object. Use replaceThrown or let the exception propagate instead.");
@@ -90,6 +112,7 @@ public class PatchContext implements BeforeContext, AfterContext, ExceptContext 
         this.allowSuppress = allowSuppress;
     }
 
+    /** Checks if another patch already supressed the exception */
     public boolean isSuppressed() {
         return suppress;
     }

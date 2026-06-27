@@ -15,7 +15,6 @@ public interface ExceptContext {
     Object getArg(int index);
 
     Throwable getThrown();
-    <T extends Throwable> T getInferredThrown();
 
     void replaceThrown(Throwable newThrown);
 
