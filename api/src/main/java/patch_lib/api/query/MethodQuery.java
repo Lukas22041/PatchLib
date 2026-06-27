@@ -21,7 +21,7 @@ public final class MethodQuery {
     private MethodQuery() {
     }
 
-    public static MethodQuery any() {
+    public static MethodQuery create() {
         return new MethodQuery();
     }
 

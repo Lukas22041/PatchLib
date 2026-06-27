@@ -136,12 +136,16 @@ public class PatchContext implements BeforeContext, AfterContext, ExceptContext 
     /** Reflection utility for receiving a method from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
     public MethodRef getMethod(Object instance, MethodQuery query) { return PatchReflection.method(instance.getClass(), instance, query); }
 
+    /** Reflection utility for checking if the patched class has a specific method */
     public boolean hasMethod(MethodQuery query) { return PatchReflection.hasMethod(owner, query); }
 
+    /** Reflection utility for checking if a specific instance has a specific method */
     public boolean hasMethod(Object instance, MethodQuery query) { return PatchReflection.hasMethod(instance.getClass(), query); }
 
+    /** Reflection utility for checking if the patched class has a specific field */
     public boolean hasField(FieldQuery query) { return PatchReflection.hasField(owner, query); }
 
+    /** Reflection utility for checking if a specific instance has a specific field */
     public boolean hasField(Object instance, FieldQuery query) { return PatchReflection.hasField(instance.getClass(), query); }
 
     /**A transient data store for per-instance data This data is not stored in the save. It is shared across all patches with access to this instance.

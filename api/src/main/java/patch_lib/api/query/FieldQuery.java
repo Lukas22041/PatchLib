@@ -14,7 +14,7 @@ public final class FieldQuery {
 
     private FieldQuery() { }
 
-    public static FieldQuery any() { return new FieldQuery(); }
+    public static FieldQuery create() { return new FieldQuery(); }
     public static FieldQuery named(String name) { return new FieldQuery().name(name); }
 
     public FieldQuery name(String name) { this.name = name; return this; }
