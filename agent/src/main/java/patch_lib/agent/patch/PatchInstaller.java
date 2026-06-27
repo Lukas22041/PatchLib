@@ -28,11 +28,13 @@ import patch_lib.agent.spec.PatchType;
 import patch_lib.api.AfterContext;
 import patch_lib.api.BeforeContext;
 import patch_lib.api.ExceptContext;
+import patch_lib.api.PatchContext;
 
 import java.io.File;
 import java.lang.instrument.Instrumentation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -174,7 +176,8 @@ public class PatchInstaller {
             Class<?> handlerClass = Class.forName(spec.handlerClass(), false, loader);
             Method handlerMethod = handlerClass.getDeclaredMethod(spec.handlerMethod(), expectedContext);
             handlerMethod.setAccessible(true);
-            return MethodHandles.lookup().unreflect(handlerMethod);
+            MethodHandle handle =  MethodHandles.lookup().unreflect(handlerMethod);
+            return handle.asType(MethodType.methodType(void.class, PatchContext.class));
 
         } catch (ClassNotFoundException e) {
             PatchLibLogger.error("Could not resolve class for " + spec.handlerClass() + ", skipping patch");

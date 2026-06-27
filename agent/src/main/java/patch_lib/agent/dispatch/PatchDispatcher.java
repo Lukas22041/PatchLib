@@ -44,7 +44,7 @@ public class PatchDispatcher {
 
     private static void invoke(Patch patch, PatchContext context) {
         try {
-            patch.handler().invoke(context);
+            patch.handler().invokeExact(context);
         } catch (Throwable ex) {
             PatchLibLogger.error("Ran in to an error while dispatcher was executing "
                     + patch.spec().handlerClass() + "#" + patch.spec().handlerMethod() + " from mod " + patch.spec().sourceMod().getId());
