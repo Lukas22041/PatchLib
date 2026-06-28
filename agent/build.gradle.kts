@@ -51,10 +51,10 @@ java {
 tasks.shadowJar {
     archiveFileName.set("PatchLibAgent.jar")
     destinationDirectory.set(file("$rootDir/jars"))
-    relocate("net.bytebuddy", "patch_lib.bytebuddy")
+    relocate("net.bytebuddy", "patchlib.bytebuddy")
     manifest {
         attributes(
-            "Premain-Class" to "patch_lib.agent.PreMain",
+            "Premain-Class" to "patchlib.agent.PreMain",
             "Can-Retransform-Classes" to "true",
             "Implementation-Version" to agentVersion,
         )

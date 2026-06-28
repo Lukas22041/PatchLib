@@ -27,7 +27,7 @@ tasks.shadowJar {
     destinationDirectory.set(file("$rootDir/jars"))
     manifest {
         attributes(
-            "Main-Class" to "patch_lib.installer.InstallerMain",
+            "Main-Class" to "patchlib.installer.InstallerMain",
         )
     }
 }
