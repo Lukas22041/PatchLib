@@ -32,29 +32,54 @@ public interface AfterContext {
      * Changing an arg in a @Before patch means that the original method will be called and use the modified arguments. */
     <T> Ref<T> getArgRef(int index);
 
+
     /** Reflection utility for reading/writing a typed field from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
     <T> Ref<T> getField(FieldQuery query);
 
     /** Reflection utility for reading/writing a typed field from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
-    <T> Ref<T> getField(Object instance, FieldQuery query);
+    <T> Ref<T> getField(FieldQuery query, Object instance);
+
+    /** Reflection utility for reading/writing a typed field from the instance. Most useful for private members of a class, since reflection is otherwise blocked. */
+    <T> Ref<T> getField(String name);
+
+    /** Reflection utility for reading/writing a typed field from the given object. Most useful for private members of a class, since reflection is otherwise blocked. */
+    <T> Ref<T> getField(String name, Object instance);
 
     /** Reflection utility for receiving a method from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
     MethodRef getMethod(MethodQuery query);
 
     /** Reflection utility for receiving a method from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
-    MethodRef getMethod(Object instance, MethodQuery query);
+    MethodRef getMethod(MethodQuery query, Object instance);
+
+    /** Reflection utility for receiving a method from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
+    MethodRef getMethod(String name);
+
+    /** Reflection utility for receiving a method from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
+    MethodRef getMethod(String name, Object instance);
 
     /** Reflection utility for checking if the patched class has a specific method */
     boolean hasMethod(MethodQuery query);
 
     /** Reflection utility for checking if a specific instance has a specific method */
-    boolean hasMethod(Object instance, MethodQuery query);
+    boolean hasMethod(MethodQuery query, Object instance);
+
+    /** Reflection utility for checking if the patched class has a specific method */
+    boolean hasMethod(String name);
+
+    /** Reflection utility for checking if a specific instance has a specific method */
+    boolean hasMethod(String name, Object instance);
 
     /** Reflection utility for checking if the patched class has a specific field */
     boolean hasField(FieldQuery query);
 
     /** Reflection utility for checking if a specific instance has a specific field */
-    boolean hasField(Object instance, FieldQuery query);
+    boolean hasField(FieldQuery query, Object instance);
+
+    /** Reflection utility for checking if the patched class has a specific field */
+    boolean hasField(String name);
+
+    /** Reflection utility for checking if a specific instance has a specific field */
+    boolean hasField(String name, Object instance);
 
     /**A transient data store for per-instance data This data is not stored in the save. It is shared across all patches with access to this instance.
      * Useful for communicating across patches, or if something like a timer is needed. It should use unique keys, not something generic like "target" which multiple mods may use.

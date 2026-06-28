@@ -123,26 +123,58 @@ public class PatchContext implements BeforeContext, AfterContext, ExceptContext 
     public <T> Ref<T> getField(FieldQuery query) { return PatchReflection.field(owner, self, query); }
 
     /** Reflection utility for reading/writing a typed field from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
-    public <T> Ref<T> getField(Object instance, FieldQuery query) { return PatchReflection.field(instance.getClass(), instance, query); }
+    public <T> Ref<T> getField(FieldQuery query, Object instance) { return PatchReflection.field(instance.getClass(), instance, query); }
 
 
     /** Reflection utility for receiving a method from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
     public MethodRef getMethod(MethodQuery query) { return PatchReflection.method(owner, self, query); }
 
     /** Reflection utility for receiving a method from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
-    public MethodRef getMethod(Object instance, MethodQuery query) { return PatchReflection.method(instance.getClass(), instance, query); }
+    public MethodRef getMethod(MethodQuery query, Object instance) { return PatchReflection.method(instance.getClass(), instance, query); }
+
+
+    /** Reflection utility for reading/writing a typed field from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
+    public <T> Ref<T> getField(String name) { return PatchReflection.field(owner, self, FieldQuery.named(name)); }
+
+    /** Reflection utility for reading/writing a typed field from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
+    public <T> Ref<T> getField(String name, Object instance) { return PatchReflection.field(instance.getClass(), instance, FieldQuery.named(name)); }
+
+
+    /** Reflection utility for receiving a method from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
+    public MethodRef getMethod(String name) { return PatchReflection.method(owner, self, MethodQuery.named(name)); }
+
+    /** Reflection utility for receiving a method from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
+    public MethodRef getMethod(String name, Object instance) { return PatchReflection.method(instance.getClass(), instance, MethodQuery.named(name)); }
+
+
+
+
 
     /** Reflection utility for checking if the patched class has a specific method */
     public boolean hasMethod(MethodQuery query) { return PatchReflection.hasMethod(owner, query); }
 
     /** Reflection utility for checking if a specific instance has a specific method */
-    public boolean hasMethod(Object instance, MethodQuery query) { return PatchReflection.hasMethod(instance.getClass(), query); }
+    public boolean hasMethod(MethodQuery query, Object instance) { return PatchReflection.hasMethod(instance.getClass(), query); }
 
     /** Reflection utility for checking if the patched class has a specific field */
     public boolean hasField(FieldQuery query) { return PatchReflection.hasField(owner, query); }
 
     /** Reflection utility for checking if a specific instance has a specific field */
-    public boolean hasField(Object instance, FieldQuery query) { return PatchReflection.hasField(instance.getClass(), query); }
+    public boolean hasField(FieldQuery query, Object instance) { return PatchReflection.hasField(instance.getClass(), query); }
+
+    /** Reflection utility for checking if the patched class has a specific method */
+    public boolean hasMethod(String name) { return PatchReflection.hasMethod(owner, MethodQuery.named(name)); }
+
+    /** Reflection utility for checking if a specific instance has a specific method */
+    public boolean hasMethod(String name, Object instance) { return PatchReflection.hasMethod(instance.getClass(), MethodQuery.named(name)); }
+
+    /** Reflection utility for checking if the patched class has a specific field */
+    public boolean hasField(String name) { return PatchReflection.hasField(owner, FieldQuery.named(name)); }
+
+    /** Reflection utility for checking if a specific instance has a specific field */
+    public boolean hasField(String name, Object instance) { return PatchReflection.hasField(instance.getClass(), FieldQuery.named(name)); }
+
+
 
     /**A transient data store for per-instance data This data is not stored in the save. It is shared across all patches with access to this instance.
      * Useful for communicating across patches, or if something like a timer is needed. It should use unique keys, not something generic like "target" which multiple mods may use.
