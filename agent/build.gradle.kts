@@ -3,7 +3,7 @@ plugins {
     id("com.gradleup.shadow") version "9.0.0"
 }
 
-val agentVersion = "0.1.1"
+val agentVersion = "0.2.0"
 
 repositories {
     mavenCentral()
