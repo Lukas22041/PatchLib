@@ -60,7 +60,7 @@ Following is an example patch. This patch is run after every "getCycle" call on 
 public class TestPatch {
 
     @After(methodName = "getCycle")
-    public static void afterGetCycle(PatchContext context) {
+    public static void afterGetCycle(AfterContext context) {
         context.setReturnValue((int) context.getReturnValue() + 1000);
     }
 
