@@ -35,6 +35,22 @@ public class ClassTargetMatcher {
             }
         }
 
+        String excludePackage = classSpec.excludePackage();
+        if (!excludePackage.isEmpty()) {
+            //Recursive exclude. Classes with no package (default package) are never excluded.
+            if (classSpec.excludeSubpackages()) {
+                matcher = matcher.and((TypeDescription type) -> {
+                            if (type.getPackage() == null) return true;
+                            String packageName = type.getPackage().getName();
+                            return !(packageName.equals(excludePackage) || packageName.startsWith(excludePackage + "."));
+                        });
+            } else {
+                matcher = matcher.and((TypeDescription type) ->
+                    type.getPackage() == null || !type.getPackage().getName().equals(excludePackage)
+                );
+            }
+        }
+
         for (TargetMethodSpec methodSpec : classSpec.methodMatches()) {
             matcher = matcher.and(declaresMethod(MethodTargetMatcher.create(methodSpec)));
         }

@@ -27,6 +27,11 @@ public @interface Patch {
     /** Makes targetPackage recursive, allowing deeper subfolders of the target package */
     boolean includeSubpackages() default false;
 
+    /** Can be used to exclude a specific package, like "com.fs" to only patch modded classes. */
+    String excludePackage() default "";
+    /** Makes excludePackage recursive, also excluding deeper subfolders of the excluded package */
+    boolean excludeSubpackages() default false;
+
     /** Match based on the shape of methods within the class */
     MethodMatch[] methodMatches() default {};
 

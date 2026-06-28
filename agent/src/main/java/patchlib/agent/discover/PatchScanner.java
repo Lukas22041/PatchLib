@@ -156,6 +156,9 @@ public class PatchScanner {
         String targetPackage = AnnotationReader.readString(annotation, "targetPackage", "");
         boolean includeSubpackages = AnnotationReader.readBoolean(annotation, "includeSubpackages", false);
 
+        String excludePackage = AnnotationReader.readString(annotation, "excludePackage", "");
+        boolean excludeSubpackages = AnnotationReader.readBoolean(annotation, "excludeSubpackages", false);
+
         //Matchers for searching classes by contained methods, not the patching annotations one.
         AnnotationDescription[] matchAnnotations = AnnotationReader.readAnnotationArray(annotation, "methodMatches");
         TargetMethodSpec[] methodMatches = new TargetMethodSpec[matchAnnotations.length];
@@ -175,6 +178,8 @@ public class PatchScanner {
                 !targetSubtype.isEmpty() ? targetSubtype : targetSubtypeName,
                 targetPackage,
                 includeSubpackages,
+                excludePackage,
+                excludeSubpackages,
                 methodMatches,
                 fieldMatches
         );

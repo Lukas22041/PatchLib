@@ -6,6 +6,8 @@ public record TargetClassSpec(
         String targetSubtype,
         String targetPackage,
         boolean includeSubpackages,
+        String excludePackage,
+        boolean excludeSubpackages,
         TargetMethodSpec[] methodMatches,
         TargetFieldSpec[] fieldMatches
 ) { }
