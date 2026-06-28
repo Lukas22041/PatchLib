@@ -14,7 +14,7 @@ public class IgnoreMatcher {
             "kotlin.", "kotlinx.", //Ignore the kotlin runtime
             "patchlib.", //Ignore PatchLib itself and its bundled Bytebuddy
             "org.apache.log4j.", //Ignore the logger
-            "com.azul.", "org.graalvm", "com.oracle.", "oracle.", //Ignore specific JVMs
+            "com.azul.", "org.graalvm.", "com.oracle.", "oracle.", //Ignore specific JVMs
             "org.codehaus.janino.", "org.codehaus.commons.", //Ignore Janino
             "com.intellij.", "org.jetbrains.capture." //Ignore Intellijs debugger
     };
