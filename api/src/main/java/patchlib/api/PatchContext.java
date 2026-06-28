@@ -108,10 +108,6 @@ public class PatchContext implements BeforeContext, AfterContext, ExceptContext 
         this.returnValue = returnValue;
     }
 
-    public void setAllowSuppress(boolean allowSuppress) {
-        this.allowSuppress = allowSuppress;
-    }
-
     /** Checks if another patch already supressed the exception */
     public boolean isSuppressed() {
         return suppress;

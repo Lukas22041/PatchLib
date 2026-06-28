@@ -10,7 +10,8 @@ import java.lang.annotation.Target;
 
 
 /** A patch that is triggered whenever the targeted method throws an exception.
- * Can process, suppress or replace the given Exception. */
+ * Can process, suppress or replace the given Exception.
+ * This annotation does not work on constructors*/
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
 public @interface Except {

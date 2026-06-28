@@ -7,7 +7,10 @@ import patchlib.agent.dispatch.PatchDispatcher;
 import patchlib.api.PatchContext;
 
 /** A template of code that bytebuddy inserts for targeted constructors.
- * Constructors can not be skipped and do not have "self" available in "enter", which makes them require their own template. */
+ * Constructors are special in three ways, so they need their own template:
+ *  - they can not be skipped,
+ *  - "self" is not available in "enter" (the instance does not exist yet),
+ *  - they can not catch their own thrown exceptions. */
 public final class ConstructorTemplate {
     @Advice.OnMethodEnter //Cant skip constructors
     public static PatchContext enter(@DispatchIdMarker int siteId,
@@ -21,20 +24,11 @@ public final class ConstructorTemplate {
         return context;
     }
 
-    @Advice.OnMethodExit(onThrowable = Throwable.class)
+    @Advice.OnMethodExit
     public static void exit(@DispatchIdMarker int siteId,
                             @Advice.This(optional = true) Object self,
-                            @Advice.Thrown(readOnly = false, typing = Assigner.Typing.DYNAMIC) Throwable thrown,
                             @Advice.Enter PatchContext context) {
-
-        //Exception
-        if (thrown != null) {
-            context.setAllowSuppress(false);
-            thrown = PatchDispatcher.except(siteId, context, thrown);
-        } else {
-            //Normal completion.
-            context.setSelf(self);
-            PatchDispatcher.exit(siteId, context, null);
-        }
+        context.setSelf(self);
+        PatchDispatcher.exit(siteId, context, null);
     }
 }

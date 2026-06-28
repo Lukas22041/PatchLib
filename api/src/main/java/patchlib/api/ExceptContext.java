@@ -26,8 +26,7 @@ public interface ExceptContext {
     /** Replaces the thrown exception with your own */
     void replaceThrown(Throwable newThrown);
 
-    /** Suppresses an exception, requires passing a return value. Use "null" for void methods.
-     * This method will throw an IllegalStateException if used in a constructor. */
+    /** Suppresses an exception, requires passing a return value. Use "null" for void methods.*/
     void suppressException(Object returnValue);
 
     /** Checks if another patch already supressed the exception */
