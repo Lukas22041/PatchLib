@@ -12,7 +12,6 @@ public class PatchContext extends BaseContext implements BeforeContext, AfterCon
     private boolean skipOriginal;
     private Throwable thrown;
     private boolean suppress;
-    private boolean allowSuppress = true;
 
     public PatchContext(Class<?> owner, Object self, Object[] args) {
         super(owner, self, args);
@@ -60,9 +59,6 @@ public class PatchContext extends BaseContext implements BeforeContext, AfterCon
     /** Suppresses an exception, requires passing a return value. Use "null" for void methods.
      * This method will throw an IllegalStateException if used in a constructor. */
     public void suppressException(Object returnValue) {
-        if (!allowSuppress) {
-            throw new IllegalStateException("Can not suppress an exception thrown from a constructor, as it would leave a partially constructed object. Use replaceThrown or let the exception propagate instead.");
-        }
         this.thrown = null;
         this.suppress = true;
         this.returnValue = returnValue;

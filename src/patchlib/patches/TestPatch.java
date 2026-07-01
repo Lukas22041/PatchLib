@@ -31,7 +31,6 @@ public class TestPatch {
         float result = fromInner;
         if (isPlayerFleet(context)) {
             result = fromInner * 20f;
-            if (logDue(true)) log("outer", "inner gave " + fromInner + ", returning " + result);
         }
         context.setResult(result);
     }
