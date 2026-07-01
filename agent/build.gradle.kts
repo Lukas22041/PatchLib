@@ -12,7 +12,7 @@ repositories {
 val coreDir = File(rootProject.extra["starsectorCoreDir"] as String)
 
 dependencies {
-    implementation("net.bytebuddy:byte-buddy:1.14.18")
+    implementation("net.bytebuddy:byte-buddy:1.18.10")
 
     //The shared, mod-facing API (annotations + context interfaces). Bundled into the agent jar (unrelocated)
     //so each interface resolves to a single class on the system loader at runtime, shared with the impls in this module.

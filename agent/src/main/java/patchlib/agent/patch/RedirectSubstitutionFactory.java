@@ -1,6 +1,7 @@
 package patchlib.agent.patch;
 
 import net.bytebuddy.asm.MemberSubstitution.Substitution;
+import net.bytebuddy.asm.MemberSubstitution.Target;
 import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
@@ -25,7 +26,7 @@ import java.util.function.Predicate;
  * collapse to one site and nest, which is what the layered model promises.
  *
  * Once the matching layers are known, the real bytecode is left to ByteBuddys standard delegation chain. */
-final class RedirectSubstitutionFactory implements Substitution.Factory {
+final class RedirectSubstitutionFactory implements Substitution.Factory<Target.ForMember> {
 
     /** One redirect: how to recognise its call site against a resolved member, and the handler to run. */
     record Layer(Predicate<ByteCodeElement.Member> matches, Patch patch) {}
@@ -45,9 +46,10 @@ final class RedirectSubstitutionFactory implements Substitution.Factory {
     }
 
     @Override
-    public Substitution make(TypeDescription instrumentedType, MethodDescription instrumentedMethod, TypePool typePool) {
+    public Substitution<Target.ForMember> make(TypeDescription instrumentedType, MethodDescription instrumentedMethod, TypePool typePool) {
         //Substitution has a single method, so this lambda is the substitution applied at each matched call site.
-        return (receiver, original, parameters, result, methodHandle, stackManipulation, freeOffset) -> {
+        return (target, parameters, result, methodHandle, stackManipulation, freeOffset) -> {
+            ByteCodeElement.Member original = target.getMember();
 
             //Reuse the matchers built at install to pick the layers that target this exact resolved call.
             List<Layer> matched = new ArrayList<>();
@@ -67,14 +69,14 @@ final class RedirectSubstitutionFactory implements Substitution.Factory {
 
             //Hand the actual bytecode back to ByteBuddys standard delegation, with this sites id baked in.
             return Substitution.Chain
-                    .with(Assigner.DEFAULT, Assigner.Typing.DYNAMIC)
+                    .<Target.ForMember>with(Assigner.DEFAULT, Assigner.Typing.DYNAMIC)
                     .executing(Substitution.Chain.Step.ForDelegation
                             .withCustomMapping()
                             .bind(DispatchIdMarker.class, id)
                             .bind(DispatchOwnerMarker.class, hostType)
                             .to(bridge))
                     .make(instrumentedType, instrumentedMethod, typePool)
-                    .resolve(receiver, original, parameters, result, methodHandle, stackManipulation, freeOffset);
+                    .resolve(target, parameters, result, methodHandle, stackManipulation, freeOffset);
         };
     }
 

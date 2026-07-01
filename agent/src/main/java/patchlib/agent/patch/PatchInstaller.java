@@ -166,7 +166,7 @@ public class PatchInstaller {
     private static AsmVisitorWrapper redirectVisitor(RedirectKind kind, List<InstallData> kindData, String hostKey,
                                                      TypeDescription hostType, MethodDescription method) {
         List<RedirectSubstitutionFactory.Layer> layers = new ArrayList<>();
-        MemberSubstitution.WithoutSpecification target;
+        MemberSubstitution.WithoutSpecification<MemberSubstitution.Target.ForMember> target;
 
         if (kind == RedirectKind.METHOD_CALL) {
             ElementMatcher.Junction<MethodDescription> selector = ElementMatchers.none();
