@@ -42,6 +42,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -214,14 +215,20 @@ public class PatchInstaller {
     private static List<InstallData> setupData(List<PatchSpec> specs, ClassLoader handlerLoader) {
         List<InstallData> data = new ArrayList<>();
         for (PatchSpec spec : specs) {
-            MethodHandle handle = createMethodHandle(spec, handlerLoader);
-            if (handle == null) continue;
+            //A broken patch is skipped and blamed; it must never take down the install of everyone elses patches.
+            try {
+                MethodHandle handle = createMethodHandle(spec, handlerLoader);
+                if (handle == null) continue;
 
-            data.add(new InstallData(
-                    spec,
-                    ClassTargetMatcher.create(spec.targetClass()),
-                    MethodTargetMatcher.create(spec.targetMethod()),
-                    handle));
+                data.add(new InstallData(
+                        spec,
+                        ClassTargetMatcher.create(spec.targetClass()),
+                        MethodTargetMatcher.create(spec.targetMethod()),
+                        handle));
+            } catch (Throwable t) {
+                PatchLibLogger.error("Could not set up " + spec.handlerClass() + " (" + spec.handlerMethod() + ") from mod "
+                        + spec.sourceMod().getId() + ", skipping patch: " + t);
+            }
         }
         PatchLibLogger.info("Assembled " + data.size() + " patches");
         return data;
@@ -261,6 +268,10 @@ public class PatchInstaller {
         try {
             Class<?> handlerClass = Class.forName(spec.handlerClass(), false, loader);
             Method handlerMethod = handlerClass.getDeclaredMethod(spec.handlerMethod(), expectedContext);
+            if (!Modifier.isStatic(handlerMethod.getModifiers())) {
+                PatchLibLogger.error("Patch handlers must be static, but " + spec.handlerClass() + " (" + spec.handlerMethod() + ") is not, skipping patch");
+                return null;
+            }
             handlerMethod.setAccessible(true);
             MethodHandle handle =  MethodHandles.lookup().unreflect(handlerMethod);
             return handle.asType(MethodType.methodType(void.class, contextImpl(spec)));

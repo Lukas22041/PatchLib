@@ -10,6 +10,7 @@ import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.pool.TypePool;
 import patchlib.agent.PatchLibLogger;
 import patchlib.agent.spec.*;
+import patchlib.api.match.MethodType;
 
 import java.io.File;
 import java.io.IOException;
@@ -93,18 +94,23 @@ public class PatchScanner {
 
                             for (MethodDescription.InDefinedShape handledMethod : type.getDeclaredMethods()) {
 
-                                //Check for a before/after/except annotation.
+                                AnnotationDescription before = getAnnotation(handledMethod.getDeclaredAnnotations(), BEFORE);
+                                AnnotationDescription after = getAnnotation(handledMethod.getDeclaredAnnotations(), AFTER);
+                                AnnotationDescription except = getAnnotation(handledMethod.getDeclaredAnnotations(), EXCEPT);
+                                AnnotationDescription redirectAnnotation = getAnnotation(handledMethod.getDeclaredAnnotations(), REDIRECT);
+
                                 //Only one patch annotation is allowed per method, any past the first are ignored.
-                                AnnotationDescription methodAnnotation = getAnnotation(handledMethod.getDeclaredAnnotations(), BEFORE);
-                                if (methodAnnotation == null) {
-                                    methodAnnotation = getAnnotation(handledMethod.getDeclaredAnnotations(), AFTER);
-                                }
-                                if (methodAnnotation == null) {
-                                    methodAnnotation = getAnnotation(handledMethod.getDeclaredAnnotations(), EXCEPT);
+                                int annotationCount = (before != null ? 1 : 0) + (after != null ? 1 : 0)
+                                        + (except != null ? 1 : 0) + (redirectAnnotation != null ? 1 : 0);
+                                if (annotationCount == 0) continue;
+                                if (annotationCount > 1) {
+                                    PatchLibLogger.warn("Multiple patch annotations on " + binaryName + "#" + handledMethod.getName()
+                                            + ", only the first of @Before/@After/@Except/@Redirect is used");
                                 }
 
+                                AnnotationDescription methodAnnotation = before != null ? before : after != null ? after : except;
                                 if (methodAnnotation != null) {
-                                    TargetMethodSpec methodSpec = createMethodSpec(methodAnnotation);
+                                    TargetMethodSpec methodSpec = createMethodSpec(AnnotationReader.readAnnotation(methodAnnotation, "target"));
                                     int priority = AnnotationReader.readInt(methodAnnotation, "priority", 0);
                                     String methodAnnotationName = methodAnnotation.getAnnotationType().getName();
 
@@ -120,10 +126,6 @@ public class PatchScanner {
                                     PatchLibLogger.info("Discovered Patch  -  Class: " + binaryName + "; Handler Method: " + handledMethod.getName() + ";");
                                     continue;
                                 }
-
-                                //Check for a redirect annotation instead.
-                                AnnotationDescription redirectAnnotation = getAnnotation(handledMethod.getDeclaredAnnotations(), REDIRECT);
-                                if (redirectAnnotation == null) continue; //Skip if none exist
 
                                 RedirectSiteSpec siteSpec = createRedirectSiteSpec(redirectAnnotation);
                                 if (siteSpec == null) {
@@ -144,7 +146,7 @@ public class PatchScanner {
 
 
                         } catch (Exception ex) {
-                            PatchLibLogger.info("Failed to scan " + binaryName + ": " + ex);
+                            PatchLibLogger.warn("Failed to scan " + binaryName + ": " + ex);
                         }
                     }
                 }
@@ -154,7 +156,7 @@ public class PatchScanner {
             throw new RuntimeException(ex);
         }
         PatchLibLogger.info("Finished patch search");
-        PatchLibLogger.info("Discovered " + patches.size() + " patch");
+        PatchLibLogger.info("Discovered " + patches.size() + " patches");
 
         return patches;
     }

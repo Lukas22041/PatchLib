@@ -35,12 +35,12 @@ public class GateMatcher {
         List<ElementMatcher<TypeDescription>> otherMatchers = new ArrayList<>();
         for (TargetClassSpec spec : other) otherMatchers.add(ClassTargetMatcher.create(spec));
 
-        return (type, classLoader, module, classBeingRedefined, protectionDomain) -> {
+        //Fallback for Janino loaded classes, which don't have a source jar
+        ElementMatcher.Junction<TypeDescription> liveSubtype = subtypeNames.isEmpty()
+                ? null
+                : hasSuperType(matchedType -> subtypeNames.contains(matchedType.getActualName()));
 
-            //Fallback for Janino loaded classes, which don't have a source jar
-            ElementMatcher.Junction<TypeDescription> liveSubtype = subtypeNames.isEmpty()
-                    ? null
-                    : hasSuperType(matchedType -> subtypeNames.contains(matchedType.getActualName()));
+        return (type, classLoader, module, classBeingRedefined, protectionDomain) -> {
 
             if (!exactNames.isEmpty() && exactNames.contains(type.getActualName())) return true;
 

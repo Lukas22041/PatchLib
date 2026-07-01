@@ -12,7 +12,7 @@ public interface FieldReadContext extends Context {
 
     /** Reads the field at the next layer down, or the original field if this is the innermost layer.
      * Returns the read value. This does not by itself become this layer's result, use setResult for that. */
-    Object call();
+    Object read();
 
     /** Sets the value this read yields to the host method. Must be set. */
     void setResult(Object result);

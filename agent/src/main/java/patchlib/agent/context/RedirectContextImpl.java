@@ -44,10 +44,13 @@ public final class RedirectContextImpl extends BaseContext
 
     public Object call() { return proceed(callArgs); }
     public Object call(Object... callArgs) { return proceed(callArgs); }
+    public Object read() { return proceed(callArgs); }
+    public void write() { proceed(callArgs); }
+    public void write(Object value) { proceed(new Object[]{value}); }
 
     public void setResult(Object result) { this.result = result; }
 
-    /** Read by the dispatcher only, the handler proceeds with call() instead. */
+    /** Read by the dispatcher only, the handler proceeds with call()/read()/write() instead. */
     public Object getResult() { return result; }
 
     private Object proceed(Object[] proceedArgs) {

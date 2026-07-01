@@ -67,8 +67,9 @@ public class PatchDispatcher {
     public static Object redirectMethodCall(int siteId, Class<?> hostOwner, MethodHandle original,
                                             Object callReceiver, Object[] callArgs, Object hostSelf, Object[] hostArgs) throws Throwable {
         RedirectSite site = PatchRegistry.redirectSite(siteId);
+        MethodHandle spread = site.spreadOriginal(original);
         boolean hasReceiver = original.type().parameterCount() > callArgs.length;
-        Operation realCall = args -> original.invokeWithArguments(hasReceiver ? prepend(callReceiver, args) : args);
+        Operation realCall = args -> spread.invokeExact(hasReceiver ? prepend(callReceiver, args) : args);
         return wrap(site.layers(), hostOwner, hostSelf, hostArgs, callReceiver, callArgs, realCall);
     }
 
@@ -76,8 +77,9 @@ public class PatchDispatcher {
     public static Object redirectFieldRead(int siteId, Class<?> hostOwner, MethodHandle original,
                                            Object fieldOwner, Object hostSelf, Object[] hostArgs) throws Throwable {
         RedirectSite site = PatchRegistry.redirectSite(siteId);
+        MethodHandle spread = site.spreadOriginal(original);
         boolean hasReceiver = original.type().parameterCount() > 0;
-        Operation realRead = args -> original.invokeWithArguments(hasReceiver ? new Object[]{fieldOwner} : NO_ARGS);
+        Operation realRead = args -> spread.invokeExact(hasReceiver ? new Object[]{fieldOwner} : NO_ARGS);
         return wrap(site.layers(), hostOwner, hostSelf, hostArgs, fieldOwner, NO_ARGS, realRead);
     }
 
@@ -85,11 +87,10 @@ public class PatchDispatcher {
     public static void redirectFieldWrite(int siteId, Class<?> hostOwner, MethodHandle original,
                                           Object fieldOwner, Object value, Object hostSelf, Object[] hostArgs) throws Throwable {
         RedirectSite site = PatchRegistry.redirectSite(siteId);
+        MethodHandle spread = site.spreadOriginal(original);
         boolean hasReceiver = original.type().parameterCount() > 1;
-        Operation realWrite = args -> {
-            original.invokeWithArguments(hasReceiver ? new Object[]{fieldOwner, args[0]} : new Object[]{args[0]});
-            return null;
-        };
+        //A write has no result; the null that the adapted void return produces is discarded by wrap.
+        Operation realWrite = args -> spread.invokeExact(hasReceiver ? new Object[]{fieldOwner, args[0]} : new Object[]{args[0]});
         wrap(site.layers(), hostOwner, hostSelf, hostArgs, fieldOwner, new Object[]{value}, realWrite);
     }
 
@@ -109,7 +110,14 @@ public class PatchDispatcher {
                 return ctx.getResult();
             };
         }
-        return op.call(startArgs);
+        try {
+            return op.call(startArgs);
+        } finally {
+            //The marker must not outlive the chain: a layer may catch the propagated exception and recover, and a
+            //stale entry would misread a later throw of the same (cached) exception instance as propagating.
+            //Nested chains are safe, an exception crossing back into an enclosing chain is re-recorded by proceed.
+            PROPAGATING.remove();
+        }
     }
 
     /** Runs one redirect layer. Mirrors invoke() for advice, but only blames this layer when the layer itself threw.

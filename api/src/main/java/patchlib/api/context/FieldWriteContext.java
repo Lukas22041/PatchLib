@@ -25,6 +25,9 @@ public interface FieldWriteContext extends Context {
     <T> Ref<T> getValueRef();
 
     /** Performs the write at the next layer down, or the original write if this is the innermost layer, using the
-     * current value. Skip the write entirely by never calling this. Returns null, a write has no result. */
-    Object call();
+     * current value. Skip the write entirely by never calling this. */
+    void write();
+
+    /** Same as write() but stores the given value instead of the current one. */
+    void write(Object value);
 }
