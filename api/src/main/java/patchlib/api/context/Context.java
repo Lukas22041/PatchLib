@@ -1,4 +1,4 @@
-package patchlib.api;
+package patchlib.api.context;
 
 import patchlib.api.query.FieldQuery;
 import patchlib.api.query.MethodQuery;
@@ -27,9 +27,6 @@ public interface Context {
     /** Utility for retrieving a typed read/writeable arg of the original called method.
      * Changing an arg in a @Before patch means that the original method will be called and use the modified arguments. */
     <T> Ref<T> getArgRef(int index);
-
-    /** Checks if something has skipped the original method in @Before */
-    boolean isSkipOriginal();
 
     /** Reflection utility for reading/writing a typed field from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
     <T> Ref<T> getField(FieldQuery query);

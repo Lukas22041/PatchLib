@@ -1,4 +1,4 @@
-package patchlib.api;
+package patchlib.api.context;
 
 
 public interface ExceptContext extends Context {
@@ -14,5 +14,8 @@ public interface ExceptContext extends Context {
 
     /** Checks if another patch already suppressed the exception */
     boolean isSuppressed();
+
+    /** Checks if something has skipped the original method in @Before */
+    boolean isSkipOriginal();
 
 }

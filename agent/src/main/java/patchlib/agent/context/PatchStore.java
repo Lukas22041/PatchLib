@@ -1,11 +1,13 @@
-package patchlib.api.store;
+package patchlib.agent.context;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class PatchStore {
+/** Backing store for per-instance patch data, keyed weakly by instance identity. Internal to the context impls;
+ * mods reach it only through BaseContext.getData(), which wraps the returned map in a PatchData. */
+final class PatchStore {
 
     private PatchStore() {}
 
@@ -13,7 +15,7 @@ public final class PatchStore {
     private static final ConcurrentHashMap<Key, ConcurrentHashMap<String, Object>> DATA = new ConcurrentHashMap<>();
 
     /** The data map for an instance, created on first use. */
-    public static Map<String, Object> getOrCreate(Object instance) {
+    static Map<String, Object> getOrCreate(Object instance) {
         if (instance == null) {
             throw new IllegalStateException("Can not use PatchContext.getData on a static method or on a @Before constructor method, as those have no instance.");
         }

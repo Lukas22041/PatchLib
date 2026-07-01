@@ -4,7 +4,7 @@ import net.bytebuddy.asm.Advice;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import patchlib.agent.dispatch.DispatchIdMarker;
 import patchlib.agent.dispatch.PatchDispatcher;
-import patchlib.api.PatchContext;
+import patchlib.agent.context.PatchContext;
 
 /**A template of code that bytebuddy inserts for non-constructor methods that do have a return type.  */
 public final class ReturnTemplate {

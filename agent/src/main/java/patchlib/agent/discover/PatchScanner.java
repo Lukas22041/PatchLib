@@ -26,6 +26,7 @@ public class PatchScanner {
     static final String BEFORE = "patchlib.api.patch.Before";
     static final String AFTER = "patchlib.api.patch.After";
     static final String EXCEPT = "patchlib.api.patch.Except";
+    static final String REDIRECT = "patchlib.api.patch.Redirect";
     static final String UNSET = "patchlib.api.match.Unset";
 
     record JarPair(ModSpecAPI mod, File jar) { }
@@ -92,7 +93,7 @@ public class PatchScanner {
 
                             for (MethodDescription.InDefinedShape handledMethod : type.getDeclaredMethods()) {
 
-                                //Check for the annotation.
+                                //Check for a before/after/except annotation.
                                 //Only one patch annotation is allowed per method, any past the first are ignored.
                                 AnnotationDescription methodAnnotation = getAnnotation(handledMethod.getDeclaredAnnotations(), BEFORE);
                                 if (methodAnnotation == null) {
@@ -101,31 +102,43 @@ public class PatchScanner {
                                 if (methodAnnotation == null) {
                                     methodAnnotation = getAnnotation(handledMethod.getDeclaredAnnotations(), EXCEPT);
                                 }
-                                if (methodAnnotation == null) continue; //Skip if none exist
 
-                                TargetMethodSpec methodSpec = createMethodSpec(methodAnnotation);
-                                int priority = AnnotationReader.readInt(methodAnnotation, "priority", 0);
-                                String methodAnnotationName = methodAnnotation.getAnnotationType().getName();
+                                if (methodAnnotation != null) {
+                                    TargetMethodSpec methodSpec = createMethodSpec(methodAnnotation);
+                                    int priority = AnnotationReader.readInt(methodAnnotation, "priority", 0);
+                                    String methodAnnotationName = methodAnnotation.getAnnotationType().getName();
 
-                                PatchType patchType = switch (methodAnnotationName) {
-                                    case BEFORE -> PatchType.BEFORE;
-                                    case AFTER -> PatchType.AFTER;
-                                    case EXCEPT -> PatchType.EXCEPT;
-                                    default -> PatchType.BEFORE;
-                                };
+                                    PatchType patchType = switch (methodAnnotationName) {
+                                        case BEFORE -> PatchType.BEFORE;
+                                        case AFTER -> PatchType.AFTER;
+                                        case EXCEPT -> PatchType.EXCEPT;
+                                        default -> PatchType.BEFORE;
+                                    };
 
-                                PatchSpec patchSpec = new PatchSpec(
-                                        jarPair.mod,
-                                        binaryName,
-                                        handledMethod.getName(),
-                                        patchType,
-                                        priority,
-                                        classSpec,
-                                        methodSpec
-                                );
+                                    patches.add(new PatchSpec(jarPair.mod, binaryName, handledMethod.getName(),
+                                            patchType, priority, classSpec, methodSpec, null));
+                                    PatchLibLogger.info("Discovered Patch  -  Class: " + binaryName + "; Handler Method: " + handledMethod.getName() + ";");
+                                    continue;
+                                }
 
-                                patches.add(patchSpec);
-                                PatchLibLogger.info("Discovered Patch  -  Class: " + binaryName + "; Handler Method: " + handledMethod.getName() + ";" );
+                                //Check for a redirect annotation instead.
+                                AnnotationDescription redirectAnnotation = getAnnotation(handledMethod.getDeclaredAnnotations(), REDIRECT);
+                                if (redirectAnnotation == null) continue; //Skip if none exist
+
+                                RedirectSiteSpec siteSpec = createRedirectSiteSpec(redirectAnnotation);
+                                if (siteSpec == null) {
+                                    PatchLibLogger.error("A @Redirect must set exactly one of methodCall or fieldAccess. Skipping "
+                                            + binaryName + "#" + handledMethod.getName());
+                                    continue;
+                                }
+
+                                AnnotationDescription targetMatch = AnnotationReader.readAnnotation(redirectAnnotation, "target");
+                                TargetMethodSpec hostSpec = createMethodSpec(targetMatch);
+                                int redirectPriority = AnnotationReader.readInt(redirectAnnotation, "priority", 0);
+
+                                patches.add(new PatchSpec(jarPair.mod, binaryName, handledMethod.getName(),
+                                        PatchType.REDIRECT, redirectPriority, classSpec, hostSpec, siteSpec));
+                                PatchLibLogger.info("Discovered Redirect  -  Class: " + binaryName + "; Handler Method: " + handledMethod.getName() + ";");
 
                             }
 
@@ -233,6 +246,55 @@ public class PatchScanner {
     }
 
 
+
+    /** Builds the call site spec from a @Redirect. methodCall and fieldAccess are single-element arrays, so the active
+     * one is simply whichever is present. Returns null unless exactly one element is set across the two. */
+    private RedirectSiteSpec createRedirectSiteSpec(AnnotationDescription redirectAnnotation) {
+        AnnotationDescription[] methodCall = AnnotationReader.readAnnotationArray(redirectAnnotation, "methodCall");
+        AnnotationDescription[] fieldAccess = AnnotationReader.readAnnotationArray(redirectAnnotation, "fieldAccess");
+
+        if (methodCall.length + fieldAccess.length != 1) return null; //Exactly one matcher, total.
+
+        if (methodCall.length == 1) {
+            AnnotationDescription call = methodCall[0];
+            String[] parameters = AnnotationReader.readTypeArray(call, "parameters");
+            String[] parameterNames = AnnotationReader.readStringArray(call, "parameterNames");
+            String returnType = AnnotationReader.readType(call, "returnType", "");
+            String returnTypeName = AnnotationReader.readString(call, "returnTypeName", "");
+
+            return new RedirectSiteSpec(
+                    RedirectKind.METHOD_CALL,
+                    ownerName(call),
+                    AnnotationReader.readString(call, "methodName", ""),
+                    parameters.length != 0 ? parameters : parameterNames,
+                    AnnotationReader.readInt(call, "parameterCount", -1),
+                    !returnType.isEmpty() ? returnType : returnTypeName,
+                    "", //fieldSubtype is unused for method calls
+                    AnnotationReader.readBoolean(call, "staticOnly", false));
+        }
+
+        AnnotationDescription access = fieldAccess[0];
+        String fieldType = AnnotationReader.readType(access, "fieldType", "");
+        String fieldTypeName = AnnotationReader.readString(access, "fieldTypeName", "");
+        String fieldSubtype = AnnotationReader.readType(access, "fieldSubtype", "");
+        String fieldSubtypeName = AnnotationReader.readString(access, "fieldSubtypeName", "");
+        boolean write = AnnotationReader.readEnumName(access, "access", "READ").equals("WRITE");
+
+        return new RedirectSiteSpec(
+                write ? RedirectKind.FIELD_WRITE : RedirectKind.FIELD_READ,
+                ownerName(access),
+                AnnotationReader.readString(access, "fieldName", ""),
+                new String[0],
+                -1,
+                !fieldType.isEmpty() ? fieldType : fieldTypeName,
+                !fieldSubtype.isEmpty() ? fieldSubtype : fieldSubtypeName,
+                AnnotationReader.readBoolean(access, "staticOnly", false));
+    }
+
+    private String ownerName(AnnotationDescription match) {
+        String owner = AnnotationReader.readType(match, "owner", "");
+        return !owner.isEmpty() ? owner : AnnotationReader.readString(match, "ownerName", "");
+    }
 
     private AnnotationDescription getAnnotation(AnnotationList annotations, String fullClassName) {
         for (AnnotationDescription annotation : annotations) {

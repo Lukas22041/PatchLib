@@ -66,6 +66,13 @@ public class AnnotationReader {
         return new String[0];
     }
 
+    static AnnotationDescription readAnnotation(AnnotationDescription annotation, String member) {
+        for (MethodDescription.InDefinedShape m : annotation.getAnnotationType().getDeclaredMethods()) {
+            if (m.getName().equals(member)) return (AnnotationDescription) annotation.getValue(m).resolve();
+        }
+        return null;
+    }
+
     static AnnotationDescription[] readAnnotationArray(AnnotationDescription annotation, String member) {
         for (MethodDescription.InDefinedShape m : annotation.getAnnotationType().getDeclaredMethods()) {
             if (m.getName().equals(member)) {

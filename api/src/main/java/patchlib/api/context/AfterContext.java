@@ -1,4 +1,4 @@
-package patchlib.api;
+package patchlib.api.context;
 
 
 public interface AfterContext extends Context {
@@ -11,6 +11,9 @@ public interface AfterContext extends Context {
     <T> T getInferredReturnValue();
     /** Replaces the return value from the original method. */
     void setReturnValue(Object newReturnValue);
+
+    /** Checks if something has skipped the original method in @Before */
+    boolean isSkipOriginal();
 
 
 }

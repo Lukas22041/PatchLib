@@ -9,6 +9,7 @@ public record PatchSpec(
         PatchType patchType,
         int priority,
         TargetClassSpec targetClass,
-        TargetMethodSpec targetMethod) {
+        TargetMethodSpec targetMethod,
+        RedirectSiteSpec redirectSite) {
 
 }
