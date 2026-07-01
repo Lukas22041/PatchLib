@@ -13,13 +13,14 @@ public class FieldTargetMatcher {
         return refine(any(), spec.fieldName(), spec.fieldType(), spec.fieldSubtype(), spec.staticOnly());
     }
 
-    /** Matches the field access a @Redirect intercepts inside the host body. Same shape matching as a target field,
-     * plus the owner, which is the class declaring the field. Read vs write is decided by the installer, not here. */
+    /** Matches the field access a @RedirectFieldRead/@RedirectFieldWrite intercepts inside the host body. Same shape
+     * matching as a target field, plus the owner, which is the class declaring the field. Read vs write is decided by
+     * the installer, not here. */
     public static ElementMatcher.Junction<FieldDescription> create(RedirectSiteSpec spec) {
         ElementMatcher.Junction<FieldDescription> base = any();
 
-        if (!spec.owner().isEmpty())
-            base = base.and(isDeclaredBy(named(spec.owner())));
+        if (!spec.owner().matchesEverything())
+            base = base.and(isDeclaredBy(ClassTargetMatcher.create(spec.owner())));
 
         return refine(base, spec.name(), spec.returnOrFieldType(), spec.fieldSubtype(), spec.staticOnly());
     }

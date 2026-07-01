@@ -1,6 +1,6 @@
 package patchlib.api.context;
 
-/** Context for a @Redirect that intercepts a field read inside the host method. The inherited Context methods refer
+/** Context for a @RedirectFieldRead intercepting a field read inside the host method. The inherited Context methods refer
  * to the host method; the methods below refer to the read. */
 public interface FieldReadContext extends Context {
 

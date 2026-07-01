@@ -10,4 +10,11 @@ public record TargetClassSpec(
         boolean excludeSubpackages,
         TargetMethodSpec[] methodMatches,
         TargetFieldSpec[] fieldMatches
-) { }
+) {
+
+    /** True when no filter is set, i.e the spec matches every class. */
+    public boolean matchesEverything() {
+        return targetClass.isEmpty() && targetSubtype.isEmpty() && targetPackage.isEmpty()
+                && excludePackage.isEmpty() && methodMatches.length == 0 && fieldMatches.length == 0;
+    }
+}

@@ -2,12 +2,12 @@ package patchlib.patches;
 
 import com.fs.starfarer.api.Global;
 import patchlib.api.context.MethodCallContext;
-import patchlib.api.match.MethodCallMatch;
+import patchlib.api.match.ClassMatch;
 import patchlib.api.match.MethodMatch;
 import patchlib.api.patch.Patch;
-import patchlib.api.patch.Redirect;
+import patchlib.api.patch.RedirectCall;
 
-/** Demonstrates @Redirect. Inside CampaignFleet.advance the fleet reads its own getTravelSpeed() and feeds the result
+/** Demonstrates @RedirectCall. Inside CampaignFleet.advance the fleet reads its own getTravelSpeed() and feeds the result
  * straight into its movement module, so redirecting that one call changes the player fleet's map speed without
  * touching how speed is computed or how any other fleet moves. Doing this with @Before/@After would mean reproducing
  * the whole advance method.
@@ -15,15 +15,15 @@ import patchlib.api.patch.Redirect;
  * Two layers target the same call to show how redirects nest. The lower priority is the outer layer and runs first;
  * its call() reaches the inner layer, whose call() reaches the real getTravelSpeed. The result flows back out, so for
  * the player the speed ends up (real + 50) * 2. Other fleets are left untouched. */
-@Patch(targetClassName = "com.fs.starfarer.campaign.fleet.CampaignFleet")
+@Patch(target = @ClassMatch(typeName = "com.fs.starfarer.campaign.fleet.CampaignFleet"))
 public class TestPatch {
 
     private static long lastLog = 0L;
 
     /** Outer layer, runs first. Doubles whatever the inner layer hands back, for the player fleet only. */
-    @Redirect(
+    @RedirectCall(
             target = @MethodMatch(methodName = "advance", parameterNames = {"float"}),
-            methodCall = @MethodCallMatch(methodName = "getTravelSpeed"),
+            call = @MethodMatch(methodName = "getTravelSpeed"),
             priority = 0
     )
     public static void outerDoubleSpeed(MethodCallContext context) {
@@ -36,9 +36,9 @@ public class TestPatch {
     }
 
     /** Inner layer, reached through the outer layer. Adds a flat bonus on top of the real speed. */
-    @Redirect(
+    @RedirectCall(
             target = @MethodMatch(methodName = "advance", parameterNames = {"float"}),
-            methodCall = @MethodCallMatch(methodName = "getTravelSpeed"),
+            call = @MethodMatch(methodName = "getTravelSpeed"),
             priority = 10
     )
     public static void innerFlatBonus(MethodCallContext context) {
@@ -64,6 +64,6 @@ public class TestPatch {
     }
 
     private static void log(String layer, String message) {
-        Global.getLogger(TestPatch.class).info("[PatchLib @Redirect " + layer + "] " + message);
+        Global.getLogger(TestPatch.class).info("[PatchLib @RedirectCall " + layer + "] " + message);
     }
 }

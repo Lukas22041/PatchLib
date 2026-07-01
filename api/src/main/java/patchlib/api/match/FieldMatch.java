@@ -7,15 +7,17 @@ import java.lang.annotation.RetentionPolicy;
 public @interface FieldMatch {
     String fieldName() default "";
 
-    Class<?> fieldType() default Unset.class;
+    /** The exact type of the field. */
+    Class<?> type() default Unset.class;
     /**Uses actual class names, with type erasure.
      * Examples: "int", "int[]", "java.lang.Integer", "java.lang.Integer[]", "java.util.List" */
-    String fieldTypeName() default "";
+    String typeName() default "";
 
-    Class<?> fieldSubtype() default Unset.class;
+    /** Matches fields whose type is the given type or a subtype of it. */
+    Class<?> subtype() default Unset.class;
     /**Uses actual class names, with type erasure.
      * Examples: "java.util.List", "com.fs.starfarer.api.campaign.CampaignClockAPI" */
-    String fieldSubtypeName() default "";
+    String subtypeName() default "";
 
     boolean staticOnly() default false;
 }

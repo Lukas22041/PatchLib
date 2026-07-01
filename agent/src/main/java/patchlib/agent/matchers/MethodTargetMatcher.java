@@ -19,12 +19,12 @@ public class MethodTargetMatcher {
         return refine(base, spec.methodName(), spec.parameters(), spec.parameterCount(), spec.returnType(), spec.staticOnly());
     }
 
-    /** Matches the method call a @Redirect intercepts inside the host body. Same shape matching as a target method
+    /** Matches the method call a @RedirectCall intercepts inside the host body. Same shape matching as a target method
      * (a call is never a constructor, so isMethod), plus the owner, which is the class declaring the called method. */
     public static ElementMatcher.Junction<MethodDescription> create(RedirectSiteSpec spec) {
         ElementMatcher.Junction<MethodDescription> base = isMethod();
-        if (!spec.owner().isEmpty())
-            base = base.and(isDeclaredBy(named(spec.owner())));
+        if (!spec.owner().matchesEverything())
+            base = base.and(isDeclaredBy(ClassTargetMatcher.create(spec.owner())));
         return refine(base, spec.name(), spec.parameters(), spec.parameterCount(), spec.returnOrFieldType(), spec.staticOnly());
     }
 

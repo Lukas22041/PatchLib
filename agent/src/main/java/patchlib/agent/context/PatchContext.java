@@ -3,9 +3,12 @@ package patchlib.agent.context;
 import patchlib.api.context.AfterContext;
 import patchlib.api.context.BeforeContext;
 import patchlib.api.context.ExceptContext;
+import patchlib.api.ref.ArgRef;
+import patchlib.api.ref.Ref;
 
 /** The context handed to @Before, @After and @Except patches. Adds the return value, skip and exception state on top
- * of the shared instance/argument/reflection utilities in BaseContext. */
+ * of the shared instance/argument/reflection utilities in BaseContext. Advice runs inside the patched method, so only
+ * this context can replace its arguments; the redirect contexts observe them read-only. */
 public class PatchContext extends BaseContext implements BeforeContext, AfterContext, ExceptContext {
 
     private Object returnValue;
@@ -15,6 +18,14 @@ public class PatchContext extends BaseContext implements BeforeContext, AfterCon
 
     public PatchContext(Class<?> owner, Object self, Object[] args) {
         super(owner, self, args);
+    }
+
+    public void setArg(int index, Object newValue) {
+        args[index] = newValue;
+    }
+
+    public <T> Ref<T> getArgRef(int index) {
+        return new ArgRef<>(args, index);
     }
 
     /** Retrieves the return value from the original method  */

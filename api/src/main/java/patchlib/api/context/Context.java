@@ -15,18 +15,12 @@ public interface Context {
      * Automatically casts the value to the variable/method parameters type that you call it for. */
     <T> T getInferredSelf();
 
-    /**Gets the passed in arguments. Writing to a spot in the array will replace the original value */
+    /**Gets the passed in arguments. In @Before/@After/@Except patches, writing to a spot in the array will replace the
+     * original value. In redirects the host method's arguments are read-only, see AdviceContext. */
     Object[] getArgs();
     /**Gets a read-only argument from the passed in arguments of the method.
      * While you can not replace the instance itself with this, you can still modify the member variables of the object. */
     Object getArg(int index);
-    /** Writes a new value to an arg */
-    void setArg(int index, Object newValue);
-
-
-    /** Utility for retrieving a typed read/writeable arg of the original called method.
-     * Changing an arg in a @Before patch means that the original method will be called and use the modified arguments. */
-    <T> Ref<T> getArgRef(int index);
 
     /** Reflection utility for reading/writing a typed field from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
     <T> Ref<T> getField(FieldQuery query);

@@ -1,7 +1,7 @@
 package patchlib.api.context;
 
 
-public interface BeforeContext extends Context {
+public interface BeforeContext extends AdviceContext {
 
     /** Checks if something has skipped the original method in @Before */
     boolean isSkipOriginal();

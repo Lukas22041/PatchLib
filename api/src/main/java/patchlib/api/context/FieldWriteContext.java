@@ -2,7 +2,7 @@ package patchlib.api.context;
 
 import patchlib.api.ref.Ref;
 
-/** Context for a @Redirect that intercepts a field write inside the host method. The inherited Context methods refer
+/** Context for a @RedirectFieldWrite intercepting a field write inside the host method. The inherited Context methods refer
  * to the host method; the methods below refer to the write. */
 public interface FieldWriteContext extends Context {
 

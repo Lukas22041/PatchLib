@@ -3,7 +3,6 @@ package patchlib.agent.context;
 import patchlib.api.context.Context;
 import patchlib.api.query.FieldQuery;
 import patchlib.api.query.MethodQuery;
-import patchlib.api.ref.ArgRef;
 import patchlib.api.ref.MethodRef;
 import patchlib.api.ref.Ref;
 import patchlib.api.store.PatchData;
@@ -42,14 +41,6 @@ public abstract class BaseContext implements Context {
 
     public Object getArg(int index) {
         return args[index];
-    }
-
-    public void setArg(int index, Object newValue) {
-        args[index] = newValue;
-    }
-
-    public <T> Ref<T> getArgRef(int index) {
-        return new ArgRef<>(args, index);
     }
 
     public <T> Ref<T> getField(FieldQuery query) { return PatchReflection.field(owner, self, query); }

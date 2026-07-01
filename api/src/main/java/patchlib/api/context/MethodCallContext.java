@@ -2,7 +2,7 @@ package patchlib.api.context;
 
 import patchlib.api.ref.Ref;
 
-/** Context for a @Redirect that intercepts a method call inside the host method. The inherited Context methods
+/** Context for a @RedirectCall intercepting a method call inside the host method. The inherited Context methods
  * (getSelf, getArgs, reflection utilities, ...) refer to the host method; the methods below refer to the call. */
 public interface MethodCallContext extends Context {
 
