@@ -16,10 +16,6 @@ public class PatchDispatcher {
 
     static final Object[] NO_ARGS = new Object[0];
 
-    /** Holds the exception currently unwinding through a redirect chain, so an enclosing layer frame can tell a
-     * propagated exception (surfaced from ctx.call()) apart from one the layer itself threw. See invokeLayer. */
-    private static final ThreadLocal<Throwable> PROPAGATING = new ThreadLocal<>();
-
     public static PatchContext enter(int siteId, Class<?> owner, Object self, Object[] args) {
         PatchSite site = PatchRegistry.site(siteId);
         PatchContext context = new PatchContext(owner, self, args);
@@ -110,46 +106,32 @@ public class PatchDispatcher {
      * are the call arguments, [value] for a write, or NO_ARGS for a read. The result of a write is unused. */
     private static Object wrap(Patch[] layers, Class<?> hostOwner, Object hostSelf, Object[] hostArgs,
                                Object target, Object[] startArgs, Operation realAccess) throws Throwable {
-        Operation op = realAccess;
-        for (int i = layers.length - 1; i >= 0; i--) {
-            Operation next = op;
-            Patch layer = layers[i];
-            op = args -> {
-                RedirectContextImpl ctx = new RedirectContextImpl(hostOwner, hostSelf, hostArgs, target, args, next);
-                invokeLayer(layer, ctx);
-                return ctx.getResult();
-            };
-        }
-        try {
-            return op.call(startArgs);
-        } finally {
-            //The marker must not outlive the chain: a layer may catch the propagated exception and recover, and a
-            //stale entry would misread a later throw of the same (cached) exception instance as propagating.
-            //Nested chains are safe, an exception crossing back into an enclosing chain is re-recorded by proceed.
-            PROPAGATING.remove();
-        }
+        if (layers.length == 0) return realAccess.call(startArgs);
+        return runLayer(layers, 0, hostOwner, hostSelf, hostArgs, target, startArgs, realAccess);
+    }
+
+    /** Runs the layer at index with a fresh context. The context's call()/read()/write() comes back through here for
+     * the layer below, or reaches realAccess past the last one. Called by wrap and RedirectContextImpl.proceed only. */
+    public static Object runLayer(Patch[] layers, int index, Class<?> hostOwner, Object hostSelf, Object[] hostArgs,
+                                  Object target, Object[] args, Operation realAccess) {
+        RedirectContextImpl ctx = new RedirectContextImpl(hostOwner, hostSelf, hostArgs, target, args, layers, index, realAccess);
+        invokeLayer(layers[index], ctx);
+        return ctx.getResult();
     }
 
     /** Runs one redirect layer. Mirrors invoke() for advice, but only blames this layer when the layer itself threw.
      * Exceptions surfacing from ctx.call() (the original access or a deeper layer) come back through proceed(), which
-     * records them in PROPAGATING, so they keep propagating without being double-logged or pinned on the wrong mod. */
+     * records them on the context, so they keep propagating without being double-logged or pinned on the wrong mod. */
     private static void invokeLayer(Patch layer, RedirectContextImpl ctx) {
         try {
             layer.handler().invokeExact(ctx);
         } catch (Throwable ex) {
-            if (PROPAGATING.get() != ex) {
+            if (!ctx.isPropagating(ex)) {
                 PatchLibLogger.error("Ran in to an error while dispatcher was executing "
                         + layer.spec().handlerClass() + "#" + layer.spec().handlerMethod() + " from mod " + layer.spec().sourceMod().getId());
             }
             throw uncheckedThrow(ex);
         }
-    }
-
-    /** Records t as propagating up through the redirect chain (see invokeLayer), then rethrows it unchecked.
-     * Called from RedirectContextImpl.proceed when a deeper layer or the original access throws. */
-    public static RuntimeException propagate(Throwable t) {
-        PROPAGATING.set(t);
-        return uncheckedThrow(t); //Always throws; the return only satisfies the compiler at the call site.
     }
 
     private static Object[] prepend(Object head, Object[] tail) {
@@ -161,7 +143,7 @@ public class PatchDispatcher {
 
     /**Throws an exception upwards without checking it on this level */
     @SuppressWarnings("unchecked")
-    static <T extends Throwable> RuntimeException uncheckedThrow(Throwable ex) throws T {
+    public static <T extends Throwable> RuntimeException uncheckedThrow(Throwable ex) throws T {
         throw (T) ex;
     }
 }

@@ -8,6 +8,7 @@ import patchlib.api.ref.Ref;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -22,8 +23,12 @@ final class PatchReflection {
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
+    /** A resolved method with its handles created once at cache time. handle keeps the real method types for
+     * MethodRef.handle(), spread is the Object[]-in, Object-out form that MethodRef.call() invokes. */
+    private record CachedMethod(Method method, MethodHandle handle, MethodHandle spread) {}
+
     private static final ConcurrentHashMap<Object, Optional<Field>> FIELD_CACHE = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<Object, Optional<Method>> METHOD_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Object, Optional<CachedMethod>> METHOD_CACHE = new ConcurrentHashMap<>();
 
     static <T> Ref<T> field(Class<?> owner, Object target, FieldQuery query) {
         Field field = FIELD_CACHE.computeIfAbsent(query.cacheKey(owner), key -> Optional.ofNullable(resolveField(owner, query)))
@@ -32,9 +37,11 @@ final class PatchReflection {
     }
 
     static MethodRef method(Class<?> owner, Object target, MethodQuery query) {
-        Method method = METHOD_CACHE.computeIfAbsent(query.cacheKey(owner), key -> Optional.ofNullable(resolveMethod(owner, query)))
+        CachedMethod cached = METHOD_CACHE.computeIfAbsent(query.cacheKey(owner), key -> Optional.ofNullable(resolveMethod(owner, query)))
                 .orElseThrow(() -> new RuntimeException("No method matching the query on " + owner.getName() + " or its supertypes"));
-        return new MethodRef(bind(method, target));
+        //Static methods and lookups without an instance stay unbound, the caller passes the receiver as the first call() arg.
+        Object receiver = Modifier.isStatic(cached.method().getModifiers()) || target == null ? null : target;
+        return new MethodRef(cached.handle(), cached.spread(), receiver);
     }
 
     static boolean hasField(Class<?> owner, FieldQuery query) {
@@ -55,20 +62,22 @@ final class PatchReflection {
         return null;
     }
 
-    private static Method resolveMethod(Class<?> owner, MethodQuery query) {
+    private static CachedMethod resolveMethod(Class<?> owner, MethodQuery query) {
         for (Class<?> clazz = owner; clazz != null; clazz = clazz.getSuperclass())
             for (Method method : clazz.getDeclaredMethods())
                 if (query.matches(method)) {
                     method.setAccessible(true);
-                    return method;
+                    return unreflect(method);
                 }
         return null;
     }
 
-    static MethodHandle bind(Method m, Object target) {
+    private static CachedMethod unreflect(Method m) {
         try {
             MethodHandle handle = LOOKUP.unreflect(m);
-            return Modifier.isStatic(m.getModifiers()) || target == null ? handle : handle.bindTo(target);
+            int parameterCount = handle.type().parameterCount();
+            MethodHandle spread = handle.asType(MethodType.genericMethodType(parameterCount)).asSpreader(Object[].class, parameterCount);
+            return new CachedMethod(m, handle, spread);
         } catch (IllegalAccessException e) {
             throw new RuntimeException("Could not access method " + m, e);
         }
