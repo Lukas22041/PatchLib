@@ -73,6 +73,16 @@ public class PatchDispatcher {
         return wrap(site.layers(), hostOwner, hostSelf, hostArgs, callReceiver, callArgs, realCall);
     }
 
+    /** Wraps an intercepted constructor call in its layers. There is no receiver, the original handle allocates and
+     * initializes in one step. */
+    public static Object redirectConstructorCall(int siteId, Class<?> hostOwner, MethodHandle original,
+                                                 Object[] callArgs, Object hostSelf, Object[] hostArgs) throws Throwable {
+        RedirectSite site = PatchRegistry.redirectSite(siteId);
+        MethodHandle spread = site.spreadOriginal(original);
+        Operation realNew = args -> spread.invokeExact(args);
+        return wrap(site.layers(), hostOwner, hostSelf, hostArgs, null, callArgs, realNew);
+    }
+
     /** Wraps an intercepted field read in its layers. A read takes no arguments. */
     public static Object redirectFieldRead(int siteId, Class<?> hostOwner, MethodHandle original,
                                            Object fieldOwner, Object hostSelf, Object[] hostArgs) throws Throwable {
@@ -94,10 +104,10 @@ public class PatchDispatcher {
         wrap(site.layers(), hostOwner, hostSelf, hostArgs, fieldOwner, new Object[]{value}, realWrite);
     }
 
-    /** Wraps an intercepted access in its priority-ordered layers, shared by all three redirect kinds. layers[0]
+    /** Wraps an intercepted access in its priority-ordered layers, shared by all redirect kinds. layers[0]
      * (lowest priority) is the outermost and runs first; each layer reaches the next through ctx.call(), and the
-     * innermost reaches realAccess. target is the call receiver or field owner; startArgs are the call arguments,
-     * [value] for a write, or NO_ARGS for a read. The result of a write is unused. */
+     * innermost reaches realAccess. target is the call receiver or field owner, or null for a construction; startArgs
+     * are the call arguments, [value] for a write, or NO_ARGS for a read. The result of a write is unused. */
     private static Object wrap(Patch[] layers, Class<?> hostOwner, Object hostSelf, Object[] hostArgs,
                                Object target, Object[] startArgs, Operation realAccess) throws Throwable {
         Operation op = realAccess;

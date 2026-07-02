@@ -35,13 +35,15 @@ final class RedirectSubstitutionFactory implements Substitution.Factory<Target.F
     private final String hostKey;
     private final TypeDescription hostType;
     private final Method bridge;
+    private final Method staticBridge; //replaces bridge when the resolved method is static, null for other kinds
     private final List<Layer> layers;
 
-    RedirectSubstitutionFactory(RedirectKind kind, String hostKey, TypeDescription hostType, Method bridge, List<Layer> layers) {
+    RedirectSubstitutionFactory(RedirectKind kind, String hostKey, TypeDescription hostType, Method bridge, Method staticBridge, List<Layer> layers) {
         this.kind = kind;
         this.hostKey = hostKey;
         this.hostType = hostType;
         this.bridge = bridge;
+        this.staticBridge = staticBridge;
         this.layers = layers;
     }
 
@@ -56,7 +58,15 @@ final class RedirectSubstitutionFactory implements Substitution.Factory<Target.F
             for (Layer layer : layers) {
                 if (layer.matches().test(original)) matched.add(layer);
             }
-            if (matched.isEmpty()) return stackManipulation; //Not one of ours, leave the call untouched.
+            if (matched.isEmpty()) {
+                //Not one of ours. Calls and field accesses take the raw instruction back unchanged, but a bound
+                //constructor site can not (the visitor cleans the stack after it), so ByteBuddys own step rebuilds it.
+                if (kind != RedirectKind.CONSTRUCTOR) return stackManipulation;
+                return Substitution.Chain.<Target.ForMember>with(Assigner.DEFAULT, Assigner.Typing.DYNAMIC)
+                        .executing(Substitution.Chain.Step.OfOriginalExpression.INSTANCE)
+                        .make(instrumentedType, instrumentedMethod, typePool)
+                        .resolve(target, parameters, result, methodHandle, stackManipulation, freeOffset);
+            }
 
             matched.sort(Comparator.comparingInt((Layer layer) -> layer.patch().spec().priority())
                     .thenComparing(layer -> layer.patch().spec().sourceMod().getName()));
@@ -66,6 +76,11 @@ final class RedirectSubstitutionFactory implements Substitution.Factory<Target.F
             //registration idempotent if the class is retransformed. The kind is part of the key because a read and a
             //write of the same field resolve to the same member but need separate sites.
             int id = PatchRegistry.registerRedirect(hostKey + "->" + kind + ":" + memberKey(original), new RedirectSite(patches));
+
+            //Static calls go through their own bridge variant, see RedirectBridges.methodCallStatic.
+            Method bridge = staticBridge != null && original instanceof MethodDescription method && method.isStatic()
+                    ? staticBridge
+                    : this.bridge;
 
             //Hand the actual bytecode back to ByteBuddys standard delegation, with this sites id baked in.
             return Substitution.Chain

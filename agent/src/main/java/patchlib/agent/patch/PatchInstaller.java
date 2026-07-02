@@ -31,6 +31,7 @@ import patchlib.agent.spec.PatchType;
 import patchlib.agent.spec.RedirectKind;
 import patchlib.api.context.AfterContext;
 import patchlib.api.context.BeforeContext;
+import patchlib.api.context.ConstructorCallContext;
 import patchlib.api.context.ExceptContext;
 import patchlib.api.context.FieldReadContext;
 import patchlib.api.context.FieldWriteContext;
@@ -179,6 +180,24 @@ public class PatchInstaller {
                         new Patch(data.spec(), data.handlerMethod())));
             }
             target = MemberSubstitution.relaxed().method(selector);
+        } else if (kind == RedirectKind.CONSTRUCTOR) {
+            ElementMatcher.Junction<MethodDescription> selector = ElementMatchers.none();
+            for (InstallData data : kindData) {
+                ElementMatcher.Junction<MethodDescription> matcher = MethodTargetMatcher.createConstructor(data.spec().redirectSite());
+                selector = selector.or(matcher);
+                layers.add(new RedirectSubstitutionFactory.Layer(
+                        member -> member instanceof MethodDescription md && matcher.matches(md),
+                        new Patch(data.spec(), data.handlerMethod())));
+            }
+            //this()/super() delegation uses the same instruction as a new expression and must not be substituted, so
+            //in a constructor host every construction of the host class or its direct superclass is excluded.
+            if (method.isConstructor()) {
+                selector = selector.and(ElementMatchers.not(ElementMatchers.isDeclaredBy(hostType)));
+                TypeDescription.Generic superClass = hostType.getSuperClass();
+                if (superClass != null)
+                    selector = selector.and(ElementMatchers.not(ElementMatchers.isDeclaredBy(superClass.asErasure())));
+            }
+            target = MemberSubstitution.relaxed().constructor(selector);
         } else {
             ElementMatcher.Junction<FieldDescription> selector = ElementMatchers.none();
             for (InstallData data : kindData) {
@@ -193,7 +212,7 @@ public class PatchInstaller {
                     : MemberSubstitution.relaxed().field(selector).onWrite();
         }
 
-        RedirectSubstitutionFactory factory = new RedirectSubstitutionFactory(kind, hostKey, hostType, bridgeFor(kind), layers);
+        RedirectSubstitutionFactory factory = new RedirectSubstitutionFactory(kind, hostKey, hostType, bridgeFor(kind), staticCallBridgeFor(kind), layers);
         return target.replaceWith(factory).on(ElementMatchers.is(method));
     }
 
@@ -202,6 +221,8 @@ public class PatchInstaller {
             return switch (kind) {
                 case METHOD_CALL -> RedirectBridges.class.getMethod("methodCall",
                         int.class, Class.class, MethodHandle.class, Object.class, Object[].class, Object.class, Object[].class);
+                case CONSTRUCTOR -> RedirectBridges.class.getMethod("constructorCall",
+                        int.class, Class.class, MethodHandle.class, Object[].class, Object.class, Object[].class);
                 case FIELD_READ -> RedirectBridges.class.getMethod("fieldRead",
                         int.class, Class.class, MethodHandle.class, Object.class, Object.class, Object[].class);
                 case FIELD_WRITE -> RedirectBridges.class.getMethod("fieldWrite",
@@ -209,6 +230,17 @@ public class PatchInstaller {
             };
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("Could not resolve redirect bridge for " + kind, e);
+        }
+    }
+
+    /** The bridge variant used when a redirected call resolves to a static method, see RedirectBridges.methodCallStatic. */
+    private static Method staticCallBridgeFor(RedirectKind kind) {
+        if (kind != RedirectKind.METHOD_CALL) return null;
+        try {
+            return RedirectBridges.class.getMethod("methodCallStatic",
+                    int.class, Class.class, MethodHandle.class, Object.class, Object[].class, Object.class, Object[].class);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("Could not resolve the static call redirect bridge", e);
         }
     }
 
@@ -297,6 +329,7 @@ public class PatchInstaller {
             case EXCEPT -> ExceptContext.class;
             case REDIRECT -> switch (spec.redirectSite().kind()) {
                 case METHOD_CALL -> MethodCallContext.class;
+                case CONSTRUCTOR -> ConstructorCallContext.class;
                 case FIELD_READ -> FieldReadContext.class;
                 case FIELD_WRITE -> FieldWriteContext.class;
             };

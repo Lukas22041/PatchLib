@@ -20,12 +20,21 @@ public class MethodTargetMatcher {
     }
 
     /** Matches the method call a @RedirectCall intercepts inside the host body. Same shape matching as a target method
-     * (a call is never a constructor, so isMethod), plus the owner, which is the class declaring the called method. */
+     * (a call is never a constructor, so isMethod), plus the class declaring the called method. */
     public static ElementMatcher.Junction<MethodDescription> create(RedirectSiteSpec spec) {
         ElementMatcher.Junction<MethodDescription> base = isMethod();
-        if (!spec.owner().matchesEverything())
-            base = base.and(isDeclaredBy(ClassTargetMatcher.create(spec.owner())));
+        if (!spec.declaringType().matchesEverything())
+            base = base.and(isDeclaredBy(ClassTargetMatcher.create(spec.declaringType())));
         return refine(base, spec.name(), spec.parameters(), spec.parameterCount(), spec.returnOrFieldType(), spec.staticOnly());
+    }
+
+    /** Matches the constructor a @RedirectNew intercepts inside the host body. The declaring type is the instantiated
+     * class; only the parameter constraints apply, a constructor has no name or return type and is never static. */
+    public static ElementMatcher.Junction<MethodDescription> createConstructor(RedirectSiteSpec spec) {
+        ElementMatcher.Junction<MethodDescription> base = isConstructor();
+        if (!spec.declaringType().matchesEverything())
+            base = base.and(isDeclaredBy(ClassTargetMatcher.create(spec.declaringType())));
+        return refine(base, "", spec.parameters(), spec.parameterCount(), "", false);
     }
 
     /** Adds the name/parameter/return/static constraints shared by target methods and redirected calls onto a base matcher. */

@@ -24,6 +24,33 @@ public final class RedirectBridges {
         return PatchDispatcher.redirectMethodCall(siteId, hostOwner, original, callReceiver, callArgs, hostSelf, hostArgs);
     }
 
+    /** methodCall variant for static calls. includeSelf works around a ByteBuddy bug where the argument lists
+     * capacity hint goes negative for a zero arg static call. There is no receiver, so the arguments are unchanged. */
+    public static Object methodCallStatic(
+            @DispatchIdMarker int siteId,
+            @DispatchOwnerMarker Class<?> hostOwner,
+            @MemberSubstitution.SelfCallHandle(bound = false) MethodHandle original,
+            @MemberSubstitution.This(source = MemberSubstitution.Source.SUBSTITUTED_ELEMENT, optional = true) Object callReceiver,
+            @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.SUBSTITUTED_ELEMENT, includeSelf = true) Object[] callArgs,
+            @MemberSubstitution.This(source = MemberSubstitution.Source.ENCLOSING_METHOD, optional = true) Object hostSelf,
+            @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD) Object[] hostArgs
+    ) throws Throwable {
+        return PatchDispatcher.redirectMethodCall(siteId, hostOwner, original, callReceiver, callArgs, hostSelf, hostArgs);
+    }
+
+    public static Object constructorCall(
+            @DispatchIdMarker int siteId,
+            @DispatchOwnerMarker Class<?> hostOwner,
+            @MemberSubstitution.SelfCallHandle(bound = false) MethodHandle original,
+            //includeSelf works around a ByteBuddy bug where the argument lists capacity hint goes negative for a
+            //zero arg constructor. A construction has no receiver, so the bound arguments are unchanged by it.
+            @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.SUBSTITUTED_ELEMENT, includeSelf = true) Object[] callArgs,
+            @MemberSubstitution.This(source = MemberSubstitution.Source.ENCLOSING_METHOD, optional = true) Object hostSelf,
+            @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD) Object[] hostArgs
+    ) throws Throwable {
+        return PatchDispatcher.redirectConstructorCall(siteId, hostOwner, original, callArgs, hostSelf, hostArgs);
+    }
+
     public static Object fieldRead(
             @DispatchIdMarker int siteId,
             @DispatchOwnerMarker Class<?> hostOwner,

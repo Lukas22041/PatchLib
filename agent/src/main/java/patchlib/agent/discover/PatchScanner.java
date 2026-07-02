@@ -28,6 +28,7 @@ public class PatchScanner {
     static final String AFTER = "patchlib.api.patch.After";
     static final String EXCEPT = "patchlib.api.patch.Except";
     static final String REDIRECT_CALL = "patchlib.api.patch.RedirectCall";
+    static final String REDIRECT_NEW = "patchlib.api.patch.RedirectNew";
     static final String REDIRECT_FIELD_READ = "patchlib.api.patch.RedirectFieldRead";
     static final String REDIRECT_FIELD_WRITE = "patchlib.api.patch.RedirectFieldWrite";
     static final String UNSET = "patchlib.api.match.Unset";
@@ -100,12 +101,14 @@ public class PatchScanner {
                                 AnnotationDescription after = getAnnotation(handledMethod.getDeclaredAnnotations(), AFTER);
                                 AnnotationDescription except = getAnnotation(handledMethod.getDeclaredAnnotations(), EXCEPT);
                                 AnnotationDescription redirectCall = getAnnotation(handledMethod.getDeclaredAnnotations(), REDIRECT_CALL);
+                                AnnotationDescription redirectNew = getAnnotation(handledMethod.getDeclaredAnnotations(), REDIRECT_NEW);
                                 AnnotationDescription redirectRead = getAnnotation(handledMethod.getDeclaredAnnotations(), REDIRECT_FIELD_READ);
                                 AnnotationDescription redirectWrite = getAnnotation(handledMethod.getDeclaredAnnotations(), REDIRECT_FIELD_WRITE);
 
                                 //Only one patch annotation is allowed per method, any past the first are ignored.
                                 int annotationCount = (before != null ? 1 : 0) + (after != null ? 1 : 0) + (except != null ? 1 : 0)
-                                        + (redirectCall != null ? 1 : 0) + (redirectRead != null ? 1 : 0) + (redirectWrite != null ? 1 : 0);
+                                        + (redirectCall != null ? 1 : 0) + (redirectNew != null ? 1 : 0)
+                                        + (redirectRead != null ? 1 : 0) + (redirectWrite != null ? 1 : 0);
                                 if (annotationCount == 0) continue;
                                 if (annotationCount > 1) {
                                     PatchLibLogger.warn("Multiple patch annotations on " + binaryName + "#" + handledMethod.getName()
@@ -132,9 +135,10 @@ public class PatchScanner {
                                 }
 
                                 AnnotationDescription redirectAnnotation = redirectCall != null ? redirectCall
+                                        : redirectNew != null ? redirectNew
                                         : redirectRead != null ? redirectRead : redirectWrite;
-                                RedirectSiteSpec siteSpec = redirectCall != null
-                                        ? createCallSiteSpec(redirectAnnotation)
+                                RedirectSiteSpec siteSpec = redirectCall != null ? createCallSiteSpec(redirectAnnotation)
+                                        : redirectNew != null ? createNewSiteSpec(redirectAnnotation)
                                         : createFieldSiteSpec(redirectAnnotation, redirectRead != null ? RedirectKind.FIELD_READ : RedirectKind.FIELD_WRITE);
 
                                 TargetMethodSpec hostSpec = createMethodSpec(AnnotationReader.readAnnotation(redirectAnnotation, "target"));
@@ -270,6 +274,24 @@ public class PatchScanner {
                 !returnType.isEmpty() ? returnType : returnTypeName,
                 "", //fieldSubtype is unused for method calls
                 AnnotationReader.readBoolean(call, "staticOnly", false));
+    }
+
+    /** Builds the construction site spec from a @RedirectNew. The constructor shape reuses @MethodMatch; only its
+     * parameter members are used. The declaring type is the instantiated class. */
+    private RedirectSiteSpec createNewSiteSpec(AnnotationDescription redirectAnnotation) {
+        AnnotationDescription constructor = AnnotationReader.readAnnotation(redirectAnnotation, "constructor");
+        String[] parameters = AnnotationReader.readTypeArray(constructor, "parameters");
+        String[] parameterNames = AnnotationReader.readStringArray(constructor, "parameterNames");
+
+        return new RedirectSiteSpec(
+                RedirectKind.CONSTRUCTOR,
+                createClassSpec(AnnotationReader.readAnnotation(redirectAnnotation, "type")),
+                "", //name is unused, a constructor has no name
+                parameters.length != 0 ? parameters : parameterNames,
+                AnnotationReader.readInt(constructor, "parameterCount", -1),
+                "", //returnOrFieldType is unused, the result is the instantiated class
+                "", //fieldSubtype is unused for constructor calls
+                false);
     }
 
     /** Builds the field access spec from a @RedirectFieldRead or @RedirectFieldWrite. The field shape reuses @FieldMatch. */

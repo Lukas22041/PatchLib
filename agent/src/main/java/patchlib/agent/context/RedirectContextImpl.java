@@ -2,20 +2,21 @@ package patchlib.agent.context;
 
 import patchlib.agent.dispatch.Operation;
 import patchlib.agent.dispatch.PatchDispatcher;
+import patchlib.api.context.ConstructorCallContext;
 import patchlib.api.context.FieldReadContext;
 import patchlib.api.context.FieldWriteContext;
 import patchlib.api.context.MethodCallContext;
 import patchlib.api.ref.ArgRef;
 import patchlib.api.ref.Ref;
 
-/** Runtime context for one layer of any redirect. The three context interfaces are role specific views onto one shape:
- * a target (the call receiver or field owner), the values flowing into the access (call args, the written value, or
- * nothing for a read), a way to proceed to the next layer, and a result flowing back out (unused by writes). The
- * inherited BaseContext state is the host method. */
+/** Runtime context for one layer of any redirect. The context interfaces are role specific views onto one shape:
+ * a target (the call receiver or field owner, null for a construction), the values flowing into the access (call
+ * args, the written value, or nothing for a read), a way to proceed to the next layer, and a result flowing back out
+ * (unused by writes). The inherited BaseContext state is the host method. */
 public final class RedirectContextImpl extends BaseContext
-        implements MethodCallContext, FieldReadContext, FieldWriteContext {
+        implements MethodCallContext, ConstructorCallContext, FieldReadContext, FieldWriteContext {
 
-    private final Object target;   //call receiver or field owner, null when static
+    private final Object target;   //call receiver or field owner, null when static or a construction
     private final Object[] callArgs;   //call args, or [value] for a write, or empty for a read
     private final Operation next;
     private Object result;
