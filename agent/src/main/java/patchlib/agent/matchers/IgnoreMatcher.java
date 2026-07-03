@@ -19,13 +19,21 @@ public class IgnoreMatcher {
             "com.intellij.", "org.jetbrains.capture." //Ignore Intellijs debugger
     };
 
+    /** Exceptions to the ignored prefixes. */
+    private static final String[] ALLOWED_PREFIXES = {
+            "patchlib.test.targets.", //PatchLibs own test targets, patched by the in-game tests
+    };
+
     public static ElementMatcher.Junction<TypeDescription> create() {
-        ElementMatcher.Junction<TypeDescription> matcher = none();
-        for (String prefix : IGNORED_PREFIXES) matcher = matcher.or(nameStartsWith(prefix));
-        return matcher;
+        ElementMatcher.Junction<TypeDescription> ignored = none();
+        for (String prefix : IGNORED_PREFIXES) ignored = ignored.or(nameStartsWith(prefix));
+        ElementMatcher.Junction<TypeDescription> allowed = none();
+        for (String prefix : ALLOWED_PREFIXES) allowed = allowed.or(nameStartsWith(prefix));
+        return ignored.and(not(allowed));
     }
 
     public static boolean isIgnored(String binaryName) {
+        for (String prefix : ALLOWED_PREFIXES) if (binaryName.startsWith(prefix)) return false;
         for (String prefix : IGNORED_PREFIXES) if (binaryName.startsWith(prefix)) return true;
         return false;
     }
