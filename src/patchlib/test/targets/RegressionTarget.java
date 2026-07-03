@@ -18,6 +18,10 @@ public class RegressionTarget {
         throw new IllegalStateException("boom");
     }
 
+    public int afterThrowTarget() {
+        throw new IllegalStateException("boom");
+    }
+
     public int redirectCallTarget() {
         return callee(1);
     }

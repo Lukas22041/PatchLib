@@ -1,5 +1,8 @@
 package patchlib.agent;
 
+import patchlib.agent.dispatch.RealAccess;
+import patchlib.agent.spec.RedirectKind;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 
@@ -8,28 +11,53 @@ import java.lang.invoke.MethodType;
 public final class RedirectSite {
 
     private final Patch[] layers;
+    private final RedirectKind kind;
 
-    /** The original access as an Object[]-in, Object-out handle, adapted once on first dispatch. Invoking it via
-     * invokeExact skips the per-call type checking and boxing setup that invokeWithArguments redoes on every access. */
-    private volatile MethodHandle spreadOriginal;
+    /** The original access at the chain bottom, adapted once on first dispatch, see realAccess(). */
+    private volatile RealAccess realAccess;
 
-    public RedirectSite(Patch[] layers) {
+    public RedirectSite(Patch[] layers, RedirectKind kind) {
         this.layers = layers;
+        this.kind = kind;
     }
 
     public Patch[] layers() {
         return layers;
     }
 
-    /** The adapted form of the original access. Every dispatch of a site carries the same underlying member, so the
-     * adaptation is reusable; the race on first dispatch is benign, both threads adapt to an equivalent handle. */
-    public MethodHandle spreadOriginal(MethodHandle original) {
-        MethodHandle handle = spreadOriginal;
-        if (handle == null) {
-            int parameterCount = original.type().parameterCount();
-            handle = original.asType(MethodType.genericMethodType(parameterCount)).asSpreader(Object[].class, parameterCount);
-            spreadOriginal = handle;
+    /** The adapted original access, created on first dispatch. Every dispatch of a site carries the same underlying
+     * member, so the adaptation is reusable; the race on first dispatch is benign, both threads build an equivalent access. */
+    public RealAccess realAccess(MethodHandle original, int argCount) {
+        RealAccess access = realAccess;
+        if (access == null) {
+            access = createRealAccess(original, original.type().parameterCount() > argCount);
+            realAccess = access;
         }
-        return handle;
+        return access;
+    }
+
+    /** Adapts the original handle to a generic form invoked via invokeExact, which skips the per-call type checking
+     * and boxing setup that invokeWithArguments redoes on every access. The receiver stays a leading positional
+     * parameter, so no argument array is rebuilt per call. */
+    private RealAccess createRealAccess(MethodHandle original, boolean hasReceiver) {
+        int count = original.type().parameterCount();
+        MethodHandle generic = original.asType(MethodType.genericMethodType(count));
+        return switch (kind) {
+            case METHOD_CALL, CONSTRUCTOR -> {
+                if (!hasReceiver) { //also every constructor: the handle allocates and initializes in one step
+                    MethodHandle spread = generic.asSpreader(Object[].class, count);
+                    yield (target, args) -> (Object) spread.invokeExact(args);
+                }
+                MethodHandle spread = generic.asSpreader(Object[].class, count - 1);
+                yield (target, args) -> (Object) spread.invokeExact(target, args);
+            }
+            case FIELD_READ -> hasReceiver
+                    ? (target, args) -> (Object) generic.invokeExact(target)
+                    : (target, args) -> (Object) generic.invokeExact();
+            //A write has no result, the adapted handle returns the null that asType makes of the void return.
+            case FIELD_WRITE -> hasReceiver
+                    ? (target, args) -> (Object) generic.invokeExact(target, args[0])
+                    : (target, args) -> (Object) generic.invokeExact(args[0]);
+        };
     }
 }

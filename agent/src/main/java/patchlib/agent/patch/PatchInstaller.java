@@ -23,9 +23,8 @@ import patchlib.agent.matchers.GateMatcher;
 import patchlib.agent.matchers.IgnoreMatcher;
 import patchlib.agent.matchers.MethodTargetMatcher;
 import patchlib.agent.matchers.SubtypeIndex;
-import patchlib.agent.patch.template.ConstructorTemplate;
-import patchlib.agent.patch.template.ReturnTemplate;
-import patchlib.agent.patch.template.VoidTemplate;
+import patchlib.agent.patch.template.EnterTemplates;
+import patchlib.agent.patch.template.ExitTemplates;
 import patchlib.agent.spec.PatchSpec;
 import patchlib.agent.spec.PatchType;
 import patchlib.agent.spec.RedirectKind;
@@ -126,11 +125,13 @@ public class PatchInstaller {
             if (!advice.isEmpty()) {
                 String key = type.getName() + "#" + method.getInternalName() + method.getDescriptor();
                 int id = PatchRegistry.register(key, createPatchSite(advice));
+                boolean hasBefore = advice.stream().anyMatch(d -> d.spec().patchType() == PatchType.BEFORE);
+                boolean hasExcept = advice.stream().anyMatch(d -> d.spec().patchType() == PatchType.EXCEPT);
 
                 builder = builder.visit(
                         Advice.withCustomMapping()
                                 .bind(DispatchIdMarker.class, id) //Attach the Dispatch ID
-                                .to(pickTemplate(method)) //Pick the right template per method type
+                                .to(pickEnter(method, hasBefore), pickExit(method, hasExcept)) //Pick the leanest template pair for the site
                                 .on(ElementMatchers.is(method))
                 );
 
@@ -344,10 +345,17 @@ public class PatchInstaller {
         };
     }
 
-    private static Class<?> pickTemplate(MethodDescription method) {
-        if (method.isConstructor()) return ConstructorTemplate.class;
-        if (method.getReturnType().represents(void.class)) return VoidTemplate.class;
-        return ReturnTemplate.class;
+    private static Class<?> pickEnter(MethodDescription method, boolean hasBefore) {
+        if (method.isConstructor())
+            return hasBefore ? EnterTemplates.ConstructorWithBefore.class : EnterTemplates.ConstructorPlain.class;
+        return hasBefore ? EnterTemplates.WithBefore.class : EnterTemplates.Plain.class;
+    }
+
+    private static Class<?> pickExit(MethodDescription method, boolean hasExcept) {
+        if (method.isConstructor()) return ExitTemplates.Constructor.class;
+        if (method.getReturnType().represents(void.class))
+            return hasExcept ? ExitTemplates.VoidExcept.class : ExitTemplates.NoValue.class;
+        return hasExcept ? ExitTemplates.ValueExcept.class : ExitTemplates.Value.class;
     }
 
 }

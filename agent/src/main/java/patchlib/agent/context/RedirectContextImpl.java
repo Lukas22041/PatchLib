@@ -1,7 +1,7 @@
 package patchlib.agent.context;
 
 import patchlib.agent.Patch;
-import patchlib.agent.dispatch.Operation;
+import patchlib.agent.dispatch.RealAccess;
 import patchlib.agent.dispatch.PatchDispatcher;
 import patchlib.api.context.ConstructorCallContext;
 import patchlib.api.context.FieldReadContext;
@@ -21,12 +21,12 @@ public final class RedirectContextImpl extends BaseContext
     private final Object[] callArgs;   //call args, or [value] for a write, or empty for a read
     private final Patch[] layers;  //the site's full chain, this context runs the layer at layerIndex
     private final int layerIndex;
-    private final Operation realAccess;
+    private final RealAccess realAccess;
     private Object result;
     private Throwable propagated;  //the exception that last surfaced from this context's proceed, see isPropagating
 
     public RedirectContextImpl(Class<?> hostOwner, Object hostSelf, Object[] hostArgs, Object target, Object[] callArgs,
-                               Patch[] layers, int layerIndex, Operation realAccess) {
+                               Patch[] layers, int layerIndex, RealAccess realAccess) {
         super(hostOwner, hostSelf, hostArgs);
         this.target = target;
         this.callArgs = callArgs;
@@ -69,7 +69,7 @@ public final class RedirectContextImpl extends BaseContext
             int next = layerIndex + 1;
             return next < layers.length
                     ? PatchDispatcher.runLayer(layers, next, owner, self, args, target, proceedArgs, realAccess)
-                    : realAccess.call(proceedArgs);
+                    : realAccess.call(target, proceedArgs);
         } catch (Throwable t) {
             propagated = t;
             throw PatchDispatcher.uncheckedThrow(t);

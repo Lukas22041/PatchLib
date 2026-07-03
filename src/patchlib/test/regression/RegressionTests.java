@@ -13,6 +13,8 @@ public class RegressionTests {
         check("@Before return replaced", "patched", target.beforeTarget());
         check("@After return adjusted", 42, target.afterTarget());
         check("@Except exception suppressed", "suppressed", callExcept(target));
+        check("@After-only throw propagates", "threw IllegalStateException", callAfterThrow(target));
+        check("@After-only throw skips handler", false, RegressionPatches.afterThrowRan);
         check("@RedirectCall arg replaced", 5, target.redirectCallTarget());
         check("@RedirectNew instance swapped", 99, target.redirectNewTarget());
         check("@RedirectFieldRead value replaced", 21, target.redirectReadTarget());
@@ -24,6 +26,15 @@ public class RegressionTests {
     private static Object callExcept(RegressionTarget target) {
         try {
             return target.exceptTarget();
+        } catch (Throwable thrown) {
+            return "threw " + thrown.getClass().getSimpleName();
+        }
+    }
+
+    /** The target throws and only has an @After patch, so the exception must reach the caller. */
+    private static Object callAfterThrow(RegressionTarget target) {
+        try {
+            return target.afterThrowTarget();
         } catch (Throwable thrown) {
             return "threw " + thrown.getClass().getSimpleName();
         }

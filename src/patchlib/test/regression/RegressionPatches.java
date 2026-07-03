@@ -41,6 +41,14 @@ public class RegressionPatches {
         context.suppressException("suppressed");
     }
 
+    /** Guards the no-@Except exit path: an exception must propagate unchanged and skip @After. */
+    public static boolean afterThrowRan = false;
+
+    @After(target = @MethodMatch(methodName = "afterThrowTarget"))
+    public static void afterOnThrow(AfterContext context) {
+        afterThrowRan = true;
+    }
+
     @RedirectCall(target = @MethodMatch(methodName = "redirectCallTarget"), call = @MethodMatch(methodName = "callee"))
     public static void replaceCallArg(MethodCallContext context) {
         context.setCallArg(0, 5);

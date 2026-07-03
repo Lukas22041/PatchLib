@@ -75,7 +75,7 @@ final class RedirectSubstitutionFactory implements Substitution.Factory<Target.F
             //One site per resolved member per kind. Repeated calls and divergent queries share a key, which also keeps
             //registration idempotent if the class is retransformed. The kind is part of the key because a read and a
             //write of the same field resolve to the same member but need separate sites.
-            int id = PatchRegistry.registerRedirect(hostKey + "->" + kind + ":" + memberKey(original), new RedirectSite(patches));
+            int id = PatchRegistry.registerRedirect(hostKey + "->" + kind + ":" + memberKey(original), new RedirectSite(patches, kind));
 
             //Static calls go through their own bridge variant, see RedirectBridges.methodCallStatic.
             Method bridge = staticBridge != null && original instanceof MethodDescription method && method.isStatic()

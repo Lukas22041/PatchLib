@@ -58,15 +58,12 @@ public class PatchDispatcher {
         }
     }
 
-    /** Wraps an intercepted method call in its layers. The single argument is the call receiver (absent for a static
-     * call), followed by the call arguments. */
+    /** Wraps an intercepted method call in its layers. The receiver is absent for a static call. */
     public static Object redirectMethodCall(int siteId, Class<?> hostOwner, MethodHandle original,
                                             Object callReceiver, Object[] callArgs, Object hostSelf, Object[] hostArgs) throws Throwable {
         RedirectSite site = PatchRegistry.redirectSite(siteId);
-        MethodHandle spread = site.spreadOriginal(original);
-        boolean hasReceiver = original.type().parameterCount() > callArgs.length;
-        Operation realCall = args -> spread.invokeExact(hasReceiver ? prepend(callReceiver, args) : args);
-        return wrap(site.layers(), hostOwner, hostSelf, hostArgs, callReceiver, callArgs, realCall);
+        RealAccess real = site.realAccess(original, callArgs.length);
+        return wrap(site.layers(), hostOwner, hostSelf, hostArgs, callReceiver, callArgs, real);
     }
 
     /** Wraps an intercepted constructor call in its layers. There is no receiver, the original handle allocates and
@@ -74,30 +71,25 @@ public class PatchDispatcher {
     public static Object redirectConstructorCall(int siteId, Class<?> hostOwner, MethodHandle original,
                                                  Object[] callArgs, Object hostSelf, Object[] hostArgs) throws Throwable {
         RedirectSite site = PatchRegistry.redirectSite(siteId);
-        MethodHandle spread = site.spreadOriginal(original);
-        Operation realNew = args -> spread.invokeExact(args);
-        return wrap(site.layers(), hostOwner, hostSelf, hostArgs, null, callArgs, realNew);
+        RealAccess real = site.realAccess(original, callArgs.length);
+        return wrap(site.layers(), hostOwner, hostSelf, hostArgs, null, callArgs, real);
     }
 
     /** Wraps an intercepted field read in its layers. A read takes no arguments. */
     public static Object redirectFieldRead(int siteId, Class<?> hostOwner, MethodHandle original,
                                            Object fieldOwner, Object hostSelf, Object[] hostArgs) throws Throwable {
         RedirectSite site = PatchRegistry.redirectSite(siteId);
-        MethodHandle spread = site.spreadOriginal(original);
-        boolean hasReceiver = original.type().parameterCount() > 0;
-        Operation realRead = args -> spread.invokeExact(hasReceiver ? new Object[]{fieldOwner} : NO_ARGS);
-        return wrap(site.layers(), hostOwner, hostSelf, hostArgs, fieldOwner, NO_ARGS, realRead);
+        RealAccess real = site.realAccess(original, 0);
+        return wrap(site.layers(), hostOwner, hostSelf, hostArgs, fieldOwner, NO_ARGS, real);
     }
 
-    /** Wraps an intercepted field write in its layers. The single argument is the value being written. */
+    /** Wraps an intercepted field write in its layers. The single argument is the value being written.
+     * A write has no result; the null that the adapted void return produces is discarded by wrap. */
     public static void redirectFieldWrite(int siteId, Class<?> hostOwner, MethodHandle original,
                                           Object fieldOwner, Object value, Object hostSelf, Object[] hostArgs) throws Throwable {
         RedirectSite site = PatchRegistry.redirectSite(siteId);
-        MethodHandle spread = site.spreadOriginal(original);
-        boolean hasReceiver = original.type().parameterCount() > 1;
-        //A write has no result; the null that the adapted void return produces is discarded by wrap.
-        Operation realWrite = args -> spread.invokeExact(hasReceiver ? new Object[]{fieldOwner, args[0]} : new Object[]{args[0]});
-        wrap(site.layers(), hostOwner, hostSelf, hostArgs, fieldOwner, new Object[]{value}, realWrite);
+        RealAccess real = site.realAccess(original, 1);
+        wrap(site.layers(), hostOwner, hostSelf, hostArgs, fieldOwner, new Object[]{value}, real);
     }
 
     /** Wraps an intercepted access in its priority-ordered layers, shared by all redirect kinds. layers[0]
@@ -105,15 +97,15 @@ public class PatchDispatcher {
      * innermost reaches realAccess. target is the call receiver or field owner, or null for a construction; startArgs
      * are the call arguments, [value] for a write, or NO_ARGS for a read. The result of a write is unused. */
     private static Object wrap(Patch[] layers, Class<?> hostOwner, Object hostSelf, Object[] hostArgs,
-                               Object target, Object[] startArgs, Operation realAccess) throws Throwable {
-        if (layers.length == 0) return realAccess.call(startArgs);
+                               Object target, Object[] startArgs, RealAccess realAccess) throws Throwable {
+        if (layers.length == 0) return realAccess.call(target, startArgs);
         return runLayer(layers, 0, hostOwner, hostSelf, hostArgs, target, startArgs, realAccess);
     }
 
     /** Runs the layer at index with a fresh context. The context's call()/read()/write() comes back through here for
      * the layer below, or reaches realAccess past the last one. Called by wrap and RedirectContextImpl.proceed only. */
     public static Object runLayer(Patch[] layers, int index, Class<?> hostOwner, Object hostSelf, Object[] hostArgs,
-                                  Object target, Object[] args, Operation realAccess) {
+                                  Object target, Object[] args, RealAccess realAccess) {
         RedirectContextImpl ctx = new RedirectContextImpl(hostOwner, hostSelf, hostArgs, target, args, layers, index, realAccess);
         invokeLayer(layers[index], ctx);
         return ctx.getResult();
@@ -132,13 +124,6 @@ public class PatchDispatcher {
             }
             throw uncheckedThrow(ex);
         }
-    }
-
-    private static Object[] prepend(Object head, Object[] tail) {
-        Object[] full = new Object[tail.length + 1];
-        full[0] = head;
-        System.arraycopy(tail, 0, full, 1, tail.length);
-        return full;
     }
 
     /**Throws an exception upwards without checking it on this level */
