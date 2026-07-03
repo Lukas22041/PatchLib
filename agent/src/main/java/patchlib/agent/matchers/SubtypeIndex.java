@@ -6,17 +6,16 @@ import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.pool.TypePool;
+import patchlib.agent.JarClasses;
 import patchlib.agent.PatchLibLogger;
 import patchlib.agent.spec.PatchSpec;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import static net.bytebuddy.matcher.ElementMatchers.hasSuperType;
@@ -61,15 +60,7 @@ public final class SubtypeIndex {
             for (File jar : jars) {
                 if (!jar.isFile()) continue;
                 try (JarFile jarFile = new JarFile(jar)) {
-                    Enumeration<JarEntry> entries = jarFile.entries();
-                    while (entries.hasMoreElements()) {
-                        JarEntry entry = entries.nextElement();
-                        if (entry.isDirectory() || !entry.getName().endsWith(".class")) continue;
-
-                        String binaryName = entry.getName()
-                                .substring(0, entry.getName().length() - ".class".length())
-                                .replace('/', '.');
-
+                    for (String binaryName : JarClasses.namesIn(jarFile)) {
                         if (IgnoreMatcher.isIgnored(binaryName)) continue;
 
                         try {

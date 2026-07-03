@@ -1,11 +1,10 @@
 package patchlib.agent.patch;
 
+import patchlib.agent.JarClasses;
 import patchlib.agent.PatchLibLogger;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Enumeration;
-import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public final class StarsectorPreloader {
@@ -32,15 +31,7 @@ public final class StarsectorPreloader {
             }
 
             try (JarFile jarFile = new JarFile(jar)) {
-                Enumeration<JarEntry> entries = jarFile.entries();
-                while (entries.hasMoreElements()) {
-                    JarEntry entry = entries.nextElement();
-                    if (entry.isDirectory() || !entry.getName().endsWith(".class")) continue;
-
-                    String name = entry.getName()
-                            .substring(0, entry.getName().length() - ".class".length())
-                            .replace('/', '.');
-
+                for (String name : JarClasses.namesIn(jarFile)) {
                     try {
                         //Loads the class, which immediately forces it through the retransformation from the bytebuddy agent.
                         //"Initialize" set to false, as a wrong order of static block executions could have side effects.

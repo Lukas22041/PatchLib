@@ -19,8 +19,8 @@ public class GateMatcher {
     /** Gates installs to only targets that are mentioned by at least one spec. */
     public static AgentBuilder.RawMatcher create(List<PatchSpec> patches, SubtypeIndex subtypeIndex) {
 
-        //Build a cheap filter, only one of the three is checked, based on if their in the spec or not.
-        //Creates a quick filter for simple patches. Only targeting one is fine since its the entry-gate, the exact match is still checked later at install time.
+        //Build a cheap filter, each patch lands in exactly one of the three buckets below.
+        //Only checking one filter per patch is fine since this is the entry-gate, the exact match is still checked later at install time.
         Set<String> exactNames   = new HashSet<>();
         Set<String> subtypeNames = new HashSet<>();
         List<TargetClassSpec> other = new ArrayList<>();

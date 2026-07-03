@@ -1,33 +1,21 @@
 package patchlib.agent.patch;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
-import net.bytebuddy.asm.Advice;
-import net.bytebuddy.asm.AsmVisitorWrapper;
-import net.bytebuddy.asm.MemberSubstitution;
-import net.bytebuddy.description.field.FieldDescription;
+import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
-import net.bytebuddy.matcher.ElementMatcher;
-import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.utility.JavaModule;
-import patchlib.agent.Patch;
 import patchlib.agent.PatchLibLogger;
-import patchlib.agent.PatchRegistry;
-import patchlib.agent.PatchSite;
+import patchlib.agent.context.AdviceContextImpl;
 import patchlib.agent.context.RedirectContextImpl;
-import patchlib.agent.dispatch.DispatchIdMarker;
 import patchlib.agent.matchers.ClassTargetMatcher;
-import patchlib.agent.matchers.FieldTargetMatcher;
 import patchlib.agent.matchers.GateMatcher;
 import patchlib.agent.matchers.IgnoreMatcher;
 import patchlib.agent.matchers.MethodTargetMatcher;
 import patchlib.agent.matchers.SubtypeIndex;
-import patchlib.agent.patch.template.EnterTemplates;
-import patchlib.agent.patch.template.ExitTemplates;
 import patchlib.agent.spec.PatchSpec;
 import patchlib.agent.spec.PatchType;
-import patchlib.agent.spec.RedirectKind;
 import patchlib.api.context.AfterContext;
 import patchlib.api.context.BeforeContext;
 import patchlib.api.context.ConstructorCallContext;
@@ -35,7 +23,6 @@ import patchlib.api.context.ExceptContext;
 import patchlib.api.context.FieldReadContext;
 import patchlib.api.context.FieldWriteContext;
 import patchlib.api.context.MethodCallContext;
-import patchlib.agent.context.PatchContext;
 
 import java.lang.instrument.Instrumentation;
 import java.lang.invoke.MethodHandle;
@@ -44,19 +31,12 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/** Sets up the ByteBuddy agent and routes every matched method to the two installers:
+ * AdviceInstaller for before/after/except patches, RedirectInstaller for redirects. */
 public class PatchInstaller {
-
-    /** Bundled data for the install process */
-    private record InstallData(PatchSpec spec,
-                               ElementMatcher<TypeDescription> classMatcher,
-                               ElementMatcher<MethodDescription> methodMatcher,
-                               MethodHandle handlerMethod) {}
 
     public static void install(Instrumentation inst, List<PatchSpec> specs, ClassLoader handlerLoader) {
         //Create all the data that will be used for the install process once
@@ -103,7 +83,7 @@ public class PatchInstaller {
 
         List<InstallData> forType = new ArrayList<>();
         for (InstallData data : dataList) {
-            if (data.classMatcher.matches(type)) {
+            if (data.classMatcher().matches(type)) {
                 forType.add(data);
             }
         }
@@ -117,132 +97,26 @@ public class PatchInstaller {
             List<InstallData> advice = new ArrayList<>();
             List<InstallData> redirects = new ArrayList<>();
             for (InstallData data : forType) {
-                if (!data.methodMatcher.matches(method)) continue;
+                if (!data.methodMatcher().matches(method)) continue;
                 if (data.spec().patchType() == PatchType.REDIRECT) redirects.add(data);
                 else advice.add(data);
             }
 
             if (!advice.isEmpty()) {
-                String key = type.getName() + "#" + method.getInternalName() + method.getDescriptor();
-                int id = PatchRegistry.register(key, createPatchSite(advice));
-                boolean hasBefore = advice.stream().anyMatch(d -> d.spec().patchType() == PatchType.BEFORE);
-                boolean hasExcept = advice.stream().anyMatch(d -> d.spec().patchType() == PatchType.EXCEPT);
-
-                builder = builder.visit(
-                        Advice.withCustomMapping()
-                                .bind(DispatchIdMarker.class, id) //Attach the Dispatch ID
-                                .to(pickEnter(method, hasBefore), pickExit(method, hasExcept)) //Pick the leanest template pair for the site
-                                .on(ElementMatchers.is(method))
-                );
-
-                PatchLibLogger.info("Installed a patch site at " + type.getActualName() + " for method " + method.getActualName());
+                builder = AdviceInstaller.install(builder, type, method, advice);
             }
 
             if (!redirects.isEmpty()) {
-                builder = installRedirects(builder, type, method, redirects);
+                builder = RedirectInstaller.install(builder, type, method, redirects);
             }
         }
         return builder;
     }
 
-    /** Installs the redirects for a host method. All redirects of one kind share a single MemberSubstitution whose
-     * matcher is the union of their call matchers. Grouping into layered sites happens during instrumentation, where
-     * the resolved call is known, so divergent queries on the same call collapse together (see RedirectSubstitutionFactory). */
-    private static DynamicType.Builder<?> installRedirects(DynamicType.Builder<?> builder, TypeDescription type,
-                                                           MethodDescription.InDefinedShape method, List<InstallData> redirects) {
-        String hostKey = type.getName() + "#" + method.getInternalName() + method.getDescriptor();
-
-        Map<RedirectKind, List<InstallData>> byKind = new EnumMap<>(RedirectKind.class);
-        for (InstallData data : redirects) {
-            byKind.computeIfAbsent(data.spec().redirectSite().kind(), k -> new ArrayList<>()).add(data);
-        }
-
-        for (Map.Entry<RedirectKind, List<InstallData>> entry : byKind.entrySet()) {
-            builder = builder.visit(redirectVisitor(entry.getKey(), entry.getValue(), hostKey, type, method));
-            PatchLibLogger.info("Installed redirects (" + entry.getKey() + ") at " + type.getActualName() + " in method " + method.getActualName());
-        }
-        return builder;
-    }
-
-    /** Builds one MemberSubstitution for a kind of redirect in a host method. The selector matches any call any of the
-     * redirects wants; the factory then groups them per resolved call and delegates to the matching bridge. */
-    private static AsmVisitorWrapper redirectVisitor(RedirectKind kind, List<InstallData> kindData, String hostKey,
-                                                     TypeDescription hostType, MethodDescription method) {
-        List<RedirectSubstitutionFactory.Layer> layers = new ArrayList<>();
-        MemberSubstitution.WithoutSpecification<MemberSubstitution.Target.ForMember> target;
-
-        if (kind == RedirectKind.METHOD_CALL) {
-            ElementMatcher.Junction<MethodDescription> selector = ElementMatchers.none();
-            for (InstallData data : kindData) {
-                ElementMatcher.Junction<MethodDescription> matcher = MethodTargetMatcher.create(data.spec().redirectSite());
-                selector = selector.or(matcher);
-                layers.add(new RedirectSubstitutionFactory.Layer(
-                        member -> member instanceof MethodDescription md && matcher.matches(md),
-                        new Patch(data.spec(), data.handlerMethod())));
-            }
-            target = MemberSubstitution.relaxed().method(selector);
-        } else if (kind == RedirectKind.CONSTRUCTOR) {
-            ElementMatcher.Junction<MethodDescription> selector = ElementMatchers.none();
-            for (InstallData data : kindData) {
-                ElementMatcher.Junction<MethodDescription> matcher = MethodTargetMatcher.createConstructor(data.spec().redirectSite());
-                selector = selector.or(matcher);
-                layers.add(new RedirectSubstitutionFactory.Layer(
-                        member -> member instanceof MethodDescription md && matcher.matches(md),
-                        new Patch(data.spec(), data.handlerMethod())));
-            }
-            //this()/super() delegation uses the same instruction as a new expression and must not be substituted, so
-            //in a constructor host every construction of the host class or its direct superclass is excluded.
-            if (method.isConstructor()) {
-                selector = selector.and(ElementMatchers.not(ElementMatchers.isDeclaredBy(hostType)));
-                TypeDescription.Generic superClass = hostType.getSuperClass();
-                if (superClass != null)
-                    selector = selector.and(ElementMatchers.not(ElementMatchers.isDeclaredBy(superClass.asErasure())));
-            }
-            target = MemberSubstitution.relaxed().constructor(selector);
-        } else {
-            ElementMatcher.Junction<FieldDescription> selector = ElementMatchers.none();
-            for (InstallData data : kindData) {
-                ElementMatcher.Junction<FieldDescription> matcher = FieldTargetMatcher.create(data.spec().redirectSite());
-                selector = selector.or(matcher);
-                layers.add(new RedirectSubstitutionFactory.Layer(
-                        member -> member instanceof FieldDescription fd && matcher.matches(fd),
-                        new Patch(data.spec(), data.handlerMethod())));
-            }
-            target = kind == RedirectKind.FIELD_READ
-                    ? MemberSubstitution.relaxed().field(selector).onRead()
-                    : MemberSubstitution.relaxed().field(selector).onWrite();
-        }
-
-        RedirectSubstitutionFactory factory = new RedirectSubstitutionFactory(kind, hostKey, hostType, bridgeFor(kind), staticCallBridgeFor(kind), layers);
-        return target.replaceWith(factory).on(ElementMatchers.is(method));
-    }
-
-    private static Method bridgeFor(RedirectKind kind) {
-        try {
-            return switch (kind) {
-                case METHOD_CALL -> RedirectBridges.class.getMethod("methodCall",
-                        int.class, Class.class, MethodHandle.class, Object.class, Object[].class, Object.class, Object[].class);
-                case CONSTRUCTOR -> RedirectBridges.class.getMethod("constructorCall",
-                        int.class, Class.class, MethodHandle.class, Object[].class, Object.class, Object[].class);
-                case FIELD_READ -> RedirectBridges.class.getMethod("fieldRead",
-                        int.class, Class.class, MethodHandle.class, Object.class, Object.class, Object[].class);
-                case FIELD_WRITE -> RedirectBridges.class.getMethod("fieldWrite",
-                        int.class, Class.class, MethodHandle.class, Object.class, Object[].class, Object.class, Object[].class);
-            };
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException("Could not resolve redirect bridge for " + kind, e);
-        }
-    }
-
-    /** The bridge variant used when a redirected call resolves to a static method, see RedirectBridges.methodCallStatic. */
-    private static Method staticCallBridgeFor(RedirectKind kind) {
-        if (kind != RedirectKind.METHOD_CALL) return null;
-        try {
-            return RedirectBridges.class.getMethod("methodCallStatic",
-                    int.class, Class.class, MethodHandle.class, Object.class, Object[].class, Object.class, Object[].class);
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException("Could not resolve the static call redirect bridge", e);
-        }
+    /** The registry key of a member: declaring class, name and descriptor. Shared by advice sites,
+     * redirect host methods and resolved redirect targets. */
+    static String memberKey(ByteCodeElement.Member member) {
+        return member.getDeclaringType().asErasure().getName() + "#" + member.getInternalName() + member.getDescriptor();
     }
 
     private static List<InstallData> setupData(List<PatchSpec> specs, ClassLoader handlerLoader) {
@@ -265,35 +139,6 @@ public class PatchInstaller {
         }
         PatchLibLogger.info("Assembled " + data.size() + " patches");
         return data;
-    }
-
-    private static PatchSite createPatchSite(List<InstallData> dataList) {
-        Comparator<InstallData> comparator = priorityOrder();
-
-        Patch[] before = dataList.stream()
-                .filter(data -> data.spec().patchType() == PatchType.BEFORE)
-                .sorted(comparator)
-                .map(data -> new Patch(data.spec, data.handlerMethod))
-                .toArray(Patch[]::new);
-
-        Patch[] after = dataList.stream()
-                .filter(data -> data.spec().patchType() == PatchType.AFTER)
-                .sorted(comparator)
-                .map(data -> new Patch(data.spec, data.handlerMethod))
-                .toArray(Patch[]::new);
-
-        Patch[] except = dataList.stream()
-                .filter(data -> data.spec().patchType() == PatchType.EXCEPT)
-                .sorted(comparator)
-                .map(data -> new Patch(data.spec, data.handlerMethod))
-                .toArray(Patch[]::new);
-
-        return new PatchSite(before, after, except);
-    }
-
-    private static Comparator<InstallData> priorityOrder() {
-        return Comparator.comparingInt((InstallData data) -> data.spec().priority()) //Sort by priority first
-                .thenComparing(data -> data.spec().sourceMod().getName()); //Then alphabetically by mod name
     }
 
     private static MethodHandle createMethodHandle(PatchSpec spec, ClassLoader loader) {
@@ -340,22 +185,9 @@ public class PatchInstaller {
     /** The concrete context the dispatcher passes, used as the normalized method handle type. */
     private static Class<?> contextImpl(PatchSpec spec) {
         return switch (spec.patchType()) {
-            case BEFORE, AFTER, EXCEPT -> PatchContext.class;
+            case BEFORE, AFTER, EXCEPT -> AdviceContextImpl.class;
             case REDIRECT -> RedirectContextImpl.class;
         };
-    }
-
-    private static Class<?> pickEnter(MethodDescription method, boolean hasBefore) {
-        if (method.isConstructor())
-            return hasBefore ? EnterTemplates.ConstructorWithBefore.class : EnterTemplates.ConstructorPlain.class;
-        return hasBefore ? EnterTemplates.WithBefore.class : EnterTemplates.Plain.class;
-    }
-
-    private static Class<?> pickExit(MethodDescription method, boolean hasExcept) {
-        if (method.isConstructor()) return ExitTemplates.Constructor.class;
-        if (method.getReturnType().represents(void.class))
-            return hasExcept ? ExitTemplates.VoidExcept.class : ExitTemplates.NoValue.class;
-        return hasExcept ? ExitTemplates.ValueExcept.class : ExitTemplates.Value.class;
     }
 
 }

@@ -17,7 +17,7 @@ final class PatchStore {
     /** The data map for an instance, created on first use. */
     static Map<String, Object> getOrCreate(Object instance) {
         if (instance == null) {
-            throw new IllegalStateException("Can not use PatchContext.getData on a static method or on a @Before constructor method, as those have no instance.");
+            throw new IllegalStateException("Can not use Context.getData on a static method or on a @Before constructor method, as those have no instance.");
         }
 
         purge();

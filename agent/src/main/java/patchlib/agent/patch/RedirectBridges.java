@@ -9,9 +9,13 @@ import java.lang.invoke.MethodHandle;
 
 /** Delegation targets that MemberSubstitution calls in place of an intercepted call or field access. These are the
  * redirect counterpart of the Advice templates. The bindings split the intercepted call's own values
- * (SUBSTITUTED_ELEMENT) from the host method's values (ENCLOSING_METHOD); SelfCallHandle is the original call. */
+ * (SUBSTITUTED_ELEMENT) from the host method's values (ENCLOSING_METHOD); SelfCallHandle is the original call.
+ * Each bridge normalizes its kind specific values into the shared target/args shape of PatchDispatcher.redirect. */
 public final class RedirectBridges {
 
+    static final Object[] NO_ARGS = new Object[0];
+
+    /** The receiver is absent for a static call. */
     public static Object methodCall(
             @DispatchIdMarker int siteId,
             @DispatchOwnerMarker Class<?> hostOwner,
@@ -21,7 +25,7 @@ public final class RedirectBridges {
             @MemberSubstitution.This(source = MemberSubstitution.Source.ENCLOSING_METHOD, optional = true) Object hostSelf,
             @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD) Object[] hostArgs
     ) throws Throwable {
-        return PatchDispatcher.redirectMethodCall(siteId, hostOwner, original, callReceiver, callArgs, hostSelf, hostArgs);
+        return PatchDispatcher.redirect(siteId, hostOwner, original, callReceiver, callArgs, hostSelf, hostArgs);
     }
 
     /** methodCall variant for static calls. includeSelf works around a ByteBuddy bug where the argument lists
@@ -35,9 +39,10 @@ public final class RedirectBridges {
             @MemberSubstitution.This(source = MemberSubstitution.Source.ENCLOSING_METHOD, optional = true) Object hostSelf,
             @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD) Object[] hostArgs
     ) throws Throwable {
-        return PatchDispatcher.redirectMethodCall(siteId, hostOwner, original, callReceiver, callArgs, hostSelf, hostArgs);
+        return PatchDispatcher.redirect(siteId, hostOwner, original, callReceiver, callArgs, hostSelf, hostArgs);
     }
 
+    /** There is no receiver, the original handle allocates and initializes in one step. */
     public static Object constructorCall(
             @DispatchIdMarker int siteId,
             @DispatchOwnerMarker Class<?> hostOwner,
@@ -48,9 +53,10 @@ public final class RedirectBridges {
             @MemberSubstitution.This(source = MemberSubstitution.Source.ENCLOSING_METHOD, optional = true) Object hostSelf,
             @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD) Object[] hostArgs
     ) throws Throwable {
-        return PatchDispatcher.redirectConstructorCall(siteId, hostOwner, original, callArgs, hostSelf, hostArgs);
+        return PatchDispatcher.redirect(siteId, hostOwner, original, null, callArgs, hostSelf, hostArgs);
     }
 
+    /** A read takes no arguments. */
     public static Object fieldRead(
             @DispatchIdMarker int siteId,
             @DispatchOwnerMarker Class<?> hostOwner,
@@ -59,9 +65,10 @@ public final class RedirectBridges {
             @MemberSubstitution.This(source = MemberSubstitution.Source.ENCLOSING_METHOD, optional = true) Object hostSelf,
             @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD) Object[] hostArgs
     ) throws Throwable {
-        return PatchDispatcher.redirectFieldRead(siteId, hostOwner, original, fieldOwner, hostSelf, hostArgs);
+        return PatchDispatcher.redirect(siteId, hostOwner, original, fieldOwner, NO_ARGS, hostSelf, hostArgs);
     }
 
+    /** The single argument is the value being written. A write has no result, the dispatchers return value is discarded. */
     public static void fieldWrite(
             @DispatchIdMarker int siteId,
             @DispatchOwnerMarker Class<?> hostOwner,
@@ -71,7 +78,6 @@ public final class RedirectBridges {
             @MemberSubstitution.This(source = MemberSubstitution.Source.ENCLOSING_METHOD, optional = true) Object hostSelf,
             @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD) Object[] hostArgs
     ) throws Throwable {
-        Object value = writeArgs.length > 0 ? writeArgs[0] : null;
-        PatchDispatcher.redirectFieldWrite(siteId, hostOwner, original, fieldOwner, value, hostSelf, hostArgs);
+        PatchDispatcher.redirect(siteId, hostOwner, original, fieldOwner, writeArgs, hostSelf, hostArgs);
     }
 }

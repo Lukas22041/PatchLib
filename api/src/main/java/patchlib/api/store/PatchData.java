@@ -3,7 +3,7 @@ package patchlib.api.store;
 import java.lang.ref.WeakReference;
 import java.util.Map;
 
-/** Wrapper around an instance's transient per-instance data map, returned by PatchContext.getData(). */
+/** Wrapper around an instance's transient per-instance data map, returned by Context.getData(). */
 public final class PatchData {
 
     private final Map<String, Object> map;

@@ -40,7 +40,7 @@ public final class MethodQuery {
         return this;
     }
 
-    /** Lose parameter matching */
+    /** Loose parameter matching */
     public MethodQuery paramsContain(Class<?>... types) {
         this.paramsContain = List.of(types);
         return this;

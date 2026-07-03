@@ -70,7 +70,7 @@ public interface Context {
     /** Reflection utility for checking if a specific instance has a specific field */
     boolean hasField(String name, Object instance);
 
-    /**A transient data store for per-instance data This data is not stored in the save. It is shared across all patches with access to this instance.
+    /**A transient data store for per-instance data. This data is not stored in the save. It is shared across all patches with access to this instance.
      * Useful for communicating across patches, or if something like a timer is needed. It should use unique keys, not something generic like "target" which multiple mods may use.
      * Throws an IllegalStateException if used on a static method or in @Before on a constructor method, as they have no instance data.  */
     PatchData getData();

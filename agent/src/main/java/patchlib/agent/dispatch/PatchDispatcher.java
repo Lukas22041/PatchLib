@@ -1,11 +1,11 @@
 package patchlib.agent.dispatch;
 
-import patchlib.agent.Patch;
+import patchlib.agent.PatchHandler;
 import patchlib.agent.PatchLibLogger;
 import patchlib.agent.PatchRegistry;
 import patchlib.agent.PatchSite;
 import patchlib.agent.RedirectSite;
-import patchlib.agent.context.PatchContext;
+import patchlib.agent.context.AdviceContextImpl;
 import patchlib.agent.context.RedirectContextImpl;
 
 import java.lang.invoke.MethodHandle;
@@ -14,18 +14,16 @@ import java.lang.invoke.MethodHandle;
  * which uses this dispatcher to delegate work to the patch handlers. */
 public class PatchDispatcher {
 
-    static final Object[] NO_ARGS = new Object[0];
-
-    public static PatchContext enter(int siteId, Class<?> owner, Object self, Object[] args) {
+    public static AdviceContextImpl enter(int siteId, Class<?> owner, Object self, Object[] args) {
         PatchSite site = PatchRegistry.site(siteId);
-        PatchContext context = new PatchContext(owner, self, args);
-        for (Patch patch : site.beforePatches()) {
+        AdviceContextImpl context = new AdviceContextImpl(owner, self, args);
+        for (PatchHandler patch : site.beforePatches()) {
             invoke(patch, context);
         }
         return context;
     }
 
-    public static Object exit(int siteId, PatchContext context, Object returned) {
+    public static Object exit(int siteId, AdviceContextImpl context, Object returned) {
         PatchSite site = PatchRegistry.site(siteId);
 
         //If a before handler skipped a method, set the return value it left behind as the current return value.
@@ -33,78 +31,48 @@ public class PatchDispatcher {
             context.setReturnValue(returned);
         }
 
-        for (Patch patch : site.afterPatches()) {
+        for (PatchHandler patch : site.afterPatches()) {
             invoke(patch, context);
         }
         return context.getReturnValue();
     }
 
-    public static Throwable except(int siteId, PatchContext context, Throwable thrown) {
+    public static Throwable except(int siteId, AdviceContextImpl context, Throwable thrown) {
         PatchSite site = PatchRegistry.site(siteId);
         context.initThrown(thrown);
-        for (Patch patch : site.exceptPatches()) {
+        for (PatchHandler patch : site.exceptPatches()) {
             invoke(patch, context);
         }
         return context.getThrown();
     }
 
-    private static void invoke(Patch patch, PatchContext context) {
+    private static void invoke(PatchHandler patch, AdviceContextImpl context) {
         try {
             patch.handler().invokeExact(context);
         } catch (Throwable ex) {
             PatchLibLogger.error("Ran in to an error while dispatcher was executing "
                     + patch.spec().handlerClass() + "#" + patch.spec().handlerMethod() + " from mod " + patch.spec().sourceMod().getId());
-            uncheckedThrow(ex);
+            throw uncheckedThrow(ex);
         }
     }
 
-    /** Wraps an intercepted method call in its layers. The receiver is absent for a static call. */
-    public static Object redirectMethodCall(int siteId, Class<?> hostOwner, MethodHandle original,
-                                            Object callReceiver, Object[] callArgs, Object hostSelf, Object[] hostArgs) throws Throwable {
+    /** Wraps an intercepted access in its priority-ordered layers, shared by all redirect kinds. The bridges normalize
+     * the kind specific values before calling this: target is the call receiver or field owner, or null for a
+     * construction; args are the call arguments, [value] for a write, or empty for a read. The result of a write is
+     * unused. layers[0] (lowest priority) is the outermost and runs first; each layer reaches the next through
+     * ctx.call(), and the innermost reaches realAccess. */
+    public static Object redirect(int siteId, Class<?> hostOwner, MethodHandle original,
+                                  Object target, Object[] args, Object hostSelf, Object[] hostArgs) throws Throwable {
         RedirectSite site = PatchRegistry.redirectSite(siteId);
-        RealAccess real = site.realAccess(original, callArgs.length);
-        return wrap(site.layers(), hostOwner, hostSelf, hostArgs, callReceiver, callArgs, real);
-    }
-
-    /** Wraps an intercepted constructor call in its layers. There is no receiver, the original handle allocates and
-     * initializes in one step. */
-    public static Object redirectConstructorCall(int siteId, Class<?> hostOwner, MethodHandle original,
-                                                 Object[] callArgs, Object hostSelf, Object[] hostArgs) throws Throwable {
-        RedirectSite site = PatchRegistry.redirectSite(siteId);
-        RealAccess real = site.realAccess(original, callArgs.length);
-        return wrap(site.layers(), hostOwner, hostSelf, hostArgs, null, callArgs, real);
-    }
-
-    /** Wraps an intercepted field read in its layers. A read takes no arguments. */
-    public static Object redirectFieldRead(int siteId, Class<?> hostOwner, MethodHandle original,
-                                           Object fieldOwner, Object hostSelf, Object[] hostArgs) throws Throwable {
-        RedirectSite site = PatchRegistry.redirectSite(siteId);
-        RealAccess real = site.realAccess(original, 0);
-        return wrap(site.layers(), hostOwner, hostSelf, hostArgs, fieldOwner, NO_ARGS, real);
-    }
-
-    /** Wraps an intercepted field write in its layers. The single argument is the value being written.
-     * A write has no result; the null that the adapted void return produces is discarded by wrap. */
-    public static void redirectFieldWrite(int siteId, Class<?> hostOwner, MethodHandle original,
-                                          Object fieldOwner, Object value, Object hostSelf, Object[] hostArgs) throws Throwable {
-        RedirectSite site = PatchRegistry.redirectSite(siteId);
-        RealAccess real = site.realAccess(original, 1);
-        wrap(site.layers(), hostOwner, hostSelf, hostArgs, fieldOwner, new Object[]{value}, real);
-    }
-
-    /** Wraps an intercepted access in its priority-ordered layers, shared by all redirect kinds. layers[0]
-     * (lowest priority) is the outermost and runs first; each layer reaches the next through ctx.call(), and the
-     * innermost reaches realAccess. target is the call receiver or field owner, or null for a construction; startArgs
-     * are the call arguments, [value] for a write, or NO_ARGS for a read. The result of a write is unused. */
-    private static Object wrap(Patch[] layers, Class<?> hostOwner, Object hostSelf, Object[] hostArgs,
-                               Object target, Object[] startArgs, RealAccess realAccess) throws Throwable {
-        if (layers.length == 0) return realAccess.call(target, startArgs);
-        return runLayer(layers, 0, hostOwner, hostSelf, hostArgs, target, startArgs, realAccess);
+        RealAccess realAccess = site.realAccess(original, args.length);
+        PatchHandler[] layers = site.layers();
+        if (layers.length == 0) return realAccess.call(target, args);
+        return runLayer(layers, 0, hostOwner, hostSelf, hostArgs, target, args, realAccess);
     }
 
     /** Runs the layer at index with a fresh context. The context's call()/read()/write() comes back through here for
-     * the layer below, or reaches realAccess past the last one. Called by wrap and RedirectContextImpl.proceed only. */
-    public static Object runLayer(Patch[] layers, int index, Class<?> hostOwner, Object hostSelf, Object[] hostArgs,
+     * the layer below, or reaches realAccess past the last one. Called by redirect and RedirectContextImpl.proceed only. */
+    public static Object runLayer(PatchHandler[] layers, int index, Class<?> hostOwner, Object hostSelf, Object[] hostArgs,
                                   Object target, Object[] args, RealAccess realAccess) {
         RedirectContextImpl ctx = new RedirectContextImpl(hostOwner, hostSelf, hostArgs, target, args, layers, index, realAccess);
         invokeLayer(layers[index], ctx);
@@ -114,7 +82,7 @@ public class PatchDispatcher {
     /** Runs one redirect layer. Mirrors invoke() for advice, but only blames this layer when the layer itself threw.
      * Exceptions surfacing from ctx.call() (the original access or a deeper layer) come back through proceed(), which
      * records them on the context, so they keep propagating without being double-logged or pinned on the wrong mod. */
-    private static void invokeLayer(Patch layer, RedirectContextImpl ctx) {
+    private static void invokeLayer(PatchHandler layer, RedirectContextImpl ctx) {
         try {
             layer.handler().invokeExact(ctx);
         } catch (Throwable ex) {

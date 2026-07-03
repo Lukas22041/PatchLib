@@ -10,18 +10,18 @@ import java.lang.invoke.MethodType;
  * i.e the outermost layer that runs first; its call() reaches the next layer, the innermost reaches the real call. */
 public final class RedirectSite {
 
-    private final Patch[] layers;
+    private final PatchHandler[] layers;
     private final RedirectKind kind;
 
     /** The original access at the chain bottom, adapted once on first dispatch, see realAccess(). */
     private volatile RealAccess realAccess;
 
-    public RedirectSite(Patch[] layers, RedirectKind kind) {
+    public RedirectSite(PatchHandler[] layers, RedirectKind kind) {
         this.layers = layers;
         this.kind = kind;
     }
 
-    public Patch[] layers() {
+    public PatchHandler[] layers() {
         return layers;
     }
 

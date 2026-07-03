@@ -80,7 +80,8 @@ There are two types of performance impacts from the library.
 ### 3.1 Installation Performance
 
 The first one is on-install performance. 
-This one occurs whenever a class gets first loaded. This one can create stutter if something causes to many classes to be loaded at once, and if there are patches that apply very widely to many classes at once.
+This one occurs whenever a class gets first loaded and patchlib has to decide which patches may apply, and then has to apply them. 
+This one can create stutter if something causes to many classes to be load at once, and if there are patches that apply very widely to many classes at once.
 
 To mitigate this issue, PatchLib loads all base starsector classes (api & obf) during game load instead, 
 extending load by around 1-2 seconds on average, but preventing micro stutter in the campaign and combat, especially when opening UI menus.

@@ -3,7 +3,7 @@ package patchlib.api.context;
 
 public interface ExceptContext extends AdviceContext {
 
-    /** Gets the exception that was thrown on the patched method. Can be null if another patch supressed the exception, and can also be another patches replaced exception. */
+    /** Gets the exception that was thrown on the patched method. Can be null if another patch suppressed the exception, and can also be another patches replaced exception. */
     Throwable getThrown();
 
     /** Replaces the thrown exception with your own */
@@ -14,8 +14,5 @@ public interface ExceptContext extends AdviceContext {
 
     /** Checks if another patch already suppressed the exception */
     boolean isSuppressed();
-
-    /** Checks if something has skipped the original method in @Before */
-    boolean isSkipOriginal();
 
 }

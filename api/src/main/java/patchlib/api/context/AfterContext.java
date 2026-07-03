@@ -12,8 +12,4 @@ public interface AfterContext extends AdviceContext {
     /** Replaces the return value from the original method. */
     void setReturnValue(Object newReturnValue);
 
-    /** Checks if something has skipped the original method in @Before */
-    boolean isSkipOriginal();
-
-
 }

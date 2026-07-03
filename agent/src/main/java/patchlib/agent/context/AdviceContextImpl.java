@@ -9,14 +9,14 @@ import patchlib.api.ref.Ref;
 /** The context handed to @Before, @After and @Except patches. Adds the return value, skip and exception state on top
  * of the shared instance/argument/reflection utilities in BaseContext. Advice runs inside the patched method, so only
  * this context can replace its arguments; the redirect contexts observe them read-only. */
-public class PatchContext extends BaseContext implements BeforeContext, AfterContext, ExceptContext {
+public class AdviceContextImpl extends BaseContext implements BeforeContext, AfterContext, ExceptContext {
 
     private Object returnValue;
     private boolean skipOriginal;
     private Throwable thrown;
     private boolean suppress;
 
-    public PatchContext(Class<?> owner, Object self, Object[] args) {
+    public AdviceContextImpl(Class<?> owner, Object self, Object[] args) {
         super(owner, self, args);
     }
 
@@ -55,7 +55,7 @@ public class PatchContext extends BaseContext implements BeforeContext, AfterCon
         this.returnValue = returnValue;
     }
 
-    /** Gets the exception that was thrown on the patched method. Can be null if another patch supressed the exception, and can also be another patches replaced exception. */
+    /** Gets the exception that was thrown on the patched method. Can be null if another patch suppressed the exception, and can also be another patches replaced exception. */
     public Throwable getThrown() { return thrown; }
 
     public void initThrown(Throwable thrown) {
@@ -75,7 +75,7 @@ public class PatchContext extends BaseContext implements BeforeContext, AfterCon
         this.returnValue = returnValue;
     }
 
-    /** Checks if another patch already supressed the exception */
+    /** Checks if another patch already suppressed the exception */
     public boolean isSuppressed() {
         return suppress;
     }

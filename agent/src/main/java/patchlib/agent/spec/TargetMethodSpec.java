@@ -10,8 +10,4 @@ public record TargetMethodSpec(
         String returnType,
         MethodType methodType,
         boolean staticOnly
-) {
-
-
-
-}
+) { }

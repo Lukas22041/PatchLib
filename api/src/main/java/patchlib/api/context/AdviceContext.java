@@ -12,4 +12,7 @@ public interface AdviceContext extends Context {
     /** Utility for retrieving a typed read/writeable arg of the original called method.
      * Changing an arg in a @Before patch means that the original method will be called and use the modified arguments. */
     <T> Ref<T> getArgRef(int index);
+
+    /** Checks if something has skipped the original method in @Before */
+    boolean isSkipOriginal();
 }

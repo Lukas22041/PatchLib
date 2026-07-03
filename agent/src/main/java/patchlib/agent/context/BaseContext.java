@@ -8,7 +8,7 @@ import patchlib.api.ref.Ref;
 import patchlib.api.store.PatchData;
 
 /** Shared base for every context type. Holds the patched method's instance and arguments, and implements the
- * reflection and data utilities that all contexts expose. PatchContext and the redirect contexts extend this. */
+ * reflection and data utilities that all contexts expose. AdviceContextImpl and RedirectContextImpl extend this. */
 public abstract class BaseContext implements Context {
 
     protected Class<?> owner;
@@ -63,7 +63,7 @@ public abstract class BaseContext implements Context {
     public boolean hasField(String name) { return PatchReflection.hasField(owner, FieldQuery.named(name)); }
     public boolean hasField(String name, Object instance) { return PatchReflection.hasField(instance.getClass(), FieldQuery.named(name)); }
 
-    /**A transient data store for per-instance data This data is not stored in the save. It is shared across all patches with access to this instance.
+    /**A transient data store for per-instance data. This data is not stored in the save. It is shared across all patches with access to this instance.
      * Useful for communicating across patches, or if something like a timer is needed. It should use unique keys, not something generic like "target" which multiple mods may use.
      * Throws an IllegalStateException if used on a static method or in @Before on a constructor method, as they have no instance data.  */
     public PatchData getData() {
