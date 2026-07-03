@@ -72,3 +72,70 @@ PatchLib automatically scans for the @Patch annotation, so you can leave your pa
 
 To make use of PatchLib in your mod, you want to add "PatchLibAPI.jar" from the `/jars` as a code dependency.
 Do not add any of the other jars as a dependency. More instruction can be found in the [wiki](https://github.com/Lukas22041/PatchLib/wiki).
+
+# 3. Performance
+
+There are two types of performance impacts from the library. 
+
+### 3.1 Installation Performance
+
+The first one is on-install performance. 
+This one occurs whenever a class gets first loaded. This one can create stutter if something causes to many classes to be loaded at once, and if there are patches that apply very widely to many classes at once.
+
+To mitigate this issue, PatchLib loads all base starsector classes (api & obf) during game load instead, 
+extending load by around 1-2 seconds on average, but preventing micro stutter in the campaign and combat, especially when opening UI menus.
+It preloads them without calling their static initializers. 
+
+Modded classes are currently not preloaded, so very broad patches (those that target hundreds or thousands of classes) could likely create some stutter in heavily modded games.
+
+### 3.2 Runtime Performance
+
+Patches inherently add to the performance cost of the method they are patching. 
+This applies even if your patch handler is empty, without any code. The structures that have to be inserted in to the method to make the patch work have a cost to them.
+
+PatchLib's own performance test uses the method below to test the baseline cost:
+
+```java
+public long baseline(int seed) {
+    int acc = seed;
+    for (int i = 0; i < 16; i++) acc = acc * 31 + i;
+    StringBuilder sb = new StringBuilder(16);
+    sb.append("v").append(acc & 0xFF);
+    acc += helperInstance(acc); 
+    acc += helperStatic(acc); 
+    TestBox box = new TestBox(acc); 
+    lastValue = acc; 
+    long read = lastValue; 
+    return read + box.value + sb.length(); 
+}
+```
+
+The test calls the method thousands of times, each time with a different patch applied, to get the result below.
+Every patch is an empty patch, i.e it only installs the necessary code to make the Patch work, no actual change occurs.
+
+```
+baseline (unpatched):          best 11 ns/call,   avg 14 ns/call
+@Before:                       best 23 ns/call,   avg 32 ns/call 
+@After:                        best 25 ns/call,   avg 34 ns/call
+@Except:                       best 20 ns/call,   avg 29 ns/call
+@RedirectCall:                 best 29 ns/call,   avg 43 ns/call
+@RedirectNew:                  best 27 ns/call,   avg 44 ns/call
+@RedirectFieldRead:            best 29 ns/call,   avg 45 ns/call
+@RedirectFieldWrite:           best 31 ns/call,   avg 47 ns/call
+@Before + @After:              best 28 ns/call,   avg 39 ns/call
+@Before + @After + @Except:    best 28 ns/call,   avg 36 ns/call
+```
+
+As you can see, most patches are at the least twice the call cost. 
+However, keep in mind that this cost is not dependent on the patched methods own execution time, its just a flat addition that doesnt scale.
+
+For methods that perform more complex work, you may not feel much of a difference, 
+for methods that barely even did anything before you patched them, it will make them much more costly, relatively.
+
+That said though, in most cases this wont be much of an impact. Individual nanoseconds are usually far from worth noting. 
+Where it is worth taking into account is methods that are called on each frame for thousands of objects at a time. 
+
+### 3.3 Improvements
+
+There are potential performance improvements that could drop in the future, like by code generating final static method handles to the handler sites, so that the Just-in-Time compiler can inline them, but
+for keeping the library more simple internally, those are left out for now.
