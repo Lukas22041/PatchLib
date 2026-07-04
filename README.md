@@ -56,10 +56,10 @@ This allows you to modify starsector code in many ways:
 Following is an example patch. This patch is run after every "getCycle" call on starsectors campaign clock, and changes the value to be 1000 higher than its actual value.
 
 ```java
-@Patch(targetSubtype = CampaignClockAPI.class)
+@Patch(target = @ClassMatch(subType = CampaignClockAPI.class))
 public class TestPatch {
 
-    @After(methodName = "getCycle")
+    @After(target = @MethodMatch(methodName = "getCycle"))
     public static void afterGetCycle(AfterContext context) {
         context.setReturnValue((int) context.getReturnValue() + 1000);
     }
