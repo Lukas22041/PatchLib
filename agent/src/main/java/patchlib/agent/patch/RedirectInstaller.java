@@ -103,7 +103,7 @@ final class RedirectInstaller {
     private static <T> RedirectSubstitutionFactory.Layer layer(Class<T> memberType, ElementMatcher.Junction<T> matcher, InstallData data) {
         return new RedirectSubstitutionFactory.Layer(
                 member -> memberType.isInstance(member) && matcher.matches(memberType.cast(member)),
-                new PatchHandler(data.spec(), data.handlerMethod()));
+                new PatchHandler(data.spec(), data.handlerMethod(), data.blame()));
     }
 
     private static Method bridgeFor(RedirectKind kind) {

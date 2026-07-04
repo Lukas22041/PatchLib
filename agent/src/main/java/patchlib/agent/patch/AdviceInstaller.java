@@ -82,7 +82,7 @@ final class AdviceInstaller {
                 .filter(data -> data.spec().patchType() == type)
                 .sorted(Comparator.comparingInt((InstallData data) -> data.spec().priority())
                         .thenComparing(data -> data.spec().sourceMod().getName()))
-                .map(data -> new PatchHandler(data.spec(), data.handlerMethod()))
+                .map(data -> new PatchHandler(data.spec(), data.handlerMethod(), data.blame()))
                 .toArray(PatchHandler[]::new);
     }
 

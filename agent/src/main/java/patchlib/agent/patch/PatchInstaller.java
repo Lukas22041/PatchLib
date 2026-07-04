@@ -134,11 +134,17 @@ public class PatchInstaller {
                 MethodHandle handle = createMethodHandle(spec, handlerLoader);
                 if (handle == null) continue;
 
+                //Built here, before the transformer installs, because reading the mod spec later
+                //can call in to patched code and recurse back in to the dispatch that needed it.
+                String blame = "Ran in to an error while dispatcher was executing "
+                        + spec.handlerClass() + "#" + spec.handlerMethod() + " from mod " + spec.sourceMod().getId();
+
                 data.add(new InstallData(
                         spec,
                         ClassTargetMatcher.create(spec.targetClass()),
                         MethodTargetMatcher.create(spec.targetMethod()),
-                        handle));
+                        handle,
+                        blame));
             } catch (Throwable t) {
                 PatchLibLogger.error("Could not set up " + spec.handlerClass() + " (" + spec.handlerMethod() + ") from mod "
                         + spec.sourceMod().getId() + ", skipping patch: " + t);

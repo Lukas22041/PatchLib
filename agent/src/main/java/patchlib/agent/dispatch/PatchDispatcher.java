@@ -80,8 +80,7 @@ public class PatchDispatcher {
         try {
             patch.handler().invokeExact(context);
         } catch (Throwable ex) {
-            PatchLibLogger.error("Ran in to an error while dispatcher was executing "
-                    + patch.spec().handlerClass() + "#" + patch.spec().handlerMethod() + " from mod " + patch.spec().sourceMod().getId());
+            PatchLibLogger.error(patch.blame());
             throw uncheckedThrow(ex);
         }
     }

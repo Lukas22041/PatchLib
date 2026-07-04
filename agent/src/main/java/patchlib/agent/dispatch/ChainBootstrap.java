@@ -80,7 +80,7 @@ public final class ChainBootstrap {
 
     /** Binds one handler and its blame message in to the invoker, leaving (AdviceContextImpl)void. */
     private static MethodHandle wrap(PatchHandler handler) {
-        return MethodHandles.insertArguments(INVOKE_LOGGED, 0, handler.handler(), blame(handler));
+        return MethodHandles.insertArguments(INVOKE_LOGGED, 0, handler.handler(), handler.blame());
     }
 
     /** Constant dispatch twin of PatchDispatcher.invoke. */
@@ -91,12 +91,6 @@ public final class ChainBootstrap {
             PatchLibLogger.error(blame);
             throw PatchDispatcher.uncheckedThrow(ex);
         }
-    }
-
-    private static String blame(PatchHandler handler) {
-        return "Ran in to an error while dispatcher was executing "
-                + handler.spec().handlerClass() + "#" + handler.spec().handlerMethod()
-                + " from mod " + handler.spec().sourceMod().getId();
     }
 
     /** Constant dispatch bootstrap for redirect chains, one constant per intercepted call site. The original access
@@ -112,7 +106,7 @@ public final class ChainBootstrap {
             //Wrap from the innermost layer out, so layer 0 (lowest priority) runs first and each
             //layer's ctx.call() reaches the link below it.
             for (int i = layers.length - 1; i >= 0; i--) {
-                chain = MethodHandles.insertArguments(RUN_LAYER, 0, layers[i].handler(), blame(layers[i]), chain, hostOwner);
+                chain = MethodHandles.insertArguments(RUN_LAYER, 0, layers[i].handler(), layers[i].blame(), chain, hostOwner);
             }
             return chain;
         } catch (Throwable t) {
