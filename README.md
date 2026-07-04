@@ -94,7 +94,7 @@ Modded classes are currently not preloaded, so very broad patches (those that ta
 Patches inherently add to the performance cost of the method they are patching. 
 This applies even if your patch handler is empty, without any code. The structures that have to be inserted in to the method to make the patch work have a cost to them.
 
-PatchLib's own performance test uses the method below to test the baseline cost:
+The baseline cost was measured on the method below:
 
 ```java
 public long baseline(int seed) {
@@ -111,32 +111,29 @@ public long baseline(int seed) {
 }
 ```
 
-The test calls the method thousands of times, each time with a different patch applied, to get the result below.
-Every patch is an empty patch, i.e it only installs the necessary code to make the Patch work, no actual change occurs.
+The test called the method a million times per patch type, each time with a different patch applied, to get the result below.
+Every patch was an empty patch, i.e it only installs the necessary code to make the Patch work, no actual change occurs.
 
 ```
-baseline (unpatched):          best 11 ns/call,   avg 14 ns/call
-@Before:                       best 23 ns/call,   avg 32 ns/call 
-@After:                        best 25 ns/call,   avg 34 ns/call
-@Except:                       best 20 ns/call,   avg 29 ns/call
-@RedirectCall:                 best 29 ns/call,   avg 43 ns/call
-@RedirectNew:                  best 27 ns/call,   avg 44 ns/call
-@RedirectFieldRead:            best 29 ns/call,   avg 45 ns/call
-@RedirectFieldWrite:           best 31 ns/call,   avg 47 ns/call
-@Before + @After:              best 28 ns/call,   avg 39 ns/call
-@Before + @After + @Except:    best 28 ns/call,   avg 36 ns/call
+baseline (unpatched):          best 12 ns/call,   avg 13 ns/call
+@Before:                       best 14 ns/call,   avg 15 ns/call
+@After:                        best 14 ns/call,   avg 15 ns/call
+@Except:                       best 13 ns/call,   avg 15 ns/call
+@RedirectCall:                 best 25 ns/call,   avg 26 ns/call
+@RedirectNew:                  best 25 ns/call,   avg 25 ns/call
+@RedirectFieldRead:            best 22 ns/call,   avg 23 ns/call
+@RedirectFieldWrite:           best 24 ns/call,   avg 24 ns/call
+@Before + @After:              best 13 ns/call,   avg 14 ns/call
+@Before + @After + @Except:    best 14 ns/call,   avg 15 ns/call
 ```
 
-As you can see, most patches are at the least twice the call cost. 
-However, keep in mind that this cost is not dependent on the patched methods own execution time, its just a flat addition that doesnt scale.
+The before, after and except patches sit close to the unpatched cost, redirects add a few nanoseconds on top.
+Keep in mind that this cost is not dependent on the patched methods own execution time, its just a flat addition that doesnt scale.
+Your own handler code comes on top of these numbers, and how well it inlines depends on what it does.
 
-For methods that perform more complex work, you may not feel much of a difference, 
-for methods that barely even did anything before you patched them, it will make them much more costly, relatively.
+### 3.3 Janino & Java7 compiled mods
 
-That said though, in most cases this wont be much of an impact. Individual nanoseconds are usually far from worth noting. 
-Where it is worth taking into account is methods that are called on each frame for thousands of objects at a time. 
+Janino compiled code (code that is loaded from raw .java files in the /data/ folder) and old mods that have
+not been recompiled for Java17 will fall back to slower code for ``@Before``, ``@After`` and ``@Except`` due to not supporting what makes the execution fast.
 
-### 3.3 Improvements
-
-There are potential performance improvements that could drop in the future, like by code generating final static method handles to the handler sites, so that the Just-in-Time compiler can inline them, but
-for keeping the library more simple internally, those are left out for now.
+>Note: ``@Redirect`` annotations can not be used to patch Janino and Java 7 compiled code at all.

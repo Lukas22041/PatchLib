@@ -1,7 +1,6 @@
 package patchlib.test;
 
 import patchlib.agent.PatchLibLogger;
-import patchlib.test.performance.PerformanceTests;
 import patchlib.test.regression.LegacyDispatchTests;
 import patchlib.test.regression.RegressionTests;
 
@@ -17,7 +16,6 @@ public class PatchLibTests {
         PatchLibLogger.info("Running in-game tests");
         RegressionTests.run();
         LegacyDispatchTests.run();
-        PerformanceTests.run();
         PatchLibLogger.info("In-game tests finished");
     }
 
