@@ -30,6 +30,14 @@ final class RedirectInstaller {
 
     static DynamicType.Builder<?> install(DynamicType.Builder<?> builder, TypeDescription type,
                                           MethodDescription.InDefinedShape method, List<InstallData> redirects) {
+        //Redirects only exist as constant dispatch. Hosts below class file 55 previously failed on the
+        //method handle constant anyway (janino emits 45), so there is no legacy path to fall back to.
+        if (!PatchInstaller.supportsConstants(type)) {
+            PatchLibLogger.warn("Redirects need class file version 55 or newer, skipping " + redirects.size()
+                    + " redirect(s) at " + type.getActualName() + " in method " + method.getActualName());
+            return builder;
+        }
+
         String hostKey = PatchInstaller.memberKey(method);
 
         Map<RedirectKind, List<InstallData>> byKind = new EnumMap<>(RedirectKind.class);
@@ -102,13 +110,13 @@ final class RedirectInstaller {
         try {
             return switch (kind) {
                 case METHOD_CALL -> RedirectBridges.class.getMethod("methodCall",
-                        int.class, Class.class, MethodHandle.class, Object.class, Object[].class, Object.class, Object[].class);
+                        MethodHandle.class, Object.class, Object[].class, Object.class, Object[].class);
                 case CONSTRUCTOR -> RedirectBridges.class.getMethod("constructorCall",
-                        int.class, Class.class, MethodHandle.class, Object[].class, Object.class, Object[].class);
+                        MethodHandle.class, Object[].class, Object.class, Object[].class);
                 case FIELD_READ -> RedirectBridges.class.getMethod("fieldRead",
-                        int.class, Class.class, MethodHandle.class, Object.class, Object.class, Object[].class);
+                        MethodHandle.class, Object.class, Object.class, Object[].class);
                 case FIELD_WRITE -> RedirectBridges.class.getMethod("fieldWrite",
-                        int.class, Class.class, MethodHandle.class, Object.class, Object[].class, Object.class, Object[].class);
+                        MethodHandle.class, Object.class, Object[].class, Object.class, Object[].class);
             };
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("Could not resolve redirect bridge for " + kind, e);
@@ -120,7 +128,7 @@ final class RedirectInstaller {
         if (kind != RedirectKind.METHOD_CALL) return null;
         try {
             return RedirectBridges.class.getMethod("methodCallStatic",
-                    int.class, Class.class, MethodHandle.class, Object.class, Object[].class, Object.class, Object[].class);
+                    MethodHandle.class, Object.class, Object[].class, Object.class, Object[].class);
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("Could not resolve the static call redirect bridge", e);
         }

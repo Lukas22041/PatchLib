@@ -1,6 +1,5 @@
 package patchlib.agent.patch;
 
-import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
@@ -43,7 +42,7 @@ final class AdviceInstaller {
         int id = PatchRegistry.register(PatchInstaller.memberKey(method), createPatchSite(advice));
         boolean hasBefore = advice.stream().anyMatch(data -> data.spec().patchType() == PatchType.BEFORE);
         boolean hasExcept = advice.stream().anyMatch(data -> data.spec().patchType() == PatchType.EXCEPT);
-        boolean constants = supportsConstants(type);
+        boolean constants = PatchInstaller.supportsConstants(type);
 
         if (constants) {
             //Binding both chains and the id is fine, only what a template declares lands in the class.
@@ -68,12 +67,6 @@ final class AdviceInstaller {
         PatchLibLogger.info("Installed a patch site at " + type.getActualName() + " for method " + method.getActualName()
                 + (constants ? " (constant dispatch)" : " (legacy dispatch)"));
         return builder;
-    }
-
-    /** Dynamic constants need class file version 55 or newer in the host class. Janino compiled code is below this */
-    private static boolean supportsConstants(TypeDescription type) {
-        ClassFileVersion version = type.getClassFileVersion();
-        return version != null && version.isAtLeast(ClassFileVersion.JAVA_V11);
     }
 
     private static PatchSite createPatchSite(List<InstallData> dataList) {

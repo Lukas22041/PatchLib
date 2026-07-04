@@ -3,6 +3,7 @@ package patchlib.agent.patch;
 import net.bytebuddy.asm.MemberSubstitution.Substitution;
 import net.bytebuddy.asm.MemberSubstitution.Target;
 import net.bytebuddy.description.ByteCodeElement;
+import net.bytebuddy.description.field.FieldDescription;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.description.type.TypeList;
@@ -13,10 +14,12 @@ import net.bytebuddy.utility.JavaConstant;
 import patchlib.agent.PatchHandler;
 import patchlib.agent.PatchRegistry;
 import patchlib.agent.RedirectSite;
-import patchlib.agent.dispatch.DispatchIdMarker;
-import patchlib.agent.dispatch.DispatchOwnerMarker;
+import patchlib.agent.dispatch.ChainBootstrap;
+import patchlib.agent.dispatch.RedirectChainMarker;
 import patchlib.agent.spec.RedirectKind;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -28,11 +31,17 @@ import java.util.function.Predicate;
  * hit, not by how each query was phrased. Two patches that target the same call with different queries therefore
  * collapse to one site and nest, which is what the layered model promises.
  *
- * Once the matching layers are known, the real bytecode is left to ByteBuddys standard delegation chain. */
+ * The site's layer chain becomes a dynamic constant of the host class: the bind below carries the site id, the
+ * host type, the original access as a method handle constant and the receiver flag to ChainBootstrap, which
+ * composes the chain when the host first executes the site. The bytecode itself is left to ByteBuddys standard
+ * delegation chain, targeting the matching bridge. */
 final class RedirectSubstitutionFactory implements Substitution.Factory<Target.ForMember> {
 
     /** One redirect: how to recognise its call site against a resolved member, and the handler to run. */
     record Layer(Predicate<ByteCodeElement.Member> matches, PatchHandler patch) {}
+
+    /** The condy bootstrap behind every redirect chain constant, see ChainBootstrap. */
+    private static final Method BOOTSTRAP = resolveBootstrap();
 
     private final RedirectKind kind;
     private final String hostKey;
@@ -96,13 +105,20 @@ final class RedirectSubstitutionFactory implements Substitution.Factory<Target.F
                     ? staticBridge
                     : bridge;
 
-            //Hand the actual bytecode back to ByteBuddys standard delegation, with this sites id baked in.
+            //Whether the intercepted access carries a receiver, needed to adapt the original handle at bootstrap time.
+            boolean hasReceiver = switch (kind) {
+                case METHOD_CALL -> original instanceof MethodDescription method && !method.isStatic();
+                case CONSTRUCTOR -> false;
+                case FIELD_READ, FIELD_WRITE -> original instanceof FieldDescription field && !field.isStatic();
+            };
+
+            //Hand the actual bytecode back to ByteBuddys standard delegation, with this sites chain constant baked in.
             return Substitution.Chain
                     .<Target.ForMember>with(Assigner.DEFAULT, Assigner.Typing.DYNAMIC)
                     .executing(Substitution.Chain.Step.ForDelegation
                             .withCustomMapping()
-                            .bind(DispatchIdMarker.class, id)
-                            .bind(DispatchOwnerMarker.class, hostType)
+                            .bind(RedirectChainMarker.class, JavaConstant.Dynamic.bootstrap("redirect", BOOTSTRAP,
+                                    id, hostType, methodHandle, hasReceiver ? 1 : 0))
                             .to(chosenBridge))
                     .make(instrumentedType, instrumentedMethod, typePool)
                     .resolve(target, parameters, result, methodHandle, stackManipulation, freeOffset);
@@ -121,6 +137,15 @@ final class RedirectSubstitutionFactory implements Substitution.Factory<Target.F
             PatchHandler[] patches = new PatchHandler[matched.size()];
             for (int i = 0; i < patches.length; i++) patches[i] = matched.get(i).patch();
             return patches;
+        }
+    }
+
+    private static Method resolveBootstrap() {
+        try {
+            return ChainBootstrap.class.getMethod("redirectBootstrap",
+                    MethodHandles.Lookup.class, String.class, Class.class, int.class, Class.class, MethodHandle.class, int.class);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("Could not resolve the redirect chain bootstrap", e);
         }
     }
 }

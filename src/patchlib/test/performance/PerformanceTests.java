@@ -19,9 +19,9 @@ import java.util.function.IntToLongFunction;
  * type against the unpatched reference. Indicative numbers, only comparable within one launch. */
 public class PerformanceTests {
 
-    private static final int WARMUP = 50000;
+    private static final int WARMUP = 100000;
     private static final int ROUNDS = 10;
-    private static final int CALLS_PER_ROUND = 10000;
+    private static final int CALLS_PER_ROUND = 100000;
 
     /** Consumed results land here so the JIT can not eliminate the work. */
     public static volatile long sink;

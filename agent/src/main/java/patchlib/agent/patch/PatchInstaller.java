@@ -1,5 +1,6 @@
 package patchlib.agent.patch;
 
+import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.method.MethodDescription;
@@ -117,6 +118,12 @@ public class PatchInstaller {
      * redirect host methods and resolved redirect targets. */
     static String memberKey(ByteCodeElement.Member member) {
         return member.getDeclaringType().asErasure().getName() + "#" + member.getInternalName() + member.getDescriptor();
+    }
+
+    /** Dynamic constants need class file version 55 or newer in the host class. Janino compiled code is below this. */
+    static boolean supportsConstants(TypeDescription type) {
+        ClassFileVersion version = type.getClassFileVersion();
+        return version != null && version.isAtLeast(ClassFileVersion.JAVA_V11);
     }
 
     private static List<InstallData> setupData(List<PatchSpec> specs, ClassLoader handlerLoader) {
