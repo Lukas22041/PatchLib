@@ -1,6 +1,9 @@
 package patchlib.agent;
 
+import patchlib.agent.spec.PatchSpec;
+
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -14,6 +17,9 @@ public final class PatchRegistry {
 
     private static final CopyOnWriteArrayList<RedirectSite> REDIRECT_SITES = new CopyOnWriteArrayList<>();
     private static final Map<String, Integer> REDIRECT_IDS = new HashMap<>();
+
+    /** Every spec the scanner discovered, installed or not. Set once at init, used by diagnostics. */
+    private static volatile List<PatchSpec> SCANNED = List.of();
 
     public static int register(String methodKey, PatchSite site) {
         synchronized (SITES) {
@@ -44,5 +50,36 @@ public final class PatchRegistry {
 
     public static RedirectSite redirectSite(int id) {
         return REDIRECT_SITES.get(id);
+    }
+
+    /** Snapshot of all advice sites keyed by method key. For diagnostics, not dispatch. */
+    public static Map<String, PatchSite> siteSnapshot() {
+        synchronized (SITES) {
+            Map<String, PatchSite> out = new HashMap<>();
+            for (Map.Entry<String, Integer> entry : IDS.entrySet()) {
+                out.put(entry.getKey(), SITES.get(entry.getValue()));
+            }
+            return out;
+        }
+    }
+
+    /** Snapshot of all redirect sites keyed by call key. For diagnostics, not dispatch. */
+    public static Map<String, RedirectSite> redirectSnapshot() {
+        synchronized (REDIRECT_SITES) {
+            Map<String, RedirectSite> out = new HashMap<>();
+            for (Map.Entry<String, Integer> entry : REDIRECT_IDS.entrySet()) {
+                out.put(entry.getKey(), REDIRECT_SITES.get(entry.getValue()));
+            }
+            return out;
+        }
+    }
+
+    /** Records the full scanned spec list so diagnostics can tell which specs never installed. */
+    public static void setScannedSpecs(List<PatchSpec> specs) {
+        SCANNED = List.copyOf(specs);
+    }
+
+    public static List<PatchSpec> scannedSpecs() {
+        return SCANNED;
     }
 }

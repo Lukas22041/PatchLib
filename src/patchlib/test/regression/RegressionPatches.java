@@ -25,6 +25,9 @@ import patchlib.test.targets.TestBox;
 @Patch(target = @ClassMatch(typeName = "patchlib.test.targets.RegressionTarget"))
 public class RegressionPatches {
 
+    @Before(target = @MethodMatch(methodName = "nonExistantMethod"))
+    public static void doNotPatch(BeforeContext context) { }
+
     @Before(target = @MethodMatch(methodName = "beforeTarget"))
     public static void replaceReturn(BeforeContext context) {
         context.skipOriginal("patched");
