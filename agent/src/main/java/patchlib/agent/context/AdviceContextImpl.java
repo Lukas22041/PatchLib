@@ -6,6 +6,9 @@ import patchlib.api.context.ExceptContext;
 import patchlib.api.ref.ArgRef;
 import patchlib.api.ref.Ref;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /** The context handed to @Before, @After and @Except patches. Adds the return value, skip and exception state on top
  * of the shared instance/argument/reflection utilities in BaseContext. Advice runs inside the patched method, so only
  * this context can replace its arguments; the redirect contexts observe them read-only. */
@@ -15,6 +18,7 @@ public class AdviceContextImpl extends BaseContext implements BeforeContext, Aft
     private boolean skipOriginal;
     private Throwable thrown;
     private boolean suppress;
+    private Map<String, Object> locals;
 
     public AdviceContextImpl(Class<?> owner, Object self, Object[] args) {
         super(owner, self, args);
@@ -78,5 +82,14 @@ public class AdviceContextImpl extends BaseContext implements BeforeContext, Aft
     /** Checks if another patch already suppressed the exception */
     public boolean isSuppressed() {
         return suppress;
+    }
+
+    public void setLocal(String key, Object value) {
+        if (locals == null) locals = new HashMap<>(4);
+        locals.put(key, value);
+    }
+
+    public <T> T getLocal(String key) {
+        return locals == null ? null : (T) locals.get(key);
     }
 }

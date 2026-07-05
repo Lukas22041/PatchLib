@@ -15,4 +15,10 @@ public interface AdviceContext extends Context {
 
     /** Checks if something has skipped the original method in @Before */
     boolean isSkipOriginal();
+
+    /** Stores a value for the duration of this single method call, shared with all before/after/except patches. */
+    void setLocal(String key, Object value);
+
+    /** Retrieves a value stored by setLocal during this method call. shared with all before/after/except patches. */
+    <T> T getLocal(String key);
 }
