@@ -1,0 +1,20 @@
+{
+    "masterVersionFile":"https://raw.githubusercontent.com/Lukas22041/LunaLib/main/LunaLib.version",
+	"modVersion":
+    {
+        "major":2,
+        "minor":0,
+        "patch":5 # Can be a number, character or string (1, 2, a, b, "-RC2", etc)
+    },
+    "modName":"LunaLib",
+	"modThreadId":25658,
+	
+	#Link towards a direct download, fetched from the online version file
+	"directDownloadURL":"https://github.com/Lukas22041/LunaLib/releases/latest/download/LunaLib.zip",
+	
+	#Link towards a directly accessible text file, which can be used to display a changelog ingame, is fetched from the online version file.
+	#The menu will highlight any line that beginns with "Version"
+	"changelogURL":"https://raw.githubusercontent.com/Lukas22041/LunaLib/main/changelog.txt",
+
+
+}

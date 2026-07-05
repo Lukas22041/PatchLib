@@ -5,6 +5,8 @@ import patchlib.agent.spec.PatchSpec;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /** Registers and remembers patch sites (i.e, patched methods). Returns the index on register even if already registered*/
@@ -20,6 +22,10 @@ public final class PatchRegistry {
 
     /** Every spec the scanner discovered, installed or not. Set once at init, used by diagnostics. */
     private static volatile List<PatchSpec> SCANNED = List.of();
+
+    /** Supertypes (transitive superclasses and interfaces, minus Object) of each patched class, recorded as
+     * the class is transformed. Only used by the debug menu's group-by-supertype view. */
+    private static final Map<String, Set<String>> SUPERTYPES = new ConcurrentHashMap<>();
 
     public static int register(String methodKey, PatchSite site) {
         synchronized (SITES) {
@@ -81,5 +87,14 @@ public final class PatchRegistry {
 
     public static List<PatchSpec> scannedSpecs() {
         return SCANNED;
+    }
+
+    /** Records a patched class's supertypes for the diagnostics view. Overwrites on re-transform, which is fine. */
+    public static void recordSupertypes(String className, Set<String> supertypes) {
+        SUPERTYPES.put(className, supertypes);
+    }
+
+    public static Map<String, Set<String>> supertypeSnapshot() {
+        return new HashMap<>(SUPERTYPES);
     }
 }

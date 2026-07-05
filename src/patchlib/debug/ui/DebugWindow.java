@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.BaseCustomUIPanelPlugin;
 import com.fs.starfarer.api.campaign.FactionSpecAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
 import com.fs.starfarer.api.ui.Alignment;
+import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.CutStyle;
 import com.fs.starfarer.api.ui.Fonts;
@@ -18,8 +19,10 @@ import com.fs.starfarer.api.util.Misc;
 import patchlib.debug.DebugMenuManager;
 import patchlib.debug.data.PatchTreeModel;
 import patchlib.debug.data.PatchTreeModel.ClassNode;
+import patchlib.debug.data.PatchTreeModel.GroupNode;
 import patchlib.debug.data.PatchTreeModel.HandlerRow;
 import patchlib.debug.data.PatchTreeModel.MethodNode;
+import patchlib.debug.data.PatchTreeModel.ModNode;
 import patchlib.debug.data.PatchTreeModel.UninstalledRow;
 
 import java.awt.Color;
@@ -58,13 +61,16 @@ public class DebugWindow extends BaseCustomUIPanelPlugin implements PatchRow.Lis
     private static final float NAME_X = 22f;
     private static final float INDENT = 22f;
     private static final float CARET_GAP = 12f;
-    private static final String[] COL_TITLES = {"Patch site  /  handler", "Kind", "Source mod", "Prio"};
+    // the handler (data) row sits at this inset in both views, so the columns line up; the grouped view fits
+    // its extra supertype level in by using a smaller per-level step (see indentUnit).
+    private static final float DATA_INSET = 2f * INDENT;
+    private static final String[] COL_TITLES = {"Patch site  /  handler", "Type", "Source mod", "Prio"};
 
     private static final Color FALLBACK_BASE = new Color(150, 170, 200);
     private static final Color FALLBACK_DARK = new Color(45, 55, 70);
     private static final Color FALLBACK_TEXT = new Color(220, 220, 220);
 
-    private Color cBase, cDark, cText, cWarn, cClassBg, cMethodBg, cLeafBg;
+    private Color cBase, cDark, cText, cWarn, cGroupBg, cClassBg, cMethodBg, cLeafBg;
 
     private CustomPanelAPI panel;
     private PositionAPI position;
@@ -79,12 +85,22 @@ public class DebugWindow extends BaseCustomUIPanelPlugin implements PatchRow.Lis
     private float[] segX, segW;
 
     private TextFieldAPI searchField;
+    private LabelAPI searchPlaceholder; // shown over an empty search field, hidden (0 opacity) once it has text
     private CustomPanelAPI listHost;
     private TooltipMakerAPI listElement;
 
     private PatchTreeModel model;
+    private final Set<String> expandedGroups = new HashSet<>();
+    private final Set<String> expandedMods = new HashSet<>();
     private final Set<String> expandedClasses = new HashSet<>();
     private final Set<String> expandedMethods = new HashSet<>();
+
+    /** How the tree is organized. FLAT is class-first; the others add a top level and share the layout. */
+    private enum Mode { FLAT, SUPERTYPE, MOD }
+
+    private static Mode mode = Mode.FLAT; // static so the chosen view sticks across reopens for the session
+    private float indentUnit;      // x added per tree level; smaller when grouped so the data row stays put
+    private ButtonAPI modeButton;  // toolbar button that cycles through the modes
 
     private float pollTimer;
     private String lastSearch = "";
@@ -149,9 +165,10 @@ public class DebugWindow extends BaseCustomUIPanelPlugin implements PatchRow.Lis
         } catch (Exception e) { }
         try { if (Misc.getTextColor() != null) cText = Misc.getTextColor(); } catch (Exception e) { }
         try { if (Misc.getHighlightColor() != null) cWarn = Misc.getHighlightColor(); } catch (Exception e) { }
-        cClassBg = Misc.scaleColorOnly(cDark, 0.8f);     // 1st level: dimmer than the header, above the 2nd
-        cMethodBg = Misc.scaleColorOnly(cDark, 0.62f);   // 2nd level: darker
-        cLeafBg = Misc.scaleColorOnly(cDark, 0.30f);     // 3rd level: darkest, near-black blue
+        cGroupBg = Misc.scaleColorOnly(cDark, 0.78f);    // grouped views' top row: just above the class level
+        cClassBg = Misc.scaleColorOnly(cDark, 0.72f);    // class level: dimmer than the header, above the method
+        cMethodBg = Misc.scaleColorOnly(cDark, 0.62f);   // method level: darker
+        cLeafBg = Misc.scaleColorOnly(cDark, 0.30f);     // handler level: darkest, near-black blue
     }
 
     private void computeColumns() {
@@ -238,13 +255,21 @@ public class DebugWindow extends BaseCustomUIPanelPlugin implements PatchRow.Lis
         float x = contentX;
         x += addActionButton("Refresh", "refresh", x, 76f, top) + 6f;
         x += addActionButton("Expand all", "expandall", x, 86f, top) + 6f;
-        x += addActionButton("Collapse all", "collapseall", x, 92f, top) + GAP;
+        x += addActionButton("Collapse all", "collapseall", x, 92f, top) + 6f;
+        modeButton = addModeButton(x, 165f, top);
+        x += 165f + GAP;
 
         TooltipMakerAPI searchEl = panel.createUIElement(SEARCH_W, BTN_H, false);
         searchField = searchEl.addTextField(SEARCH_W, BTN_H, FONT, 0f);
         searchField.setHandleCtrlV(true);
         searchField.setUndoOnEscape(false);
         panel.addUIElement(searchEl).inTL(x, top);
+
+        // our own placeholder, anchored where the field's own text lands: addTextField insets the field by 5
+        // (addCustom) and sets text pad to 3 (inLMid at pad*2 = 6), so 11 total. advance() hides it when focused or filled.
+        searchPlaceholder = Global.getSettings().createLabel("Search", FONT);
+        searchPlaceholder.setColor(Misc.scaleColorOnly(cBase, 0.55f)); // muted blue, not the brighter tone of live search text
+        searchEl.addComponent((UIComponentAPI) searchPlaceholder).inLMid(11f);
     }
 
     private float addActionButton(String text, String data, float x, float bw, float top) {
@@ -252,6 +277,21 @@ public class DebugWindow extends BaseCustomUIPanelPlugin implements PatchRow.Lis
         el.addButton(text, data, cBase, cDark, Alignment.MID, CutStyle.NONE, bw, BTN_H, 0f);
         panel.addUIElement(el).inTL(x, top);
         return bw;
+    }
+
+    private ButtonAPI addModeButton(float x, float bw, float top) {
+        TooltipMakerAPI el = panel.createUIElement(bw, BTN_H, false);
+        ButtonAPI button = el.addButton(modeLabel(), "cyclemode", cBase, cDark, Alignment.MID, CutStyle.NONE, bw, BTN_H, 0f);
+        panel.addUIElement(el).inTL(x, top);
+        return button;
+    }
+
+    private String modeLabel() {
+        return switch (mode) {
+            case FLAT -> "Grouping: Classes";
+            case SUPERTYPE -> "Grouping: Supertype";
+            case MOD -> "Grouping: Source mod";
+        };
     }
 
     private void buildHeader() {
@@ -291,30 +331,12 @@ public class DebugWindow extends BaseCustomUIPanelPlugin implements PatchRow.Lis
         lastSearch = q;
         boolean searching = !q.isEmpty();
 
-        int emitted = 0;
-        for (ClassNode c : model.classes()) {
-            if (searching && !classMatches(c, q)) continue;
-            if (emitted >= MAX_ROWS) break;
-            boolean classExpanded = searching || expandedClasses.contains(c.className());
-            classRow(c, classExpanded);
-            emitted++;
-            if (!classExpanded) continue;
-
-            boolean classNameHit = contains(c.className(), q);
-            for (MethodNode m : c.methods()) {
-                if (searching && !classNameHit && !methodMatches(m, q)) continue;
-                if (emitted >= MAX_ROWS) break;
-                boolean methodExpanded = searching || expandedMethods.contains(m.key());
-                methodRow(m, methodExpanded);
-                emitted++;
-                if (!methodExpanded) continue;
-                for (HandlerRow hh : m.handlers()) {
-                    if (emitted >= MAX_ROWS) break;
-                    handlerRow(hh);
-                    emitted++;
-                }
-            }
-        }
+        indentUnit = mode == Mode.FLAT ? DATA_INSET / 2f : DATA_INSET / 3f; // the deepest row lands on DATA_INSET either way
+        int emitted = switch (mode) {
+            case FLAT -> emitFlat(q, searching);
+            case SUPERTYPE -> emitGrouped(q, searching);
+            case MOD -> emitMods(q, searching);
+        };
 
         if (!model.uninstalled().isEmpty()) {
             sectionRow("Discovered but not installed (either nothing matched, or a matching class has not been loaded yet)");
@@ -333,9 +355,89 @@ public class DebugWindow extends BaseCustomUIPanelPlugin implements PatchRow.Lis
         if (listElement.getExternalScroller() != null) listElement.getExternalScroller().setYOffset(prevScroll);
     }
 
-    /** An expandable class/method row: a bar with a caret and a single label; the whole row acts as a button. */
-    private void expandableRow(String label, String clickId, Color bg, int level, boolean expanded) {
-        float inset = level * INDENT;
+    /** Flat view: class -> method -> handler. Returns the number of rows emitted. */
+    private int emitFlat(String q, boolean searching) {
+        int emitted = 0;
+        for (ClassNode c : model.classes()) {
+            if (searching && !classMatches(c, q)) continue;
+            if (emitted >= MAX_ROWS) break;
+            boolean expanded = searching || expandedClasses.contains(c.className());
+            classRow(c, expanded, inset(0));
+            emitted++;
+            if (expanded) emitted = emitMethods(c, q, searching, emitted, 1);
+        }
+        return emitted;
+    }
+
+    /** Grouped view: supertype -> class -> method -> handler. Returns the number of rows emitted. */
+    private int emitGrouped(String q, boolean searching) {
+        int emitted = 0;
+        for (GroupNode g : model.groups()) {
+            if (searching && !groupMatches(g, q)) continue;
+            if (emitted >= MAX_ROWS) break;
+            boolean groupExpanded = searching || expandedGroups.contains(g.label());
+            groupRow(g, groupExpanded, inset(0));
+            emitted++;
+            if (!groupExpanded) continue;
+            for (ClassNode c : g.classes()) {
+                if (searching && !classMatches(c, q)) continue;
+                if (emitted >= MAX_ROWS) break;
+                boolean classExpanded = searching || expandedClasses.contains(c.className());
+                classRow(c, classExpanded, inset(1));
+                emitted++;
+                if (classExpanded) emitted = emitMethods(c, q, searching, emitted, 2);
+            }
+        }
+        return emitted;
+    }
+
+    /** Grouped view: source mod -> class -> method -> handler (only that mod's). Returns the rows emitted. */
+    private int emitMods(String q, boolean searching) {
+        int emitted = 0;
+        for (ModNode mn : model.mods()) {
+            if (searching && !modMatches(mn, q)) continue;
+            if (emitted >= MAX_ROWS) break;
+            boolean modExpanded = searching || expandedMods.contains(mn.modName());
+            modRow(mn, modExpanded, inset(0));
+            emitted++;
+            if (!modExpanded) continue;
+            for (ClassNode c : mn.classes()) {
+                if (searching && !classMatches(c, q)) continue;
+                if (emitted >= MAX_ROWS) break;
+                boolean classExpanded = searching || expandedClasses.contains(c.className());
+                classRow(c, classExpanded, inset(1));
+                emitted++;
+                if (classExpanded) emitted = emitMethods(c, q, searching, emitted, 2);
+            }
+        }
+        return emitted;
+    }
+
+    /** Emits the method and handler rows under one class, with methods at the given depth. */
+    private int emitMethods(ClassNode c, String q, boolean searching, int emitted, int methodDepth) {
+        boolean classNameHit = contains(c.className(), q);
+        for (MethodNode m : c.methods()) {
+            if (searching && !classNameHit && !methodMatches(m, q)) continue;
+            if (emitted >= MAX_ROWS) break;
+            boolean methodExpanded = searching || expandedMethods.contains(m.key());
+            methodRow(m, methodExpanded, inset(methodDepth));
+            emitted++;
+            if (!methodExpanded) continue;
+            for (HandlerRow hh : m.handlers()) {
+                if (emitted >= MAX_ROWS) break;
+                handlerRow(hh);
+                emitted++;
+            }
+        }
+        return emitted;
+    }
+
+    private float inset(int depth) {
+        return depth * indentUnit;
+    }
+
+    /** An expandable group/class/method row: a bar with a caret and a single label; the whole row is a button. */
+    private void expandableRow(String label, String clickId, Color bg, float inset, boolean expanded) {
         float nameX = NAME_X + inset;
         CustomPanelAPI rowPanel = listHost.createCustomPanel(rowW, ROW_H,
                 new PatchRow(bg, 1f, inset, cBase, expanded, nameX - CARET_GAP, clickId, this));
@@ -344,9 +446,9 @@ public class DebugWindow extends BaseCustomUIPanelPlugin implements PatchRow.Lis
     }
 
     /** A leaf handler/section row: an inset background bar plus column labels; not clickable, no caret. */
-    private void leafRow(Color bg, float bgAlpha, int level, List<Cell> cells) {
+    private void leafRow(Color bg, float bgAlpha, float inset, List<Cell> cells) {
         CustomPanelAPI rowPanel = listHost.createCustomPanel(rowW, ROW_H,
-                new PatchRow(bg, bgAlpha, level * INDENT, cBase, null, 0f, null, null));
+                new PatchRow(bg, bgAlpha, inset, cBase, null, 0f, null, null));
         for (Cell cell : cells) {
             if (cell.text == null || cell.text.isEmpty()) continue;
             placeLabel(rowPanel, cell.text, cell.color, cell.x, cell.maxWidth, cell.center, ROW_TEXT_Y);
@@ -354,19 +456,29 @@ public class DebugWindow extends BaseCustomUIPanelPlugin implements PatchRow.Lis
         listElement.addCustom(rowPanel, ROW_GAP);
     }
 
-    private void classRow(ClassNode c, boolean expanded) {
+    private void groupRow(GroupNode g, boolean expanded, float inset) {
+        String label = g.label() + "   (" + g.classes().size() + " classes, " + g.handlerCount() + " patches)";
+        expandableRow(label, "grp:" + g.label(), cGroupBg, inset, expanded);
+    }
+
+    private void modRow(ModNode mn, boolean expanded, float inset) {
+        String label = mn.modName() + "   (" + mn.classes().size() + " classes, " + mn.handlerCount() + " patches)";
+        expandableRow(label, "mod:" + mn.modName(), cGroupBg, inset, expanded);
+    }
+
+    private void classRow(ClassNode c, boolean expanded, float inset) {
         String label = c.className() + "   (" + c.handlerCount() + ")";
-        expandableRow(label, "cls:" + c.className(), cClassBg, 0, expanded);
+        expandableRow(label, "cls:" + c.className(), cClassBg, inset, expanded);
     }
 
-    private void methodRow(MethodNode m, boolean expanded) {
-        expandableRow(m.label(), "mtd:" + m.key(), cMethodBg, 1, expanded);
+    private void methodRow(MethodNode m, boolean expanded, float inset) {
+        expandableRow(m.label(), "mtd:" + m.key(), cMethodBg, inset, expanded);
     }
 
-    /** A level-2 data row: name in column 0, then kind / mod / prio; an empty prio cell is skipped. */
+    /** A data row (handler or uninstalled): name in column 0, then type / mod / prio; an empty prio is skipped. */
     private void dataRow(String name, String kind, String mod, String prio) {
-        float nameX = NAME_X + 2 * INDENT;
-        leafRow(cLeafBg, 0.95f, 2, List.of(
+        float nameX = NAME_X + DATA_INSET;
+        leafRow(cLeafBg, 0.95f, DATA_INSET, List.of(
                 new Cell(name, cText, nameX, segW[0] - nameX, false),
                 new Cell(kind, cText, segX[1], segW[1], true),
                 new Cell(mod, cText, segX[2], segW[2], true),
@@ -380,7 +492,7 @@ public class DebugWindow extends BaseCustomUIPanelPlugin implements PatchRow.Lis
     }
 
     private void sectionRow(String text) {
-        leafRow(cWarn, 0.15f, 0, List.of(new Cell(text, cWarn, NAME_X, rowW - NAME_X, false)));
+        leafRow(cWarn, 0.15f, 0f, List.of(new Cell(text, cWarn, NAME_X, rowW - NAME_X, false)));
     }
 
     private void uninstalledRow(UninstalledRow u) {
@@ -417,9 +529,23 @@ public class DebugWindow extends BaseCustomUIPanelPlugin implements PatchRow.Lis
         return false;
     }
 
+    private boolean groupMatches(GroupNode g, String q) {
+        if (contains(g.label(), q)) return true;
+        for (ClassNode c : g.classes()) if (classMatches(c, q)) return true;
+        return false;
+    }
+
+    private boolean modMatches(ModNode mn, String q) {
+        if (contains(mn.modName(), q)) return true;
+        for (ClassNode c : mn.classes()) if (classMatches(c, q)) return true;
+        return false;
+    }
+
     @Override
     public void onRowClicked(String id) {
-        if (id.startsWith("cls:")) toggle(expandedClasses, id.substring(4));
+        if (id.startsWith("grp:")) toggle(expandedGroups, id.substring(4));
+        else if (id.startsWith("mod:")) toggle(expandedMods, id.substring(4));
+        else if (id.startsWith("cls:")) toggle(expandedClasses, id.substring(4));
         else if (id.startsWith("mtd:")) toggle(expandedMethods, id.substring(4));
         // fired from a row's processInput; defer the rebuild so we don't drop the list mid-dispatch
         needsRebuild = true;
@@ -430,6 +556,8 @@ public class DebugWindow extends BaseCustomUIPanelPlugin implements PatchRow.Lis
     }
 
     private void expandAll() {
+        for (GroupNode g : model.groups()) expandedGroups.add(g.label());
+        for (ModNode mn : model.mods()) expandedMods.add(mn.modName());
         for (ClassNode c : model.classes()) {
             expandedClasses.add(c.className());
             for (MethodNode m : c.methods()) expandedMethods.add(m.key());
@@ -438,6 +566,10 @@ public class DebugWindow extends BaseCustomUIPanelPlugin implements PatchRow.Lis
 
     @Override
     public void advance(float amount) {
+        if (searchPlaceholder != null && searchField != null) {
+            boolean showPlaceholder = searchField.getText().isEmpty() && !searchField.hasFocus();
+            searchPlaceholder.setOpacity(showPlaceholder ? 1f : 0f);
+        }
         if (needsRebuild) {
             needsRebuild = false;
             rebuildList(false); // expand/collapse: keep the user where they were
@@ -456,7 +588,8 @@ public class DebugWindow extends BaseCustomUIPanelPlugin implements PatchRow.Lis
             case "close" -> DebugMenuManager.close();
             case "refresh" -> { model = PatchTreeModel.build(); rebuildList(false); }
             case "expandall" -> { expandAll(); rebuildList(false); }
-            case "collapseall" -> { expandedClasses.clear(); expandedMethods.clear(); rebuildList(true); }
+            case "collapseall" -> { expandedGroups.clear(); expandedMods.clear(); expandedClasses.clear(); expandedMethods.clear(); rebuildList(true); }
+            case "cyclemode" -> { mode = Mode.values()[(mode.ordinal() + 1) % Mode.values().length]; if (modeButton != null) modeButton.setText(modeLabel()); rebuildList(true); }
             default -> { }
         }
     }

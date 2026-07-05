@@ -11,10 +11,13 @@ import patchlib.agent.spec.TargetClassSpec;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /** Snapshot of the patch registry as a class -> method -> handler tree, plus the specs that scanned but
  * never installed anywhere. Built fresh each time so it reflects classes that loaded since the last build. */
@@ -27,18 +30,39 @@ public final class PatchTreeModel {
 
     public record ClassNode(String className, List<MethodNode> methods, int handlerCount) { }
 
+    /** A set of classes collapsed under a shared supertype, for the group-by-supertype view. */
+    public record GroupNode(String label, List<ClassNode> classes, int handlerCount) { }
+
+    /** One source mod's patches, as classes that carry only that mod's handlers, for the group-by-mod view. */
+    public record ModNode(String modName, List<ClassNode> classes, int handlerCount) { }
+
     public record UninstalledRow(String modName, String kind, String target, String handler) { }
 
+    /** Bucket for classes that share no supertype with any other; kept last so grouped rows stay one depth. */
+    private static final String UNGROUPED = "(no shared supertype)";
+
     private final List<ClassNode> classes;
+    private final List<GroupNode> groups;
+    private final List<ModNode> mods;
     private final List<UninstalledRow> uninstalled;
 
-    private PatchTreeModel(List<ClassNode> classes, List<UninstalledRow> uninstalled) {
+    private PatchTreeModel(List<ClassNode> classes, List<GroupNode> groups, List<ModNode> mods, List<UninstalledRow> uninstalled) {
         this.classes = classes;
+        this.groups = groups;
+        this.mods = mods;
         this.uninstalled = uninstalled;
     }
 
     public List<ClassNode> classes() {
         return classes;
+    }
+
+    public List<GroupNode> groups() {
+        return groups;
+    }
+
+    public List<ModNode> mods() {
+        return mods;
     }
 
     public List<UninstalledRow> uninstalled() {
@@ -98,7 +122,99 @@ public final class PatchTreeModel {
         }
         uninstalled.sort(Comparator.comparing(UninstalledRow::target).thenComparing(UninstalledRow::handler));
 
-        return new PatchTreeModel(classes, uninstalled);
+        List<GroupNode> groups = buildGroups(classes, PatchRegistry.supertypeSnapshot());
+        List<ModNode> mods = buildMods(classes);
+
+        return new PatchTreeModel(classes, groups, mods, uninstalled);
+    }
+
+    /** Regroups the class tree by source mod: one node per mod, each holding copies of the classes it patches
+     * that carry only that mod's handlers. Order follows the already-sorted class/method/handler lists. */
+    private static List<ModNode> buildMods(List<ClassNode> classes) {
+        Set<String> modNames = new TreeSet<>();
+        for (ClassNode c : classes) {
+            for (MethodNode m : c.methods()) {
+                for (HandlerRow h : m.handlers()) modNames.add(h.modName());
+            }
+        }
+
+        List<ModNode> mods = new ArrayList<>();
+        for (String mod : modNames) {
+            List<ClassNode> owned = new ArrayList<>();
+            int total = 0;
+            for (ClassNode c : classes) {
+                ClassNode filtered = filterClassForMod(c, mod);
+                if (filtered == null) continue;
+                owned.add(filtered);
+                total += filtered.handlerCount();
+            }
+            if (!owned.isEmpty()) mods.add(new ModNode(mod, owned, total));
+        }
+        return mods;
+    }
+
+    /** A copy of a class keeping only the methods and handlers belonging to the given mod, or null if none. */
+    private static ClassNode filterClassForMod(ClassNode c, String mod) {
+        List<MethodNode> methods = new ArrayList<>();
+        int total = 0;
+        for (MethodNode m : c.methods()) {
+            List<HandlerRow> owned = new ArrayList<>();
+            for (HandlerRow h : m.handlers()) {
+                if (h.modName().equals(mod)) owned.add(h);
+            }
+            if (owned.isEmpty()) continue;
+            methods.add(new MethodNode(m.key(), m.label(), owned));
+            total += owned.size();
+        }
+        return methods.isEmpty() ? null : new ClassNode(c.className(), methods, total);
+    }
+
+    /** Collapses the flat class list into supertype groups: each class joins the supertype it shares with the
+     * most other patched classes (needs at least two members), and the rest fall into one catch-all bucket. */
+    private static List<GroupNode> buildGroups(List<ClassNode> classes, Map<String, Set<String>> supertypes) {
+        Map<String, Integer> counts = new HashMap<>();
+        for (ClassNode c : classes) {
+            for (String supertype : supertypes.getOrDefault(c.className(), Set.of())) {
+                counts.merge(supertype, 1, Integer::sum);
+            }
+        }
+
+        Map<String, List<ClassNode>> byGroup = new HashMap<>();
+        List<ClassNode> ungrouped = new ArrayList<>();
+        for (ClassNode c : classes) {
+            String best = null;
+            int bestCount = 1;
+            for (String supertype : supertypes.getOrDefault(c.className(), Set.of())) {
+                int count = counts.getOrDefault(supertype, 0);
+                if (count < 2) continue;
+                if (count > bestCount || (count == bestCount && (best == null || supertype.compareTo(best) < 0))) {
+                    best = supertype;
+                    bestCount = count;
+                }
+            }
+            if (best == null) ungrouped.add(c);
+            else byGroup.computeIfAbsent(best, k -> new ArrayList<>()).add(c);
+        }
+
+        List<GroupNode> groups = new ArrayList<>();
+        for (Map.Entry<String, List<ClassNode>> entry : byGroup.entrySet()) {
+            List<ClassNode> members = entry.getValue();
+            if (members.size() < 2) ungrouped.addAll(members); // a lone survivor is not worth its own group
+            else groups.add(new GroupNode(entry.getKey(), members, handlerTotal(members)));
+        }
+        groups.sort(Comparator.comparing(GroupNode::label));
+
+        if (!ungrouped.isEmpty()) {
+            ungrouped.sort(Comparator.comparing(ClassNode::className));
+            groups.add(new GroupNode(UNGROUPED, ungrouped, handlerTotal(ungrouped)));
+        }
+        return groups;
+    }
+
+    private static int handlerTotal(List<ClassNode> classes) {
+        int total = 0;
+        for (ClassNode c : classes) total += c.handlerCount();
+        return total;
     }
 
     private static void addAdvice(Map<String, Map<String, MethodAccum>> byClass, IdentityHashMap<PatchSpec, Boolean> installed,

@@ -8,6 +8,7 @@ import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.utility.JavaModule;
 import patchlib.agent.PatchLibLogger;
+import patchlib.agent.PatchRegistry;
 import patchlib.agent.context.AdviceContextImpl;
 import patchlib.agent.context.RedirectContextImpl;
 import patchlib.agent.matchers.ClassTargetMatcher;
@@ -32,7 +33,9 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Sets up the ByteBuddy agent and routes every matched method to the two installers:
@@ -91,6 +94,9 @@ public class PatchInstaller {
 
         if (forType.isEmpty()) return builder; //Shouldn't happen due to the gate, but just in case.
 
+        //Remember this class's supertypes so the debug menu can offer a group-by-supertype view.
+        PatchRegistry.recordSupertypes(type.getName(), collectSupertypes(type));
+
         for (MethodDescription.InDefinedShape method : type.getDeclaredMethods()) {
 
             if (method.isAbstract() || method.isNative()) continue; //Methods with no body to install in to, skip.
@@ -118,6 +124,32 @@ public class PatchInstaller {
      * redirect host methods and resolved redirect targets. */
     static String memberKey(ByteCodeElement.Member member) {
         return member.getDeclaringType().asErasure().getName() + "#" + member.getInternalName() + member.getDescriptor();
+    }
+
+    /** All supertypes of a class (transitive superclasses and interfaces), minus the class itself and Object.
+     * Read from the type pool, so it describes types rather than loading them. Best effort on any failure. */
+    private static Set<String> collectSupertypes(TypeDescription type) {
+        Set<String> out = new LinkedHashSet<>();
+        try {
+            collectSupertypes(type, out);
+        } catch (Throwable t) {
+            PatchLibLogger.error("Could not read supertypes of " + type.getName() + ": " + t);
+        }
+        out.remove(type.getName());
+        out.remove(Object.class.getName());
+        return out;
+    }
+
+    private static void collectSupertypes(TypeDescription type, Set<String> out) {
+        TypeDescription.Generic superClass = type.getSuperClass();
+        if (superClass != null) {
+            TypeDescription erasure = superClass.asErasure();
+            if (out.add(erasure.getName())) collectSupertypes(erasure, out);
+        }
+        for (TypeDescription.Generic itf : type.getInterfaces()) {
+            TypeDescription erasure = itf.asErasure();
+            if (out.add(erasure.getName())) collectSupertypes(erasure, out);
+        }
     }
 
     /** Dynamic constants need class file version 55 or newer in the host class. Janino compiled code is below this. */
