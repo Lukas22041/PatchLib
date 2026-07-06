@@ -15,7 +15,7 @@ public class PatchDispatcher {
 
     public static HookContextImpl enter(int siteId, Class<?> owner, Object self, Object[] args) {
         PatchSite site = PatchRegistry.site(siteId);
-        HookContextImpl context = new HookContextImpl(owner, self, args);
+        HookContextImpl context = new HookContextImpl(siteId, owner, self, args);
         for (PatchHandler patch : site.beforePatches()) {
             invoke(patch, context);
         }
@@ -24,15 +24,15 @@ public class PatchDispatcher {
 
     /** Constant dispatch twin of enter. The chain arrives as a dynamic constant at the advice
      * call site, so the JIT can inline it and the handlers it contains, see ChainBootstrap. */
-    public static HookContextImpl enterConstant(Class<?> owner, Object self, Object[] args, MethodHandle beforeChain) throws Throwable {
-        HookContextImpl context = new HookContextImpl(owner, self, args);
+    public static HookContextImpl enterConstant(int siteId, Class<?> owner, Object self, Object[] args, MethodHandle beforeChain) throws Throwable {
+        HookContextImpl context = new HookContextImpl(siteId, owner, self, args);
         beforeChain.invokeExact(context);
         return context;
     }
 
     /** Constant dispatch twin of enter for sites without before patches, only creates the context. */
-    public static HookContextImpl createContext(Class<?> owner, Object self, Object[] args) {
-        return new HookContextImpl(owner, self, args);
+    public static HookContextImpl createContext(int siteId, Class<?> owner, Object self, Object[] args) {
+        return new HookContextImpl(siteId, owner, self, args);
     }
 
     public static Object exit(int siteId, HookContextImpl context, Object returned) {

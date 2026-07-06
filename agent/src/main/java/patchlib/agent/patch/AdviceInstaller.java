@@ -39,7 +39,7 @@ final class AdviceInstaller {
 
     static DynamicType.Builder<?> install(DynamicType.Builder<?> builder, TypeDescription type,
                                           MethodDescription.InDefinedShape method, List<InstallData> advice) {
-        int id = PatchRegistry.register(PatchInstaller.memberKey(method), createPatchSite(advice));
+        int id = PatchRegistry.register(PatchInstaller.memberKey(method), createPatchSite(type, method, advice));
         boolean hasBefore = advice.stream().anyMatch(data -> data.spec().patchType() == PatchType.BEFORE);
         boolean hasExcept = advice.stream().anyMatch(data -> data.spec().patchType() == PatchType.EXCEPT);
         boolean constants = PatchInstaller.supportsConstants(type);
@@ -69,11 +69,15 @@ final class AdviceInstaller {
         return builder;
     }
 
-    private static PatchSite createPatchSite(List<InstallData> dataList) {
+    private static PatchSite createPatchSite(TypeDescription type, MethodDescription.InDefinedShape method,
+                                             List<InstallData> dataList) {
         return new PatchSite(
                 patchesOf(dataList, PatchType.BEFORE),
                 patchesOf(dataList, PatchType.AFTER),
-                patchesOf(dataList, PatchType.EXCEPT));
+                patchesOf(dataList, PatchType.EXCEPT),
+                type.getName(),
+                method.getInternalName(),
+                method.getDescriptor());
     }
 
     /** All patches of one type, ordered by priority, ties broken alphabetically by mod name. */

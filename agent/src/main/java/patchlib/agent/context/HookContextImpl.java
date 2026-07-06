@@ -1,5 +1,6 @@
 package patchlib.agent.context;
 
+import patchlib.agent.PatchRegistry;
 import patchlib.api.context.AfterContext;
 import patchlib.api.context.BeforeContext;
 import patchlib.api.context.ExceptContext;
@@ -14,14 +15,16 @@ import java.util.Map;
  * this context can replace its arguments; the redirect contexts observe them read-only. */
 public class HookContextImpl extends BaseContext implements BeforeContext, AfterContext, ExceptContext {
 
+    private final int siteId;
     private Object returnValue;
     private boolean skipOriginal;
     private Throwable thrown;
     private boolean suppress;
     private Map<String, Object> locals;
 
-    public HookContextImpl(Class<?> owner, Object self, Object[] args) {
+    public HookContextImpl(int siteId, Class<?> owner, Object self, Object[] args) {
         super(owner, self, args);
+        this.siteId = siteId;
     }
 
     public void setArg(int index, Object newValue) {
@@ -91,5 +94,11 @@ public class HookContextImpl extends BaseContext implements BeforeContext, After
 
     public <T> T getLocal(String key) {
         return locals == null ? null : (T) locals.get(key);
+    }
+
+    public boolean isMostDerivedCall() {
+        //No instance, no dispatch to resolve: static methods and @Before constructors.
+        if (self == null) return true;
+        return PatchRegistry.site(siteId).isMostDerived(self.getClass());
     }
 }

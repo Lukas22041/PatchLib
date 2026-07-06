@@ -21,4 +21,9 @@ public interface HookContext extends Context {
 
     /** Retrieves a value stored by setLocal during this method call. shared with all before/after/except patches. */
     <T> T getLocal(String key);
+
+    /** Returns true if the running method is the objects most-derived implementation of the method, also true for static methods and when there is no instance.
+     * This is useful for when you are doing patches that target with "subtype". This is because those patches will patch both the derived and the inherited method,
+     * potentially causing your patch to be called twice or more if the derived method has a super() call in it. */
+    boolean isMostDerivedCall();
 }
