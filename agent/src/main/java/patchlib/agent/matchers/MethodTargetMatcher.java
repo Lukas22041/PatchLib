@@ -16,7 +16,7 @@ public class MethodTargetMatcher {
             case CONSTRUCTOR -> isConstructor();
             case ANY         -> isMethod().or(isConstructor());
         };
-        return refine(base, spec.methodName(), spec.parameters(), spec.parameterCount(), spec.returnType(), spec.staticOnly());
+        return refine(base, spec.methodName(), spec.parameters(), spec.parameterCount(), spec.returnType(), spec.staticOnly(), spec.annotations());
     }
 
     /** Matches the method call a @RedirectCall intercepts inside the host body. Same shape matching as a target method
@@ -25,7 +25,7 @@ public class MethodTargetMatcher {
         ElementMatcher.Junction<MethodDescription> base = isMethod();
         if (!spec.declaringType().matchesEverything())
             base = base.and(isDeclaredBy(ClassTargetMatcher.create(spec.declaringType())));
-        return refine(base, spec.name(), spec.parameters(), spec.parameterCount(), spec.returnOrFieldType(), spec.staticOnly());
+        return refine(base, spec.name(), spec.parameters(), spec.parameterCount(), spec.returnOrFieldType(), spec.staticOnly(), new String[0]);
     }
 
     /** Matches the constructor a @RedirectNew intercepts inside the host body. The declaring type is the instantiated
@@ -34,13 +34,13 @@ public class MethodTargetMatcher {
         ElementMatcher.Junction<MethodDescription> base = isConstructor();
         if (!spec.declaringType().matchesEverything())
             base = base.and(isDeclaredBy(ClassTargetMatcher.create(spec.declaringType())));
-        return refine(base, "", spec.parameters(), spec.parameterCount(), "", false);
+        return refine(base, "", spec.parameters(), spec.parameterCount(), "", false, new String[0]);
     }
 
-    /** Adds the name/parameter/return/static constraints shared by target methods and redirected calls onto a base matcher. */
+    /** Adds the name/parameter/return/static/annotation constraints shared by target methods and redirected calls onto a base matcher. */
     private static ElementMatcher.Junction<MethodDescription> refine(ElementMatcher.Junction<MethodDescription> matcher,
                                                                      String name, String[] parameters, int parameterCount,
-                                                                     String returnType, boolean staticOnly) {
+                                                                     String returnType, boolean staticOnly, String[] annotations) {
         if (!name.isEmpty())
             matcher = matcher.and(named(name));
 
@@ -61,6 +61,9 @@ public class MethodTargetMatcher {
 
         if (staticOnly)
             matcher = matcher.and(isStatic());
+
+        for (String annotationName : annotations)
+            matcher = matcher.and(isAnnotatedWith(named(annotationName)));
 
         return matcher;
     }

@@ -21,4 +21,10 @@ public @interface MethodMatch {
     MethodType methodType() default MethodType.ANY;
     boolean staticOnly() default false;
 
+    /** Match methods annotated with all of these. Only the annotation's presence is checked, not its values;
+     * read the values from inside the patch if you need them. The annotation must have CLASS or RUNTIME retention. */
+    Class<?>[] annotations() default {};
+    /** Uses actual class names, with type erasure. Only the annotation's presence is checked, not its values. */
+    String[] annotationNames() default {};
+
 }

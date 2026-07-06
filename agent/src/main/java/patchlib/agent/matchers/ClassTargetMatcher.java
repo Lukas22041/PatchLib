@@ -59,6 +59,10 @@ public class ClassTargetMatcher {
             matcher = matcher.and(declaresField(FieldTargetMatcher.create(fieldSpec)));
         }
 
+        for (String annotationName : classSpec.annotations()) {
+            matcher = matcher.and(isAnnotatedWith(named(annotationName)));
+        }
+
         return matcher;
     }
 }

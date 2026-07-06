@@ -198,6 +198,8 @@ public class PatchScanner {
             fieldMatches[i] = createFieldSpec(fieldMatchAnnotations[i]);
         }
 
+        String[] attachedAnnotations = annotationFilter(annotation);
+
         return new TargetClassSpec(
                 !type.isEmpty() ? type : typeName,
                 !subtype.isEmpty() ? subtype : subtypeName,
@@ -206,7 +208,8 @@ public class PatchScanner {
                 excludePackage,
                 excludeSubpackages,
                 methodMatches,
-                fieldMatches
+                fieldMatches,
+                attachedAnnotations
         );
     }
 
@@ -244,14 +247,24 @@ public class PatchScanner {
 
         boolean staticOnly = AnnotationReader.readBoolean(annotation, "staticOnly", false);
 
+        String[] attachedAnnotations = annotationFilter(annotation);
+
         return new TargetMethodSpec(
                 methodName,
                 parameters.length != 0 ? parameters : parameterNames,
                 parameterCount,
                 !returnType.isEmpty() ? returnType : returnTypeName,
                 methodType,
-                staticOnly
+                staticOnly,
+                attachedAnnotations
                 );
+    }
+
+    /** The annotation-presence filter of a @ClassMatch or @MethodMatch, as erased annotation type names.
+     * The typed annotations() member wins over the annotationNames() name variant when both are set. */
+    private String[] annotationFilter(AnnotationDescription annotation) {
+        String[] annotations = AnnotationReader.readTypeArray(annotation, "annotations");
+        return annotations.length != 0 ? annotations : AnnotationReader.readStringArray(annotation, "annotationNames");
     }
 
     /** Builds the call site spec from a @RedirectCall. The call shape reuses @MethodMatch; its methodType is

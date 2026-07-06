@@ -9,5 +9,6 @@ public record TargetMethodSpec(
         int parameterCount,
         String returnType,
         MethodType methodType,
-        boolean staticOnly
+        boolean staticOnly,
+        String[] annotations
 ) { }
