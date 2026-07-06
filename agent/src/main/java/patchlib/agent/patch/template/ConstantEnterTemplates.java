@@ -4,7 +4,7 @@ import net.bytebuddy.asm.Advice;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import patchlib.agent.dispatch.BeforeChainMarker;
 import patchlib.agent.dispatch.PatchDispatcher;
-import patchlib.agent.context.AdviceContextImpl;
+import patchlib.agent.context.HookContextImpl;
 
 import java.lang.invoke.MethodHandle;
 
@@ -21,7 +21,7 @@ public final class ConstantEnterTemplates {
                 @Advice.Origin Class<?> owner,
                 @Advice.This(optional = true) Object self,
                 @Advice.AllArguments(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object[] args,
-                @Advice.Local("context") AdviceContextImpl context) throws Throwable {
+                @Advice.Local("context") HookContextImpl context) throws Throwable {
 
             context = PatchDispatcher.enterConstant(owner, self, args, beforeChain);
 
@@ -40,7 +40,7 @@ public final class ConstantEnterTemplates {
                 @Advice.Origin Class<?> owner,
                 @Advice.This(optional = true) Object self,
                 @Advice.AllArguments(typing = Assigner.Typing.DYNAMIC) Object[] args,
-                @Advice.Local("context") AdviceContextImpl context) {
+                @Advice.Local("context") HookContextImpl context) {
 
             context = PatchDispatcher.createContext(owner, self, args);
         }
@@ -49,12 +49,12 @@ public final class ConstantEnterTemplates {
     /** Constructor variant of WithBefore. Self is not available before the constructor ran. */
     public static final class ConstructorWithBefore {
         @Advice.OnMethodEnter //Cant skip constructors
-        public static AdviceContextImpl enter(
+        public static HookContextImpl enter(
                 @BeforeChainMarker MethodHandle beforeChain,
                 @Advice.Origin Class<?> owner,
                 @Advice.AllArguments(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object[] args) throws Throwable {
 
-            AdviceContextImpl context = PatchDispatcher.enterConstant(owner, null, args, beforeChain);
+            HookContextImpl context = PatchDispatcher.enterConstant(owner, null, args, beforeChain);
 
             //Assign the args back in to the method, which applies any changes made to them
             args = context.getArgs();
@@ -66,7 +66,7 @@ public final class ConstantEnterTemplates {
     /** Constructor variant of Plain. */
     public static final class ConstructorPlain {
         @Advice.OnMethodEnter
-        public static AdviceContextImpl enter(
+        public static HookContextImpl enter(
                 @Advice.Origin Class<?> owner,
                 @Advice.AllArguments(typing = Assigner.Typing.DYNAMIC) Object[] args) {
 

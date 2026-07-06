@@ -9,7 +9,7 @@ import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.utility.JavaModule;
 import patchlib.agent.PatchLibLogger;
 import patchlib.agent.PatchRegistry;
-import patchlib.agent.context.AdviceContextImpl;
+import patchlib.agent.context.HookContextImpl;
 import patchlib.agent.context.RedirectContextImpl;
 import patchlib.agent.matchers.ClassTargetMatcher;
 import patchlib.agent.matchers.GateMatcher;
@@ -230,7 +230,7 @@ public class PatchInstaller {
     /** The concrete context the dispatcher passes, used as the normalized method handle type. */
     private static Class<?> contextImpl(PatchSpec spec) {
         return switch (spec.patchType()) {
-            case BEFORE, AFTER, EXCEPT -> AdviceContextImpl.class;
+            case BEFORE, AFTER, EXCEPT -> HookContextImpl.class;
             case REDIRECT -> RedirectContextImpl.class;
         };
     }

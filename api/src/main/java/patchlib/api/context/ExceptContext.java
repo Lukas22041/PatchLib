@@ -1,7 +1,7 @@
 package patchlib.api.context;
 
 
-public interface ExceptContext extends AdviceContext {
+public interface ExceptContext extends HookContext {
 
     /** Gets the exception that was thrown on the patched method. Can be null if another patch suppressed the exception, and can also be another patches replaced exception. */
     Throwable getThrown();

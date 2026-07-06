@@ -5,7 +5,7 @@ import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import patchlib.agent.dispatch.AfterChainMarker;
 import patchlib.agent.dispatch.DispatchIdMarker;
 import patchlib.agent.dispatch.PatchDispatcher;
-import patchlib.agent.context.AdviceContextImpl;
+import patchlib.agent.context.HookContextImpl;
 
 import java.lang.invoke.MethodHandle;
 
@@ -25,7 +25,7 @@ public final class ConstantExitTemplates {
                 @DispatchIdMarker int siteId,
                 @Advice.Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object returned,
                 @Advice.Thrown(readOnly = false, typing = Assigner.Typing.DYNAMIC) Throwable thrown,
-                @Advice.Local("context") AdviceContextImpl context) throws Throwable {
+                @Advice.Local("context") HookContextImpl context) throws Throwable {
 
             if (thrown != null) {
                 thrown = PatchDispatcher.except(siteId, context, thrown);
@@ -44,7 +44,7 @@ public final class ConstantExitTemplates {
         public static void exit(
                 @AfterChainMarker MethodHandle afterChain,
                 @Advice.Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object returned,
-                @Advice.Local("context") AdviceContextImpl context) throws Throwable {
+                @Advice.Local("context") HookContextImpl context) throws Throwable {
 
             returned = PatchDispatcher.exitConstant(context, returned, afterChain);
         }
@@ -57,7 +57,7 @@ public final class ConstantExitTemplates {
                 @AfterChainMarker MethodHandle afterChain,
                 @DispatchIdMarker int siteId,
                 @Advice.Thrown(readOnly = false, typing = Assigner.Typing.DYNAMIC) Throwable thrown,
-                @Advice.Local("context") AdviceContextImpl context) throws Throwable {
+                @Advice.Local("context") HookContextImpl context) throws Throwable {
 
             if (thrown != null) {
                 thrown = PatchDispatcher.except(siteId, context, thrown);
@@ -75,7 +75,7 @@ public final class ConstantExitTemplates {
         @Advice.OnMethodExit
         public static void exit(
                 @AfterChainMarker MethodHandle afterChain,
-                @Advice.Local("context") AdviceContextImpl context) throws Throwable {
+                @Advice.Local("context") HookContextImpl context) throws Throwable {
 
             PatchDispatcher.exitConstant(context, null, afterChain);
         }
@@ -87,7 +87,7 @@ public final class ConstantExitTemplates {
         public static void exit(
                 @AfterChainMarker MethodHandle afterChain,
                 @Advice.This(optional = true) Object self,
-                @Advice.Enter AdviceContextImpl context) throws Throwable {
+                @Advice.Enter HookContextImpl context) throws Throwable {
 
             context.setSelf(self);
             PatchDispatcher.exitConstant(context, null, afterChain);

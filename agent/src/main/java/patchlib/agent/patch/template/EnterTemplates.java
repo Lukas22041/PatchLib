@@ -4,7 +4,7 @@ import net.bytebuddy.asm.Advice;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import patchlib.agent.dispatch.DispatchIdMarker;
 import patchlib.agent.dispatch.PatchDispatcher;
-import patchlib.agent.context.AdviceContextImpl;
+import patchlib.agent.context.HookContextImpl;
 
 /** Enter halves of the advice templates. PatchInstaller pairs one enter with one exit per site,
  * so a site only carries the machinery its patches actually use. */
@@ -18,7 +18,7 @@ public final class EnterTemplates {
                 @Advice.Origin Class<?> owner,
                 @Advice.This(optional = true) Object self,
                 @Advice.AllArguments(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object[] args,
-                @Advice.Local("context") AdviceContextImpl context) {
+                @Advice.Local("context") HookContextImpl context) {
 
             context = PatchDispatcher.enter(siteId, owner, self, args);
 
@@ -38,7 +38,7 @@ public final class EnterTemplates {
                 @Advice.Origin Class<?> owner,
                 @Advice.This(optional = true) Object self,
                 @Advice.AllArguments(typing = Assigner.Typing.DYNAMIC) Object[] args,
-                @Advice.Local("context") AdviceContextImpl context) {
+                @Advice.Local("context") HookContextImpl context) {
 
             context = PatchDispatcher.enter(siteId, owner, self, args);
         }
@@ -47,12 +47,12 @@ public final class EnterTemplates {
     /** Constructor variant of WithBefore. Self is not available before the constructor ran. */
     public static final class ConstructorWithBefore {
         @Advice.OnMethodEnter //Cant skip constructors
-        public static AdviceContextImpl enter(
+        public static HookContextImpl enter(
                 @DispatchIdMarker int siteId,
                 @Advice.Origin Class<?> owner,
                 @Advice.AllArguments(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object[] args) {
 
-            AdviceContextImpl context = PatchDispatcher.enter(siteId, owner, null, args);
+            HookContextImpl context = PatchDispatcher.enter(siteId, owner, null, args);
 
             //Assign the args back in to the method, which applies any changes made to them
             args = context.getArgs();
@@ -64,7 +64,7 @@ public final class EnterTemplates {
     /** Constructor variant of Plain. */
     public static final class ConstructorPlain {
         @Advice.OnMethodEnter
-        public static AdviceContextImpl enter(
+        public static HookContextImpl enter(
                 @DispatchIdMarker int siteId,
                 @Advice.Origin Class<?> owner,
                 @Advice.AllArguments(typing = Assigner.Typing.DYNAMIC) Object[] args) {

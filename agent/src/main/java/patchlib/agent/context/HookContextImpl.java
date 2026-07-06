@@ -12,7 +12,7 @@ import java.util.Map;
 /** The context handed to @Before, @After and @Except patches. Adds the return value, skip and exception state on top
  * of the shared instance/argument/reflection utilities in BaseContext. Advice runs inside the patched method, so only
  * this context can replace its arguments; the redirect contexts observe them read-only. */
-public class AdviceContextImpl extends BaseContext implements BeforeContext, AfterContext, ExceptContext {
+public class HookContextImpl extends BaseContext implements BeforeContext, AfterContext, ExceptContext {
 
     private Object returnValue;
     private boolean skipOriginal;
@@ -20,7 +20,7 @@ public class AdviceContextImpl extends BaseContext implements BeforeContext, Aft
     private boolean suppress;
     private Map<String, Object> locals;
 
-    public AdviceContextImpl(Class<?> owner, Object self, Object[] args) {
+    public HookContextImpl(Class<?> owner, Object self, Object[] args) {
         super(owner, self, args);
     }
 

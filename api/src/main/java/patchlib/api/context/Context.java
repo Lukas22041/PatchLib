@@ -16,7 +16,7 @@ public interface Context {
     <T> T getInferredSelf();
 
     /**Gets the passed in arguments. In @Before/@After/@Except patches, writing to a spot in the array will replace the
-     * original value. In redirects the host method's arguments are read-only, see AdviceContext. */
+     * original value. In redirects the host method's arguments are read-only, see HookContext. */
     Object[] getArgs();
     /**Gets a read-only argument from the passed in arguments of the method.
      * While you can not replace the instance itself with this, you can still modify the member variables of the object. */

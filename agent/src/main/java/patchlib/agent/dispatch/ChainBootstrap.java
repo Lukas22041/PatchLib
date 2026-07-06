@@ -5,7 +5,7 @@ import patchlib.agent.PatchLibLogger;
 import patchlib.agent.PatchRegistry;
 import patchlib.agent.PatchSite;
 import patchlib.agent.RedirectSite;
-import patchlib.agent.context.AdviceContextImpl;
+import patchlib.agent.context.HookContextImpl;
 import patchlib.agent.context.RedirectContextImpl;
 import patchlib.agent.spec.RedirectKind;
 
@@ -21,7 +21,7 @@ public final class ChainBootstrap {
 
     private ChainBootstrap() {}
 
-    private static final MethodType CHAIN_TYPE = MethodType.methodType(void.class, AdviceContextImpl.class);
+    private static final MethodType CHAIN_TYPE = MethodType.methodType(void.class, HookContextImpl.class);
 
     /** Every redirect chain link shares this shape: the intercepted access target (call receiver or
      * field owner, null when absent), the access arguments, and the host method's self and args. */
@@ -38,7 +38,7 @@ public final class ChainBootstrap {
     static {
         try {
             INVOKE_LOGGED = MethodHandles.lookup().findStatic(ChainBootstrap.class, "invokeLogged",
-                    MethodType.methodType(void.class, MethodHandle.class, String.class, AdviceContextImpl.class));
+                    MethodType.methodType(void.class, MethodHandle.class, String.class, HookContextImpl.class));
             RUN_LAYER = MethodHandles.lookup().findStatic(ChainBootstrap.class, "runLayer",
                     MethodType.methodType(Object.class, MethodHandle.class, String.class, MethodHandle.class, Class.class,
                             Object.class, Object[].class, Object.class, Object[].class));
@@ -84,7 +84,7 @@ public final class ChainBootstrap {
     }
 
     /** Constant dispatch twin of PatchDispatcher.invoke. */
-    static void invokeLogged(MethodHandle handler, String blame, AdviceContextImpl context) {
+    static void invokeLogged(MethodHandle handler, String blame, HookContextImpl context) {
         try {
             handler.invokeExact(context);
         } catch (Throwable ex) {

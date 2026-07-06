@@ -1,7 +1,7 @@
 package patchlib.api.context;
 
 
-public interface AfterContext extends AdviceContext {
+public interface AfterContext extends HookContext {
 
 
     /** Retrieves the return value from the original method  */

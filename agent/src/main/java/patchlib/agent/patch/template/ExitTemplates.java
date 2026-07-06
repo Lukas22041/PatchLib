@@ -4,7 +4,7 @@ import net.bytebuddy.asm.Advice;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import patchlib.agent.dispatch.DispatchIdMarker;
 import patchlib.agent.dispatch.PatchDispatcher;
-import patchlib.agent.context.AdviceContextImpl;
+import patchlib.agent.context.HookContextImpl;
 
 /** Exit halves of the advice templates. The Except variants carry the try/catch wrapper
  * and exception routing; the plain variants leave the host method's exception flow untouched. */
@@ -17,7 +17,7 @@ public final class ExitTemplates {
                 @DispatchIdMarker int siteId,
                 @Advice.Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object returned,
                 @Advice.Thrown(readOnly = false, typing = Assigner.Typing.DYNAMIC) Throwable thrown,
-                @Advice.Local("context") AdviceContextImpl context) {
+                @Advice.Local("context") HookContextImpl context) {
 
             if (thrown != null) {
                 thrown = PatchDispatcher.except(siteId, context, thrown);
@@ -36,7 +36,7 @@ public final class ExitTemplates {
         public static void exit(
                 @DispatchIdMarker int siteId,
                 @Advice.Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object returned,
-                @Advice.Local("context") AdviceContextImpl context) {
+                @Advice.Local("context") HookContextImpl context) {
 
             returned = PatchDispatcher.exit(siteId, context, returned);
         }
@@ -48,7 +48,7 @@ public final class ExitTemplates {
         public static void exit(
                 @DispatchIdMarker int siteId,
                 @Advice.Thrown(readOnly = false, typing = Assigner.Typing.DYNAMIC) Throwable thrown,
-                @Advice.Local("context") AdviceContextImpl context) {
+                @Advice.Local("context") HookContextImpl context) {
 
             if (thrown != null) {
                 thrown = PatchDispatcher.except(siteId, context, thrown);
@@ -66,7 +66,7 @@ public final class ExitTemplates {
         @Advice.OnMethodExit
         public static void exit(
                 @DispatchIdMarker int siteId,
-                @Advice.Local("context") AdviceContextImpl context) {
+                @Advice.Local("context") HookContextImpl context) {
 
             PatchDispatcher.exit(siteId, context, null);
         }
@@ -78,7 +78,7 @@ public final class ExitTemplates {
         public static void exit(
                 @DispatchIdMarker int siteId,
                 @Advice.This(optional = true) Object self,
-                @Advice.Enter AdviceContextImpl context) {
+                @Advice.Enter HookContextImpl context) {
 
             context.setSelf(self);
             PatchDispatcher.exit(siteId, context, null);
