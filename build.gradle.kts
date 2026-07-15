@@ -196,23 +196,8 @@ tasks.test {
 tasks.jar {
     dependsOn(":agent:shadowJar")
     dependsOn(":api:jar")
-    dependsOn(":installer:shadowJar")
-    finalizedBy("installAgent")
     destinationDirectory.set(file("$rootDir/jars"))
     archiveFileName.set(jarName)
-}
-
-//Copies the built agent jar into starsector-core (the game's working dir) for quicker local testing.
-tasks.register("installAgent") {
-    group = "starsector"
-    description = "Installs the agent jar into the Starsector core folder for testing."
-    val agentJar = project(":agent").tasks.named("shadowJar", Jar::class).flatMap { it.archiveFile }
-    inputs.file(agentJar)
-    val destDir = starsectorLayout().gameWorkingDir
-    doLast {
-        val src = agentJar.get().asFile
-        src.copyTo(File(destDir, src.name), overwrite = true)
-    }
 }
 
 fun DependencyHandler.addModJars(jarNames: List<String>) {
@@ -614,12 +599,7 @@ tasks.register<Zip>("packageMod") {
         into("jars")
     }
 
-    // 1b. Include the java agent jar and the installer jar in the jars folder.
-    // The agent is copied into the game working dir by the installer; the installer is launched by the mod.
     from(project(":agent").tasks.named("shadowJar")) {
-        into("jars")
-    }
-    from(project(":installer").tasks.named("shadowJar")) {
         into("jars")
     }
 

@@ -6,4 +6,3 @@ plugins {
 
 include("agent")
 include("api")
-include("installer")
