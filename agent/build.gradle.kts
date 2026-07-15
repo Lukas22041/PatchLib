@@ -54,7 +54,8 @@ tasks.shadowJar {
     relocate("net.bytebuddy", "patchlib.bytebuddy")
     manifest {
         attributes(
-            "Premain-Class" to "patchlib.agent.PreMain",
+            "Agent-Class" to "patchlib.agent.AgentMain",
+            "Premain-Class" to "patchlib.agent.AgentMain",
             "Can-Retransform-Classes" to "true",
             "Implementation-Version" to agentVersion,
         )
