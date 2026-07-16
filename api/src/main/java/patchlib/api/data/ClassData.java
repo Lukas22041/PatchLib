@@ -1,0 +1,22 @@
+package patchlib.api.data;
+
+import com.fs.starfarer.api.ModSpecAPI;
+
+import java.util.List;
+
+public interface ClassData {
+
+    public String getClassName();
+    public String getSuperClassName();
+    public String getPackage();
+
+    public List<String> getInterfaceNames();
+
+    public List<MethodData> getMethods();
+    public List<FieldData> getFields();
+
+    public AnnotationData getAnnotation();
+    public List<AnnotationData> getAnnotations();
+
+    public ModSpecAPI getSourceMod();
+}
