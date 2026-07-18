@@ -22,8 +22,8 @@ public class PatchLibImpl extends PatchLib {
     }
 
     @Override
-    protected List<ClassData> scanImpl(ClassQuery query) {
-        return scanner.scan(query);
+    protected List<ClassData> scanImpl(ClassQuery query, boolean includeGameClasses, boolean includeModClasses) {
+        return scanner.scan(query, includeGameClasses, includeModClasses);
     }
 
 }

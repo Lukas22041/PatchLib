@@ -21,7 +21,7 @@ public abstract class PatchLib {
         return instance;
     }
 
-    protected abstract List<ClassData> scanImpl(ClassQuery query);
+    protected abstract List<ClassData> scanImpl(ClassQuery query, boolean includeGameClasses, boolean includeModClasses);
 
     //API
 
@@ -32,6 +32,10 @@ public abstract class PatchLib {
      * to classes that are included in the games or mods jars.
      * */
     public static List<ClassData> scan(ClassQuery query) {
-        return getInstance().scanImpl(query);
+        return getInstance().scanImpl(query, true, true);
+    }
+
+    public static List<ClassData> scan(ClassQuery query, boolean includeGameClasses, boolean includeModClasses) {
+        return getInstance().scanImpl(query, includeGameClasses, includeModClasses);
     }
 }

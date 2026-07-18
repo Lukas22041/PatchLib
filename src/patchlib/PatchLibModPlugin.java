@@ -3,17 +3,23 @@ package patchlib;
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModSpecAPI;
+import com.fs.starfarer.api.combat.BaseHullMod;
+import com.fs.util.DoNotObfuscate;
 import com.sun.tools.attach.AgentInitializationException;
 import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.VirtualMachine;
 import patchlib.agent.AgentMain;
 import patchlib.api.PatchLib;
+import patchlib.api.data.ClassData;
 import patchlib.api.patch.Patch;
 import patchlib.api.query.AnnotationQuery;
 import patchlib.api.query.ClassQuery;
+import patchlib.api.query.FieldQuery;
+import patchlib.api.query.MethodQuery;
 
 import java.io.IOException;
+import java.util.List;
 
 public class PatchLibModPlugin extends BaseModPlugin {
 
@@ -28,13 +34,10 @@ public class PatchLibModPlugin extends BaseModPlugin {
         //Pass the mod classloader, as it is needed to bind the patches method handlers later.
         AgentMain.init(this.getClass().getClassLoader());
 
-
         ClassQuery query = ClassQuery.create()
-                .hasAnnotation(AnnotationQuery.create().annotation(Patch.class))
-                .className("");
+                .hasAnnotation(AnnotationQuery.create().annotation(Patch.class));
 
-
-        PatchLib.scan(query);
+        List<ClassData> classes = PatchLib.scan(query, false, true);
 
     }
 

@@ -13,7 +13,7 @@ public class ClassScanner {
         this.classes = classes;
     }
 
-    public static List<ClassData> scan(ClassQuery builder) {
+    public static List<ClassData> scan(ClassQuery builder, boolean includeGameClasses, boolean includeModClasses) {
 
         //Turn builder in to match specs here, then create matchers out of them.
 
