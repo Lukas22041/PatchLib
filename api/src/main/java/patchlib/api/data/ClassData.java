@@ -6,8 +6,8 @@ import java.util.List;
 
 public interface ClassData {
 
-    public String getClassName();
-    public String getSuperClassName();
+    public String getName();
+    public String getSuperName();
     public String getPackage();
 
     public List<String> getInterfaceNames();
@@ -15,7 +15,7 @@ public interface ClassData {
     public List<MethodData> getMethods();
     public List<FieldData> getFields();
 
-    public AnnotationData getAnnotation();
+    public AnnotationData getAnnotation(String id);
     public List<AnnotationData> getAnnotations();
 
     public ModSpecAPI getSourceMod();

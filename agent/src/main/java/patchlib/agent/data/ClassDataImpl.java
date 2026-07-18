@@ -22,12 +22,12 @@ public class ClassDataImpl implements ClassData {
     }
 
     @Override
-    public String getClassName() {
+    public String getName() {
         return typeDescription.asErasure().getActualName();
     }
 
     @Override
-    public String getSuperClassName() {
+    public String getSuperName() {
         TypeDescription.Generic description = typeDescription.getSuperClass();
         return description != null ? description.asErasure().getActualName() : null;
     }
@@ -43,28 +43,29 @@ public class ClassDataImpl implements ClassData {
         return typeDescription.getInterfaces().stream().map(NamedElement::getActualName).toList();
     }
 
-    /*@Override
+    @Override
     public List<MethodData> getMethods() {
-        return List.of();
+        return typeDescription.getDeclaredMethods().stream().map(methodDesc -> (MethodData) new MethodDataImpl(methodDesc)).toList();
     }
 
     @Override
     public List<FieldData> getFields() {
-        return List.of();
+        return typeDescription.getDeclaredFields().stream().map(fieldDesc -> (FieldData) new FieldDataImpl(fieldDesc)).toList();
     }
 
     @Override
-    public AnnotationData getAnnotation() {
-        return null;
+    public AnnotationData getAnnotation(String id) {
+        return getAnnotations().stream().filter(annotationData -> annotationData.getName().equals(id)).findFirst().orElse(null);
     }
 
     @Override
     public List<AnnotationData> getAnnotations() {
-        return List.of();
+        return typeDescription.getDeclaredAnnotations().stream().map(annotationDesc -> (AnnotationData) new AnnotationDataImpl(annotationDesc)).toList();
     }
 
+    /** Returns null if not from a mod */
     @Override
     public ModSpecAPI getSourceMod() {
-        return null;
-    }*/
+        return modSpec;
+    }
 }

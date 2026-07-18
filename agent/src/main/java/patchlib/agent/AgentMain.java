@@ -19,9 +19,16 @@ public class AgentMain {
         System.setProperty("PatchLib_AgentAttached", "true");
     }
 
-    public static void init() {
+    public static void init(ClassLoader modClassLoader) {
 
-        throw new RuntimeException("Agent Loaded!");
+
+        //Discovery
+
+        //Scan
+
+        //Patch
+
+        //Preload
 
         /* Notes:
          * 1. Create TypePool

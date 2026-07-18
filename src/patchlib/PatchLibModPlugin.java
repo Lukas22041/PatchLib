@@ -22,7 +22,7 @@ public class PatchLibModPlugin extends BaseModPlugin {
             selfAttachAgent();
         }
 
-        AgentMain.init();
+        AgentMain.init(this.getClass().getClassLoader());
     }
 
     /** Check if the agent was already attached by a -javaagent flag in the vmparams.
