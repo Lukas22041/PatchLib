@@ -13,8 +13,6 @@ import java.io.IOException;
 
 public class PatchLibModPlugin extends BaseModPlugin {
 
-    public static boolean agentAttached = false;
-
     @Override
     public void onApplicationLoad() throws Exception {
 
@@ -22,6 +20,8 @@ public class PatchLibModPlugin extends BaseModPlugin {
             selfAttachAgent();
         }
 
+        //Init the agent if it managed to attach.
+        //Pass the mod classloader, as it is needed to bind the patches method handlers later.
         AgentMain.init(this.getClass().getClassLoader());
     }
 
