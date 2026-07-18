@@ -68,4 +68,9 @@ public class ClassDataImpl implements ClassData {
     public ModSpecAPI getSourceMod() {
         return modSpec;
     }
+
+    //Internal only
+    public TypeDescription getTypeDescription() {
+        return typeDescription;
+    }
 }

@@ -1,6 +1,7 @@
 package patchlib.api;
 
 import patchlib.api.data.ClassData;
+import patchlib.api.scan.ClassScanBuilder;
 
 import java.util.List;
 
@@ -20,10 +21,17 @@ public abstract class PatchLib {
         return instance;
     }
 
-    protected abstract List<ClassData> scanImpl();
+    protected abstract List<ClassData> scanImpl(ClassScanBuilder builder);
 
     //API
-    public static List<ClassData> scan() {
-        return getInstance().scanImpl();
+
+
+    /**
+     * Method that enables scanning for classes in the game.
+     * It has a notable limitation as in that it can not locate janino loaded classes, and is limited in general
+     * to classes that are included in the games or mods jars.
+     * */
+    public static List<ClassData> scan(ClassScanBuilder builder) {
+        return getInstance().scanImpl(builder);
     }
 }

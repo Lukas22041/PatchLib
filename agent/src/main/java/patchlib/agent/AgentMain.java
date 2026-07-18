@@ -1,24 +1,22 @@
 package patchlib.agent;
 
-import com.fs.starfarer.api.ModSpecAPI;
 import patchlib.agent.scan.ClassDiscoverer;
 import patchlib.agent.scan.ClassScanner;
-import patchlib.agent.scan.PatchScanner;
 import patchlib.api.PatchLibImpl;
 import patchlib.api.data.ClassData;
 
 import java.lang.instrument.Instrumentation;
 import java.util.List;
-import java.util.Map;
 
 public class AgentMain {
 
+    private final static String ATTACHED_PROPERTY = "PatchLib_AgentAttached";
     private static Instrumentation instrumentation;
 
     /** Called if "selfAttachAgent" succeeded from PatchLibModplugin. */
     public static void agentmain(String args, Instrumentation instrumentation) {
         AgentMain.instrumentation = instrumentation;
-        System.setProperty("PatchLib_AgentAttached", "true");
+        System.setProperty(ATTACHED_PROPERTY, "true");
     }
 
     /** Called if the -javaagent flag is set in the games vmparams.
@@ -26,7 +24,7 @@ public class AgentMain {
      * Might be worth to attempt using ByteBuddys installer fallback instead */
     public static void premain(String args, Instrumentation instrumentation) {
         AgentMain.instrumentation = instrumentation;
-        System.setProperty("PatchLib_AgentAttached", "true");
+        System.setProperty(ATTACHED_PROPERTY, "true");
     }
 
     public static void init(ClassLoader modClassLoader) {

@@ -9,6 +9,9 @@ import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.VirtualMachine;
 import patchlib.agent.AgentMain;
 import patchlib.api.PatchLib;
+import patchlib.api.patch.Patch;
+import patchlib.api.scan.AnnotationScanBuilder;
+import patchlib.api.scan.ClassScanBuilder;
 
 import java.io.IOException;
 
@@ -25,7 +28,14 @@ public class PatchLibModPlugin extends BaseModPlugin {
         //Pass the mod classloader, as it is needed to bind the patches method handlers later.
         AgentMain.init(this.getClass().getClassLoader());
 
-        PatchLib.scan();
+
+        ClassScanBuilder builder = ClassScanBuilder.create()
+                .hasAnnotation(AnnotationScanBuilder.create().annotation(Patch.class))
+                .className("");
+
+
+        PatchLib.scan(builder);
+
     }
 
     /** Check if the agent was already attached by a -javaagent flag in the vmparams.
