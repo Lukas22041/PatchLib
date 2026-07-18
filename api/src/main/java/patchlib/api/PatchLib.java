@@ -35,6 +35,11 @@ public abstract class PatchLib {
         return getInstance().scanImpl(query, true, true);
     }
 
+    /**
+     * Method that enables scanning for classes in the game.
+     * It has a notable limitation as in that it can not locate janino loaded classes, and is limited in general
+     * to classes that are included in the games or mods jars.
+     * */
     public static List<ClassData> scan(ClassQuery query, boolean includeGameClasses, boolean includeModClasses) {
         return getInstance().scanImpl(query, includeGameClasses, includeModClasses);
     }

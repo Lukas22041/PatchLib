@@ -37,7 +37,7 @@ public class ClassQuery {
         return this;
     }
 
-    public ClassQuery packageName(String name) {
+    public ClassQuery packageName(String packageName) {
         this.packageName = packageName;
         return this;
     }
