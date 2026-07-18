@@ -2,6 +2,7 @@ package patchlib.agent;
 
 import patchlib.agent.scan.ClassDiscoverer;
 import patchlib.agent.scan.ClassScanner;
+import patchlib.agent.scan.DiscoveryData;
 import patchlib.api.PatchLibImpl;
 import patchlib.api.data.ClassData;
 
@@ -32,10 +33,10 @@ public class AgentMain {
         //Discovery
 
         ClassDiscoverer discoverer = new ClassDiscoverer();
-        List<ClassData> classes = discoverer.discover();
+        DiscoveryData data = discoverer.discover();
 
         //Scan
-        ClassScanner scanner = new ClassScanner(classes);
+        ClassScanner scanner = new ClassScanner(data);
 
         //API init
         PatchLibImpl.init(scanner);

@@ -7,13 +7,15 @@ import java.util.List;
 
 public class ClassScanner {
 
-    private List<ClassData> classes;
+    private DiscoveryData data;
 
-    public ClassScanner(List<ClassData> classes) {
-        this.classes = classes;
+    public ClassScanner(DiscoveryData data) {
+        this.data = data;
     }
 
-    public static List<ClassData> scan(ClassQuery builder, boolean includeGameClasses, boolean includeModClasses) {
+    public List<ClassData> scan(ClassQuery builder, boolean includeGameClasses, boolean includeModClasses) {
+
+        List<ClassData> classes = data.classes();
 
         //Turn builder in to match specs here, then create matchers out of them.
 

@@ -21,27 +21,29 @@ public class ClassDiscoverer {
 
     private final List<String> gameJars = List.of("starfarer.api.jar", "starfarer_obf.jar", "fs.common_obf.jar", "fs.sound_obf.jar");
 
-    public List<ClassData> discover() {
+    public DiscoveryData discover() {
         PatchlibLogger.info("Starting class discovery");
 
         long before = System.currentTimeMillis();
-        List<ClassData> classDataList = discoverClasses();
+        DiscoveryData data = discoverClasses();
         long delta = System.currentTimeMillis() - before;
 
-        PatchlibLogger.info("Discovered " + classDataList.size() + " classes in " + delta + "ms");
+        PatchlibLogger.info("Discovered " + data.classes().size() + " classes in " + delta + "ms");
 
         PatchlibLogger.info("Finished class discovery");
-        return classDataList;
+        return data;
     }
 
-    private List<ClassData> discoverClasses() {
+    private DiscoveryData discoverClasses() {
         List<ClassData> classDataList = new ArrayList<>();
 
         List<JarSource> jars = getAllJars();
 
         List<ClassFileLocator> locators = getLocators(jars);
 
-        try (ClassFileLocator locator = new ClassFileLocator.Compound(locators) ) {
+        try {
+
+            ClassFileLocator locator = new ClassFileLocator.Compound(locators);
 
             //Create a type pool that doesn't read method bodies
             TypePool.CacheProvider cache = new TypePool.CacheProvider.Simple();
@@ -72,12 +74,13 @@ public class ClassDiscoverer {
                 }
             }
 
+            return new DiscoveryData(pool, locator, classDataList);
+
         } catch (IOException ex) {
             PatchlibLogger.error("Ran in to an IOException during class loading.");
             throw new RuntimeException(ex);
         }
 
-        return classDataList;
     }
 
     private List<ClassFileLocator> getLocators(List<JarSource> jars) {
