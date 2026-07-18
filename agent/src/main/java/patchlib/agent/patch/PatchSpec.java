@@ -1,4 +1,5 @@
 package patchlib.agent.patch;
 
-public class PatchSpec {
+public record PatchSpec() {
+
 }

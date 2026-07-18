@@ -8,6 +8,7 @@ import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.VirtualMachine;
 import patchlib.agent.AgentMain;
+import patchlib.api.PatchLib;
 
 import java.io.IOException;
 
@@ -23,6 +24,8 @@ public class PatchLibModPlugin extends BaseModPlugin {
         //Init the agent if it managed to attach.
         //Pass the mod classloader, as it is needed to bind the patches method handlers later.
         AgentMain.init(this.getClass().getClassLoader());
+
+        PatchLib.scan();
     }
 
     /** Check if the agent was already attached by a -javaagent flag in the vmparams.
@@ -36,7 +39,10 @@ public class PatchLibModPlugin extends BaseModPlugin {
      * Should be stable, as long as:
      * 1. The game ships with the "jdk.attach" module included in the bundled JRE/JDK.
      * 2. The game has the "-Djdk.attach.allowAttachSelf=true -XX:+EnableDynamicAgentLoading" flags set in the vmparams.
-     * Alex has confirmed that both of those will happen with v0.98.5a */
+     * Alex has confirmed that both of those will happen with v0.98.5a
+     *
+     * Note: There may be some issues with certain ascii characters if they are not included in the users windows language, but
+     * this has to be tested for first.*/
     public void selfAttachAgent() {
         ModSpecAPI modSpec = Global.getSettings().getModManager().getModSpec("patchlib");
         String agentJar = modSpec.getPath() + "/jars/PatchLibAgent.jar";

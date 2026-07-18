@@ -6,10 +6,14 @@ import java.util.List;
 
 public class ClassScanner {
 
-    private static List<ClassData> data;
+    private List<ClassData> data;
 
-    public static void setData(List<ClassData> data) {
-        ClassScanner.data = data;
+    public ClassScanner(List<ClassData> data) {
+        this.data = data;
+    }
+
+    public static List<ClassData> scan() {
+        return null;
     }
 
 }

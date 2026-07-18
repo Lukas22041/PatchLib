@@ -4,6 +4,7 @@ import com.fs.starfarer.api.ModSpecAPI;
 import patchlib.agent.scan.ClassDiscoverer;
 import patchlib.agent.scan.ClassScanner;
 import patchlib.agent.scan.PatchScanner;
+import patchlib.api.PatchLibImpl;
 import patchlib.api.data.ClassData;
 
 import java.lang.instrument.Instrumentation;
@@ -22,7 +23,7 @@ public class AgentMain {
 
     /** Called if the -javaagent flag is set in the games vmparams.
      * This is a fallback for 32bit windows mostly, in which Alex decided to not ship the JRE with the attach module.
-     * Might be worth to attempt using ByteBuddys installer fallback instead*/
+     * Might be worth to attempt using ByteBuddys installer fallback instead */
     public static void premain(String args, Instrumentation instrumentation) {
         AgentMain.instrumentation = instrumentation;
         System.setProperty("PatchLib_AgentAttached", "true");
@@ -36,9 +37,12 @@ public class AgentMain {
         List<ClassData> classes = discoverer.discover();
 
         //Scan
-        ClassScanner.setData(classes);
-       // PatchScanner
+        ClassScanner scanner = new ClassScanner(classes);
 
+        //API init
+        PatchLibImpl.init(scanner);
+
+        //PatchScanner
 
         //Patch
 
