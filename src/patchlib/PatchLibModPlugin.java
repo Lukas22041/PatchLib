@@ -10,8 +10,8 @@ import com.sun.tools.attach.VirtualMachine;
 import patchlib.agent.AgentMain;
 import patchlib.api.PatchLib;
 import patchlib.api.patch.Patch;
-import patchlib.api.scan.AnnotationScanBuilder;
-import patchlib.api.scan.ClassScanBuilder;
+import patchlib.api.query.AnnotationQuery;
+import patchlib.api.query.ClassQuery;
 
 import java.io.IOException;
 
@@ -29,12 +29,12 @@ public class PatchLibModPlugin extends BaseModPlugin {
         AgentMain.init(this.getClass().getClassLoader());
 
 
-        ClassScanBuilder builder = ClassScanBuilder.create()
-                .hasAnnotation(AnnotationScanBuilder.create().annotation(Patch.class))
+        ClassQuery query = ClassQuery.create()
+                .hasAnnotation(AnnotationQuery.create().annotation(Patch.class))
                 .className("");
 
 
-        PatchLib.scan(builder);
+        PatchLib.scan(query);
 
     }
 

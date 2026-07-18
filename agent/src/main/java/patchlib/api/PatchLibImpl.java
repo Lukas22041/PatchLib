@@ -1,9 +1,8 @@
 package patchlib.api;
 
 import patchlib.agent.scan.ClassScanner;
-import patchlib.agent.scan.PatchScanner;
 import patchlib.api.data.ClassData;
-import patchlib.api.scan.ClassScanBuilder;
+import patchlib.api.query.ClassQuery;
 
 import java.util.List;
 
@@ -23,8 +22,8 @@ public class PatchLibImpl extends PatchLib {
     }
 
     @Override
-    protected List<ClassData> scanImpl(ClassScanBuilder builder) {
-        return scanner.scan(builder);
+    protected List<ClassData> scanImpl(ClassQuery query) {
+        return scanner.scan(query);
     }
 
 }

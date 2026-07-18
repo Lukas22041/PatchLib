@@ -19,7 +19,7 @@ public class ClassDiscoverer {
 
     record JarSource(ModSpecAPI mod, File jar) { }
 
-    private List<String> gameJars = List.of("starfarer.api.jar", "starfarer_obf.jar", "fs.common_obf.jar", "fs.sound_obf.jar");
+    private final List<String> gameJars = List.of("starfarer.api.jar", "starfarer_obf.jar", "fs.common_obf.jar", "fs.sound_obf.jar");
 
     public List<ClassData> discover() {
         PatchlibLogger.info("Starting class discovery");
