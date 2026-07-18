@@ -64,10 +64,15 @@ public class ClassDiscoverer {
                         String binaryName = name.substring(0, name.length() - ".class".length())
                                 .replace('/', '.');
 
-                        TypeDescription typeDescription = pool.describe(binaryName).resolve();
-                        ClassData classData = new ClassDataImpl(typeDescription, jarSource.mod);
-                        classDataList.add(classData);
-                        count++;
+                        try {
+                            TypeDescription typeDescription = pool.describe(binaryName).resolve();
+                            ClassData classData = new ClassDataImpl(typeDescription, jarSource.mod);
+                            classDataList.add(classData);
+                            count++;
+                        } catch (Exception ex) {
+                            PatchlibLogger.error("Could not resolve type " + binaryName);
+                        }
+
                     }
                     PatchlibLogger.info("Discovered " + count + " classes in " + jarFile.getName());
 
