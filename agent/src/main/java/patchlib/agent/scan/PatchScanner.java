@@ -44,7 +44,7 @@ public class PatchScanner {
                 .build();
 
         //No point in checking game classes
-        List<ClassData> classDataList = PatchLib.scan(query, false, true);
+        List<ClassData> classDataList = PatchLib.scan(query, true, false);
 
         List<PatchHandlerSpec> specs = createSpecs(classDataList);
         PatchlibLogger.info("Found " + specs.size() + " patch handlers");
@@ -54,10 +54,14 @@ public class PatchScanner {
     private List<PatchHandlerSpec> createSpecs(List<ClassData> classDataList) {
         List<PatchHandlerSpec> specs = new ArrayList<>();
         for (ClassData classData : classDataList) {
-            for (MethodData method: classData.getMethods()) {
-                PatchHandlerSpec spec = createSpec(classData, method);
-                if (spec == null) continue;
-                specs.add(spec);
+            for (MethodData methodData: classData.getMethods()) {
+                try {
+                    PatchHandlerSpec spec = createSpec(classData, methodData);
+                    if (spec == null) continue;
+                    specs.add(spec);
+                } catch (Exception ex) {
+                    PatchlibLogger.error("Failed to parse the spec for method " + methodData.getName() + " from" + classData.getName() + " (" + classData.getSourceMod().getName() + ")");
+                }
             }
         }
         return specs;
@@ -88,12 +92,18 @@ public class PatchScanner {
         }
         else if (name.equals(REDIRECT_CALL)) {
             ClassQuerySpec owner = createClassQuery(patchType.getAnnotation("owner")).build();
-            MethodQuerySpec call = createMethodQuery(patchType.getAnnotation("call")).build();
+            MethodQuerySpec call = createMethodQuery(patchType.getAnnotation("call"))
+                    .methodType(MethodType.METHOD) //Only target methods
+                    .build();
             return new RedirectCallSpec(owner, call);
         }
         else if (name.equals(REDIRECT_NEW)) {
             ClassQuerySpec type = createClassQuery(patchType.getAnnotation("type")).build();
-            MethodQuerySpec constructor = createMethodQuery(patchType.getAnnotation("constructor")).build();
+            MethodQuerySpec constructor = createMethodQuery(patchType.getAnnotation("constructor"))
+                    .methodType(MethodType.CONSTRUCTOR) //Only target constructors
+                    .returnTypeName("") //Constructors have no return type
+                    .methodName("") //Constructors have no name
+                    .build();
             return new RedirectNewSpec(type, constructor);
         }
         else if (name.equals(REDIRECT_FIELD_READ)) {
@@ -169,7 +179,7 @@ public class PatchScanner {
     private FieldQuery createFieldQuery(AnnotationData fieldMatch) {
         FieldQuery query = FieldQuery.create()
                 .fieldName(fieldMatch.getString("fieldName"))
-                .fieldName(classOrString(fieldMatch.getClassName("type"), fieldMatch.getString("typeName")))
+                .fieldTypeName(classOrString(fieldMatch.getClassName("type"), fieldMatch.getString("typeName")))
                 .fieldSubtypeName(classOrString(fieldMatch.getClassName("subtype"), fieldMatch.getString("subtypeName")))
                 .staticOnly(fieldMatch.getBoolean("staticOnly"));
 
