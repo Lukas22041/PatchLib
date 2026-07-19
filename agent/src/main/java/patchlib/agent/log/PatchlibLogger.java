@@ -30,6 +30,10 @@ public class PatchlibLogger {
         log.error(prefix + message);
     }
 
+    public static void error(String message, Throwable t) {
+        log.error(prefix + message, t);
+    }
+
     public static void blank() {
         log.info("");
     }

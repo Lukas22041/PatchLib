@@ -65,7 +65,7 @@ public class PatchScanner {
                     PatchlibLogger.info("Discovered patch " + spec.handlerMethodName() + " in " + spec.handlerClassName() + "   (" + spec.sourceMod().getName() + ")");
                 } catch (Exception ex) {
                     PatchlibLogger.error("Failed to parse the spec for method " + methodData.getName() + " from" + classData.getName() +
-                            " (" + classData.getSourceMod().getName() + ")");
+                            " (" + classData.getSourceMod().getName() + ")", ex);
                 }
             }
         }
