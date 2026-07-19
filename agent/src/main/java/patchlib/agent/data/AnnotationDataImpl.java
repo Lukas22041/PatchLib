@@ -77,6 +77,18 @@ public class AnnotationDataImpl implements AnnotationData {
     }
 
     @Override
+    public Boolean getBoolean(String id) {
+        AnnotationValue<?, ?> value = get(id);
+        return value != null ? value.resolve(Boolean.class) : null;
+    }
+
+    @Override
+    public Boolean[] getBooleanArray(String id) {
+        AnnotationValue<?, ?> value = get(id);
+        return value != null ? value.resolve(Boolean[].class) : null;
+    }
+
+    @Override
     public String getEnumValue(String id) {
         AnnotationValue<?, ?> value = get(id);
         return value != null ? value.resolve(EnumerationDescription.class).getValue() : null;

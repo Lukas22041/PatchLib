@@ -16,8 +16,12 @@ public interface AnnotationData {
     public Float getFloat(String id);
     public Float[] getFloatArray(String id);
 
+    public Boolean getBoolean(String id);
+    public Boolean[] getBooleanArray(String id);
+
     public String getEnumValue(String id);
 
     public AnnotationData getAnnotation(String id);
     public AnnotationData[] getAnnotationArray(String id);
+
 }

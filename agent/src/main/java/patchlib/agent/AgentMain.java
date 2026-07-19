@@ -5,6 +5,8 @@ import patchlib.agent.misc.StarsectorPreloader;
 import patchlib.agent.scan.ClassDiscoverer;
 import patchlib.agent.scan.ClassScanner;
 import patchlib.agent.scan.DiscoveryData;
+import patchlib.agent.scan.PatchScanner;
+import patchlib.agent.spec.PatchHandlerSpec;
 import patchlib.api.PatchLib;
 import patchlib.api.PatchLibImpl;
 import patchlib.api.data.ClassData;
@@ -41,12 +43,14 @@ public class AgentMain {
         DiscoveryData discoveryData = discoverer.discover();
 
         //Scan
-        ClassScanner scanner = new ClassScanner(discoveryData);
+        ClassScanner classScanner = new ClassScanner(discoveryData);
 
         //API init
-        PatchLibImpl.init(scanner);
+        PatchLibImpl.init(classScanner);
 
         //PatchScanner
+        PatchScanner patchScanner = new PatchScanner();
+        List<PatchHandlerSpec> specs = patchScanner.scan();
 
         //Patch
 
