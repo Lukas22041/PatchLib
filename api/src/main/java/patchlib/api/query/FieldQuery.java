@@ -1,5 +1,8 @@
 package patchlib.api.query;
 
+import patchlib.api.spec.AnnotationQuerySpec;
+import patchlib.api.spec.FieldQuerySpec;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +18,11 @@ public class FieldQuery {
 
     public static FieldQuery create() {
         return new FieldQuery();
+    }
+
+    public FieldQuerySpec build() {
+        List<AnnotationQuerySpec> annotationSpecs = annotations.stream().map(AnnotationQuery::build).toList();
+        return new FieldQuerySpec(fieldName, fieldTypeName, fieldSubtypeName, staticOnly, annotationSpecs);
     }
 
     public FieldQuery fieldName(String fieldName) {

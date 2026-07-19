@@ -1,6 +1,9 @@
 package patchlib.api.query;
 
 import patchlib.api.match.MethodType;
+import patchlib.api.spec.AnnotationQuerySpec;
+import patchlib.api.spec.FieldQuerySpec;
+import patchlib.api.spec.MethodQuerySpec;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,13 +17,18 @@ public class MethodQuery {
     private int parameterCount = -1;
     private String returnTypeName = "";
     private MethodType methodType = MethodType.ANY;
-    boolean staticOnly = false;
+    private boolean staticOnly = false;
     private List<AnnotationQuery> annotations = new ArrayList<>();
 
     private MethodQuery() { }
 
     public static MethodQuery create() {
         return new MethodQuery();
+    }
+
+    public MethodQuerySpec build() {
+        List<AnnotationQuerySpec> annotationSpecs = annotations.stream().map(AnnotationQuery::build).toList();
+        return new MethodQuerySpec(methodName, parameterTypeNames, containsParameterType, parameterCount, returnTypeName, methodType, staticOnly, annotationSpecs);
     }
 
     public MethodQuery methodName(String methodName) {

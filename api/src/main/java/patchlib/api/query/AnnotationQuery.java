@@ -1,5 +1,7 @@
 package patchlib.api.query;
 
+import patchlib.api.spec.AnnotationQuerySpec;
+
 public class AnnotationQuery {
 
     private String annotationName = "";
@@ -8,6 +10,10 @@ public class AnnotationQuery {
 
     public static AnnotationQuery create() {
         return new AnnotationQuery();
+    }
+
+    public AnnotationQuerySpec build() {
+        return new AnnotationQuerySpec(annotationName);
     }
 
     public AnnotationQuery annotation(Class<?> annotation) {

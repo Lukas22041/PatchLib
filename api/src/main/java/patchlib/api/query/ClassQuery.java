@@ -1,5 +1,10 @@
 package patchlib.api.query;
 
+import patchlib.api.spec.AnnotationQuerySpec;
+import patchlib.api.spec.ClassQuerySpec;
+import patchlib.api.spec.FieldQuerySpec;
+import patchlib.api.spec.MethodQuerySpec;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +25,15 @@ public class ClassQuery {
 
     public static ClassQuery create() {
         return new ClassQuery();
+    }
+
+    public ClassQuerySpec build() {
+        List<MethodQuerySpec> methodSpecs = methods.stream().map(MethodQuery::build).toList();
+        List<FieldQuerySpec> fieldSpecs = fields.stream().map(FieldQuery::build).toList();
+        List<AnnotationQuerySpec> annotationSpecs = annotations.stream().map(AnnotationQuery::build).toList();
+
+        return new ClassQuerySpec(className, subtypeName, packageName, includeSubpackages, excludedPackageName, excludeSubpackages,
+                methodSpecs, fieldSpecs, annotationSpecs);
     }
 
     public ClassQuery className(String className) {

@@ -3,6 +3,7 @@ package patchlib.api;
 import patchlib.agent.scan.ClassScanner;
 import patchlib.api.data.ClassData;
 import patchlib.api.query.ClassQuery;
+import patchlib.api.spec.ClassQuerySpec;
 
 import java.util.List;
 
@@ -22,8 +23,8 @@ public class PatchLibImpl extends PatchLib {
     }
 
     @Override
-    protected List<ClassData> scanImpl(ClassQuery query, boolean includeGameClasses, boolean includeModClasses) {
-        return scanner.scan(query, includeGameClasses, includeModClasses);
+    protected List<ClassData> scanImpl(ClassQuerySpec querySpec, boolean includeGameClasses, boolean includeModClasses) {
+        return scanner.scan(querySpec, includeGameClasses, includeModClasses);
     }
 
 }

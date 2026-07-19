@@ -1,4 +1,4 @@
-package patchlib.agent.patch;
+package patchlib.agent.spec;
 
 public record PatchSpec() {
 

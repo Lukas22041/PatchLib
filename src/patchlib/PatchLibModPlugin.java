@@ -17,6 +17,7 @@ import patchlib.api.query.AnnotationQuery;
 import patchlib.api.query.ClassQuery;
 import patchlib.api.query.FieldQuery;
 import patchlib.api.query.MethodQuery;
+import patchlib.api.spec.ClassQuerySpec;
 
 import java.io.IOException;
 import java.util.List;
@@ -34,8 +35,10 @@ public class PatchLibModPlugin extends BaseModPlugin {
         //Pass the mod classloader, as it is needed to bind the patches method handlers later.
         AgentMain.init(this.getClass().getClassLoader());
 
-        ClassQuery query = ClassQuery.create()
-                .hasAnnotation(AnnotationQuery.create().annotation(Patch.class));
+
+        ClassQuerySpec query = ClassQuery.create()
+                .hasAnnotation(AnnotationQuery.create().annotation(Patch.class))
+                .build();
 
         List<ClassData> classes = PatchLib.scan(query, false, true);
 

@@ -2,6 +2,7 @@ package patchlib.agent.scan;
 
 import patchlib.api.data.ClassData;
 import patchlib.api.query.ClassQuery;
+import patchlib.api.spec.ClassQuerySpec;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ public class ClassScanner {
         this.data = data;
     }
 
-    public List<ClassData> scan(ClassQuery builder, boolean includeGameClasses, boolean includeModClasses) {
+    public List<ClassData> scan(ClassQuerySpec querySpec, boolean includeGameClasses, boolean includeModClasses) {
 
         List<ClassData> classes = data.classes();
 
