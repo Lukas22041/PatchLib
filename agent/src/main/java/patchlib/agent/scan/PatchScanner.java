@@ -108,6 +108,7 @@ public class PatchScanner {
                     .methodType(MethodType.CONSTRUCTOR) //Only target constructors
                     .returnTypeName("") //Constructors have no return type
                     .methodName("") //Constructors have no name
+                    .staticOnly(false) //Constructors are never static
                     .build();
             return new RedirectNewSpec(type, constructor);
         }
