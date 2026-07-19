@@ -1,10 +1,16 @@
 package patchlib.agent.scan;
 
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.matcher.ElementMatcher;
 import patchlib.agent.data.ClassDataImpl;
+import patchlib.agent.log.PatchlibLogger;
+import patchlib.agent.matchers.ClassMatcher;
+import patchlib.api.PatchLibImpl;
 import patchlib.api.data.ClassData;
 import patchlib.api.query.ClassQuery;
 import patchlib.api.spec.ClassQuerySpec;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ClassScanner {
@@ -17,6 +23,8 @@ public class ClassScanner {
 
     public List<ClassData> scan(ClassQuerySpec querySpec, boolean excludeGameClasses, boolean excludeModClasses) {
 
+        long start = System.currentTimeMillis();
+
         List<ClassData> classes = data.classes();
 
         if (excludeGameClasses) {
@@ -27,9 +35,22 @@ public class ClassScanner {
             classes = classes.stream().filter(classData -> classData.getSourceMod() == null).toList();
         }
 
-        //Turn builder in to match specs here, then create matchers out of them.
+        ElementMatcher.Junction<TypeDescription> matcher = ClassMatcher.fromQuery(querySpec);
 
-        return null;
+        ArrayList<ClassData> filtered = new ArrayList<>();
+        for (ClassData classData : classes) {
+            ClassDataImpl classDataImpl = (ClassDataImpl) classData;
+            TypeDescription description = classDataImpl.getTypeDescription();
+            if (matcher.matches(description)) {
+                filtered.add(classData);
+            }
+        }
+
+        long diff = System.currentTimeMillis() - start;
+
+        PatchlibLogger.info("Returned " + filtered.size() + " classes in " + diff + "ms from query: " + querySpec);
+
+        return filtered;
     }
 
 }

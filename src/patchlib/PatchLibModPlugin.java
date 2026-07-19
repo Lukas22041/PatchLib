@@ -12,6 +12,7 @@ import com.sun.tools.attach.VirtualMachine;
 import patchlib.agent.AgentMain;
 import patchlib.api.PatchLib;
 import patchlib.api.data.ClassData;
+import patchlib.api.patch.Before;
 import patchlib.api.patch.Patch;
 import patchlib.api.query.AnnotationQuery;
 import patchlib.api.query.ClassQuery;
@@ -34,13 +35,6 @@ public class PatchLibModPlugin extends BaseModPlugin {
         //Init the agent if it managed to attach.
         //Pass the mod classloader, as it is needed to bind the patches method handlers later.
         AgentMain.init(this.getClass().getClassLoader());
-
-
-        ClassQuerySpec query = ClassQuery.create()
-                .hasAnnotation(AnnotationQuery.create().annotation(Patch.class))
-                .build();
-
-        List<ClassData> classes = PatchLib.scan(query, false, true);
 
     }
 

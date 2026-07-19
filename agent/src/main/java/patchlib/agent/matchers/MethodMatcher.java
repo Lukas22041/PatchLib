@@ -14,7 +14,6 @@ import patchlib.api.spec.FieldQuerySpec;
 import patchlib.api.spec.MethodQuerySpec;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
@@ -69,8 +68,6 @@ public class MethodMatcher {
 
         return matcher;
     }
-
-
 
     private static boolean matchesParameters(MethodQuerySpec query, MethodDescription description) {
         ParameterList<?> parameters = description.getParameters();

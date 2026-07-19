@@ -29,7 +29,7 @@ public class FieldMatcher {
         }
 
         if (!query.fieldSubtypeName().isEmpty()) {
-            matcher = matcher.and(fieldType(failSafe(hasSuperType(named(query.fieldSubtypeName())))));
+            matcher = matcher.and(failSafe(fieldType(hasSuperType(named(query.fieldSubtypeName())))));
         }
 
         if (query.staticOnly()) {
