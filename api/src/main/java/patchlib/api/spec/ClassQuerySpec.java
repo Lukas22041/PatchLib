@@ -19,4 +19,10 @@ public record ClassQuerySpec(
         List<AnnotationQuerySpec> annotations
 ) {
 
+
+    public ClassQuerySpec {
+        methods = List.copyOf(methods);
+        fields = List.copyOf(fields);
+        annotations = List.copyOf(annotations);
+    }
 }

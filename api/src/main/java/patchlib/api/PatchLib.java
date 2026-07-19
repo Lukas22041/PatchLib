@@ -22,7 +22,7 @@ public abstract class PatchLib {
         return instance;
     }
 
-    protected abstract List<ClassData> scanImpl(ClassQuerySpec querySpec, boolean includeGameClasses, boolean includeModClasses);
+    protected abstract List<ClassData> scanImpl(ClassQuerySpec querySpec, boolean excludeGameClasses, boolean excludeModClasses);
 
     //API
 
@@ -33,7 +33,7 @@ public abstract class PatchLib {
      * to classes that are included in the games or mods jars.
      * */
     public static List<ClassData> scan(ClassQuerySpec querySpec) {
-        return getInstance().scanImpl(querySpec, true, true);
+        return getInstance().scanImpl(querySpec, false, false);
     }
 
     /**
@@ -41,7 +41,7 @@ public abstract class PatchLib {
      * It has a notable limitation as in that it can not locate janino loaded classes, and is limited in general
      * to classes that are included in the games or mods jars.
      * */
-    public static List<ClassData> scan(ClassQuerySpec querySpec, boolean includeGameClasses, boolean includeModClasses) {
-        return getInstance().scanImpl(querySpec, includeGameClasses, includeModClasses);
+    public static List<ClassData> scan(ClassQuerySpec querySpec, boolean excludeGameClasses, boolean excludeModClasses) {
+        return getInstance().scanImpl(querySpec, excludeGameClasses, excludeModClasses);
     }
 }

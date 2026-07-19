@@ -13,4 +13,8 @@ public record FieldQuerySpec(
         List<AnnotationQuerySpec>annotations
 ) {
 
+    public FieldQuerySpec {
+        annotations = List.copyOf(annotations);
+    }
+
 }

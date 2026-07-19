@@ -17,4 +17,10 @@ public record MethodQuerySpec(
     List<AnnotationQuerySpec> annotations
 ) {
 
+    public MethodQuerySpec {
+        parameterTypeNames = List.copyOf(parameterTypeNames);
+        containsParameterType = List.copyOf(containsParameterType);
+        annotations = List.copyOf(annotations);
+    }
+
 }
