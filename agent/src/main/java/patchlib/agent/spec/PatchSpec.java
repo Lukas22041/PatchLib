@@ -1,5 +1,4 @@
 package patchlib.agent.spec;
 
-public record PatchSpec() {
-
-}
+/** Spec for the different patch types */
+public interface PatchSpec { }
