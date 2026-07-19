@@ -31,22 +31,22 @@ public class ClassMatcher {
         }
 
         if (!query.subtypeName().isEmpty()) {
-            matcher.and(hasSuperType(named(query.subtypeName())));
+            matcher = matcher.and(failSafe(hasSuperType(named(query.subtypeName()))));
         }
 
         for (MethodQuerySpec method : query.methods()) {
             ElementMatcher.Junction<MethodDescription> methodMatcher = MethodMatcher.fromQuery(method);
-            matcher.and(methodMatcher);
+            matcher = matcher.and(declaresMethod(methodMatcher));
         }
 
         for (FieldQuerySpec field : query.fields()) {
             ElementMatcher.Junction<FieldDescription> fieldMatcher = FieldMatcher.fromQuery(field);
-            matcher.and(fieldMatcher);
+            matcher = matcher.and(declaresField(fieldMatcher));
         }
 
         for (AnnotationQuerySpec annotation : query.annotations()) {
-            ElementMatcher.Junction<AnnotationDescription> methodMatcher = AnnotationMatcher.fromQuery(annotation);
-            matcher.and(methodMatcher);
+            ElementMatcher.Junction<AnnotationDescription> annotationMatcher = AnnotationMatcher.fromQuery(annotation);
+            matcher = matcher.and(declaresAnnotation(annotationMatcher));
         }
 
         return matcher;

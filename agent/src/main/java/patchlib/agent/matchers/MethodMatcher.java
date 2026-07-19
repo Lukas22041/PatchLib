@@ -18,12 +18,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
-import static net.bytebuddy.matcher.ElementMatchers.declaresAnnotation;
-import static net.bytebuddy.matcher.ElementMatchers.fieldType;
-import static net.bytebuddy.matcher.ElementMatchers.hasSuperType;
-import static net.bytebuddy.matcher.ElementMatchers.isDeclaredBy;
-import static net.bytebuddy.matcher.ElementMatchers.isStatic;
-import static net.bytebuddy.matcher.ElementMatchers.named;
 
 public class MethodMatcher {
 
@@ -52,10 +46,10 @@ public class MethodMatcher {
             matcher = matcher.and(returns(named(query.returnTypeName())));
         }
 
-        if (query.methodType() == MethodType.METHOD) {
-            matcher = matcher.and(isMethod());
-        } else if (query.methodType() == MethodType.CONSTRUCTOR) {
-            matcher = matcher.and(isConstructor());
+        switch (query.methodType()) {
+            case METHOD -> matcher = matcher.and(isMethod());
+            case CONSTRUCTOR -> matcher = matcher.and(isConstructor());
+            case ANY -> matcher = matcher.and(isMethod().or(isConstructor()));
         }
 
         if (query.staticOnly()) {
@@ -67,7 +61,7 @@ public class MethodMatcher {
             matcher = matcher.and(declaresAnnotation(annotationMatcher));
         }
 
-        //Check if the field is part of some class, used only by redirects.
+        //Check if the method is part of some class, used only by redirects.
         if (ownerQuery != null) {
             ElementMatcher.Junction<TypeDescription> ownerMatcher = ClassMatcher.fromQuery(ownerQuery);
             matcher = matcher.and(isDeclaredBy(ownerMatcher));
@@ -96,13 +90,14 @@ public class MethodMatcher {
     }
 
     private static boolean containsParameters(MethodQuerySpec query, MethodDescription description) {
-        Set<String> parameters = description.getParameters().stream().map(param -> param.getType().asErasure().getActualName()).collect(Collectors.toSet());
+        List<String> parameters = description.getParameters().stream().map(param -> param.getType().asErasure().getActualName()).collect(Collectors.toList());
         List<String> parametersToCheck = query.containsParameterType();
 
         for (String parameterToCheck : parametersToCheck) {
             if (!parameters.contains(parameterToCheck)) {
                 return false;
             }
+            parameters.remove(parameterToCheck);
         }
 
         return true;
