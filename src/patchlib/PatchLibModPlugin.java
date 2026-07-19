@@ -29,7 +29,12 @@ public class PatchLibModPlugin extends BaseModPlugin {
     public void onApplicationLoad() throws Exception {
 
         if (!checkAlreadyAttached()) {
-            selfAttachAgent();
+            try {
+                selfAttachAgent();
+            } catch (Throwable ex) {
+                throw new RuntimeException("PatchLib failed to attach to the game. \n" +
+                        "Check PatchLib's forum thread for guidance on this issue.\n", ex);
+            }
         }
 
         //Init the agent if it managed to attach.
@@ -53,21 +58,15 @@ public class PatchLibModPlugin extends BaseModPlugin {
      *
      * Note: There may be some issues with certain ascii characters if they are not included in the users windows language, but
      * this has to be tested for first.*/
-    public void selfAttachAgent() {
+    public void selfAttachAgent() throws AgentLoadException, IOException, AgentInitializationException, AttachNotSupportedException {
         ModSpecAPI modSpec = Global.getSettings().getModManager().getModSpec("patchlib");
         String agentJar = modSpec.getPath() + "/jars/PatchLibAgent.jar";
 
         String pid = Long.toString(ProcessHandle.current().pid());
 
-        try {
-            VirtualMachine vm = VirtualMachine.attach(pid);
-            vm.loadAgent(agentJar);
-            vm.detach();
-        } catch (AgentLoadException | AgentInitializationException | IOException | AttachNotSupportedException ex) {
-            throw new RuntimeException("PatchLib failed to attach to the game. \n" +
-                    "Check PatchLib's forum thread for guidance on this issue.\n", ex);
-        }
-
+        VirtualMachine vm = VirtualMachine.attach(pid);
+        vm.loadAgent(agentJar);
+        vm.detach();
     }
 
 
