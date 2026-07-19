@@ -37,6 +37,7 @@ public class PatchScanner {
             REDIRECT_CALL, REDIRECT_NEW, REDIRECT_FIELD_READ, REDIRECT_FIELD_WRITE));
 
     public List<PatchHandlerSpec> scan() {
+        PatchlibLogger.info("Starting patch discovery");
 
         ClassQuerySpec query = ClassQuery.create()
                 .hasAnnotation(AnnotationQuery.create()
@@ -47,7 +48,9 @@ public class PatchScanner {
         List<ClassData> classDataList = PatchLib.scan(query, true, false);
 
         List<PatchHandlerSpec> specs = createSpecs(classDataList);
-        PatchlibLogger.info("Found " + specs.size() + " patch handlers");
+        PatchlibLogger.info("Discovered " + specs.size() + " patch handlers");
+        PatchlibLogger.info("Finished patch discovery");
+        PatchlibLogger.blank();
         return specs;
     }
 
@@ -59,8 +62,10 @@ public class PatchScanner {
                     PatchHandlerSpec spec = createSpec(classData, methodData);
                     if (spec == null) continue;
                     specs.add(spec);
+                    PatchlibLogger.info("Discovered patch " + spec.handlerMethodName() + " in " + spec.handlerClassName() + "   (" + spec.sourceMod().getName() + ")");
                 } catch (Exception ex) {
-                    PatchlibLogger.error("Failed to parse the spec for method " + methodData.getName() + " from" + classData.getName() + " (" + classData.getSourceMod().getName() + ")");
+                    PatchlibLogger.error("Failed to parse the spec for method " + methodData.getName() + " from" + classData.getName() +
+                            " (" + classData.getSourceMod().getName() + ")");
                 }
             }
         }

@@ -30,4 +30,8 @@ public class PatchlibLogger {
         log.error(prefix + message);
     }
 
+    public static void blank() {
+        log.info("");
+    }
+
 }

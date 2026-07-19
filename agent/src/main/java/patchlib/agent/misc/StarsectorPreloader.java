@@ -39,5 +39,6 @@ public class StarsectorPreloader {
         PatchlibLogger.info("Loaded " + loaded + " starsector classes during preload");
         PatchlibLogger.info("Skipped " + skipped + " starsector classes during preload");
         PatchlibLogger.info("Finished starsector class preload in " + diff + " ms");
+        PatchlibLogger.blank();
     }
 }

@@ -35,6 +35,7 @@ public class AgentMain {
 
     public static void init(ClassLoader modClassLoader) {
 
+        PatchlibLogger.blank();
         PatchlibLogger.info("Starting initialization");
         long start = System.currentTimeMillis();
 
@@ -61,6 +62,7 @@ public class AgentMain {
 
         float time = (System.currentTimeMillis() - start) / 1000f;
         PatchlibLogger.info("Finished initialization in " + time + " seconds");
+        PatchlibLogger.blank();
     }
 
 }

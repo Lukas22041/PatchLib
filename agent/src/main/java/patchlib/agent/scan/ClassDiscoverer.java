@@ -22,6 +22,7 @@ public class ClassDiscoverer {
     private final List<String> gameJars = List.of("starfarer.api.jar", "starfarer_obf.jar", "fs.common_obf.jar", "fs.sound_obf.jar");
 
     public DiscoveryData discover() {
+        PatchlibLogger.blank();
         PatchlibLogger.info("Starting class discovery");
 
         long before = System.currentTimeMillis();
@@ -31,6 +32,7 @@ public class ClassDiscoverer {
         PatchlibLogger.info("Discovered " + data.classes().size() + " classes in " + delta + "ms");
 
         PatchlibLogger.info("Finished class discovery");
+        PatchlibLogger.blank();
         return data;
     }
 
