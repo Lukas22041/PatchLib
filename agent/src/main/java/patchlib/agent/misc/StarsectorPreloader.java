@@ -1,0 +1,43 @@
+package patchlib.agent.misc;
+
+import patchlib.agent.log.PatchlibLogger;
+import patchlib.agent.scan.DiscoveryData;
+import patchlib.api.data.ClassData;
+
+public class StarsectorPreloader {
+
+    private DiscoveryData data;
+    private ClassLoader classLoader;
+
+    public StarsectorPreloader(DiscoveryData data, ClassLoader classLoader) {
+        this.data = data;
+        this.classLoader = classLoader;
+    }
+
+    public void preload() {
+        PatchlibLogger.info("Starting starsector class preload");
+        long start = System.currentTimeMillis();
+
+        int loaded = 0;
+        int skipped = 0;
+        for (ClassData classData : data.classes()) {
+            //Skip modded classes for now, only preload starsectors own classes
+            //If ever changed, the passed in class loader also needs to be changed to the mod class loader.
+            if (classData.getSourceMod() != null) continue;
+
+            try {
+                //Load with "initialize" set to false prevents static blocks from being called early.
+                Class.forName(classData.getName(), false, classLoader);
+                loaded++;
+            } catch (Exception ex) {
+                skipped++;
+            }
+
+        }
+
+        float diff = System.currentTimeMillis() - start ;
+        PatchlibLogger.info("Loaded " + loaded + " starsector classes during preload");
+        PatchlibLogger.info("Skipped " + skipped + " starsector classes during preload");
+        PatchlibLogger.info("Finished starsector class preload in " + diff + " ms");
+    }
+}

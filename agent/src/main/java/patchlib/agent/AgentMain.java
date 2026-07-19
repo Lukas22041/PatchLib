@@ -1,8 +1,11 @@
 package patchlib.agent;
 
+import patchlib.agent.log.PatchlibLogger;
+import patchlib.agent.misc.StarsectorPreloader;
 import patchlib.agent.scan.ClassDiscoverer;
 import patchlib.agent.scan.ClassScanner;
 import patchlib.agent.scan.DiscoveryData;
+import patchlib.api.PatchLib;
 import patchlib.api.PatchLibImpl;
 import patchlib.api.data.ClassData;
 
@@ -30,13 +33,15 @@ public class AgentMain {
 
     public static void init(ClassLoader modClassLoader) {
 
-        //Discovery
+        PatchlibLogger.info("Starting initialization");
+        long start = System.currentTimeMillis();
 
+        //Discovery
         ClassDiscoverer discoverer = new ClassDiscoverer();
-        DiscoveryData data = discoverer.discover();
+        DiscoveryData discoveryData = discoverer.discover();
 
         //Scan
-        ClassScanner scanner = new ClassScanner(data);
+        ClassScanner scanner = new ClassScanner(discoveryData);
 
         //API init
         PatchLibImpl.init(scanner);
@@ -46,7 +51,12 @@ public class AgentMain {
         //Patch
 
         //Preload
+        ClassLoader systemLoader = AgentMain.class.getClassLoader();
+        StarsectorPreloader preloader = new StarsectorPreloader(discoveryData, systemLoader);
+        preloader.preload();
 
+        float time = (System.currentTimeMillis() - start) / 1000f;
+        PatchlibLogger.info("Finished initialization in " + time + " seconds");
     }
 
 }

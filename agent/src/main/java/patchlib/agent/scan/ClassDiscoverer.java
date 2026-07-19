@@ -56,9 +56,10 @@ public class ClassDiscoverer {
                     int count = 0;
                     while (entries.hasMoreElements()) {
                         JarEntry entry = entries.nextElement();
-                        if (entry.isDirectory() || !entry.getName().endsWith(".class")) continue;
-
                         String name = entry.getName();
+                        if (entry.isDirectory()) continue;
+                        if (!name.endsWith(".class")) continue;
+                        if (name.contains("module-info.class")) continue;
 
                         //Create actual full class path in package format.
                         String binaryName = name.substring(0, name.length() - ".class".length())
