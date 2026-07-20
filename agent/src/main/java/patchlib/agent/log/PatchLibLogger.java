@@ -4,10 +4,10 @@ import com.fs.starfarer.api.Global;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-public class PatchlibLogger {
+public class PatchLibLogger {
 
 
-    private static Logger log = Global.getLogger(PatchlibLogger.class);
+    private static Logger log = Global.getLogger(PatchLibLogger.class);
     private static String prefix = "[PatchLib] ";
 
     static {

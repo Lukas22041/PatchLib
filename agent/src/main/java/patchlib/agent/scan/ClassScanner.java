@@ -3,11 +3,9 @@ package patchlib.agent.scan;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.matcher.ElementMatcher;
 import patchlib.agent.data.ClassDataImpl;
-import patchlib.agent.log.PatchlibLogger;
+import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.matchers.ClassMatcher;
-import patchlib.api.PatchLibImpl;
 import patchlib.api.data.ClassData;
-import patchlib.api.query.ClassQuery;
 import patchlib.api.spec.ClassQuerySpec;
 
 import java.util.ArrayList;
@@ -48,7 +46,7 @@ public class ClassScanner {
 
         long diff = System.currentTimeMillis() - start;
 
-        PatchlibLogger.info("Returned " + filtered.size() + " classes in " + diff + "ms from query: " + querySpec);
+        PatchLibLogger.info("Returned " + filtered.size() + " classes in " + diff + "ms from query: " + querySpec);
 
         return filtered;
     }

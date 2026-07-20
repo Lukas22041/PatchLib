@@ -6,7 +6,7 @@ import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.pool.TypePool;
 import patchlib.agent.data.ClassDataImpl;
-import patchlib.agent.log.PatchlibLogger;
+import patchlib.agent.log.PatchLibLogger;
 import patchlib.api.data.ClassData;
 
 import java.io.File;
@@ -22,17 +22,17 @@ public class ClassDiscoverer {
     private final List<String> gameJars = List.of("starfarer.api.jar", "starfarer_obf.jar", "fs.common_obf.jar", "fs.sound_obf.jar");
 
     public DiscoveryData discover() {
-        PatchlibLogger.blank();
-        PatchlibLogger.info("Starting class discovery");
+        PatchLibLogger.blank();
+        PatchLibLogger.info("Starting class discovery");
 
         long before = System.currentTimeMillis();
         DiscoveryData data = discoverClasses();
         long delta = System.currentTimeMillis() - before;
 
-        PatchlibLogger.info("Discovered " + data.classes().size() + " classes in " + delta + "ms");
+        PatchLibLogger.info("Discovered " + data.classes().size() + " classes in " + delta + "ms");
 
-        PatchlibLogger.info("Finished class discovery");
-        PatchlibLogger.blank();
+        PatchLibLogger.info("Finished class discovery");
+        PatchLibLogger.blank();
         return data;
     }
 
@@ -73,11 +73,11 @@ public class ClassDiscoverer {
                             classDataList.add(classData);
                             count++;
                         } catch (Exception ex) {
-                            PatchlibLogger.error("Could not resolve type " + binaryName);
+                            PatchLibLogger.error("Could not resolve type " + binaryName);
                         }
 
                     }
-                    PatchlibLogger.info("Discovered " + count + " classes in " + jarFile.getName());
+                    PatchLibLogger.info("Discovered " + count + " classes in " + jarFile.getName());
 
                 }
             }
@@ -85,7 +85,7 @@ public class ClassDiscoverer {
             return new DiscoveryData(pool, locator, classDataList);
 
         } catch (IOException ex) {
-            PatchlibLogger.error("Ran in to an IOException during class loading.");
+            PatchLibLogger.error("Ran in to an IOException during class loading.");
             throw new RuntimeException(ex);
         }
 
@@ -100,7 +100,7 @@ public class ClassDiscoverer {
             try {
                 locators.add(ClassFileLocator.ForJarFile.of(jar.jar));
             } catch (IOException ex) {
-                PatchlibLogger.error("Could not add " + jar.jar.getName() + " to classfile locators");
+                PatchLibLogger.error("Could not add " + jar.jar.getName() + " to classfile locators");
             }
         }
 
@@ -117,7 +117,7 @@ public class ClassDiscoverer {
         for (String gameJar : gameJars) {
             File jar = new File(workingDir, gameJar);
             jars.add(new JarSource(null, jar));
-            PatchlibLogger.info("Discovered jar: " + jar.getName());
+            PatchLibLogger.info("Discovered jar: " + jar.getName());
         }
 
         //Add mod jars
@@ -125,7 +125,7 @@ public class ClassDiscoverer {
             for (String jarPath : mod.getJars()) {
                 File jar = new File(mod.getPath(), jarPath);
                 jars.add(new JarSource(mod, jar));
-                PatchlibLogger.info("Discovered jar: " + jar.getName() + " from " + mod.getName());
+                PatchLibLogger.info("Discovered jar: " + jar.getName() + " from " + mod.getName());
             }
         }
 

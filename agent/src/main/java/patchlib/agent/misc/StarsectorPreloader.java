@@ -1,6 +1,6 @@
 package patchlib.agent.misc;
 
-import patchlib.agent.log.PatchlibLogger;
+import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.scan.DiscoveryData;
 import patchlib.api.data.ClassData;
 
@@ -15,7 +15,7 @@ public class StarsectorPreloader {
     }
 
     public void preload() {
-        PatchlibLogger.info("Starting starsector class preload");
+        PatchLibLogger.info("Starting starsector class preload");
         long start = System.currentTimeMillis();
 
         int loaded = 0;
@@ -36,9 +36,9 @@ public class StarsectorPreloader {
         }
 
         float diff = System.currentTimeMillis() - start ;
-        PatchlibLogger.info("Loaded " + loaded + " starsector classes during preload");
-        PatchlibLogger.info("Skipped " + skipped + " starsector classes during preload");
-        PatchlibLogger.info("Finished starsector class preload in " + diff + " ms");
-        PatchlibLogger.blank();
+        PatchLibLogger.info("Loaded " + loaded + " starsector classes during preload");
+        PatchLibLogger.info("Skipped " + skipped + " starsector classes during preload");
+        PatchLibLogger.info("Finished starsector class preload in " + diff + " ms");
+        PatchLibLogger.blank();
     }
 }

@@ -1,12 +1,11 @@
 package patchlib.agent.scan;
 
-import patchlib.agent.log.PatchlibLogger;
+import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.spec.*;
 import patchlib.api.PatchLib;
 import patchlib.api.data.AnnotationData;
 import patchlib.api.data.ClassData;
 import patchlib.api.data.MethodData;
-import patchlib.api.match.ClassMatch;
 import patchlib.api.match.MethodType;
 import patchlib.api.match.Unset;
 import patchlib.api.patch.*;
@@ -37,7 +36,7 @@ public class PatchScanner {
             REDIRECT_CALL, REDIRECT_NEW, REDIRECT_FIELD_READ, REDIRECT_FIELD_WRITE));
 
     public List<PatchHandlerSpec> scan() {
-        PatchlibLogger.info("Starting patch discovery");
+        PatchLibLogger.info("Starting patch discovery");
 
         ClassQuerySpec query = ClassQuery.create()
                 .hasAnnotation(AnnotationQuery.create()
@@ -48,9 +47,9 @@ public class PatchScanner {
         List<ClassData> classDataList = PatchLib.scan(query, true, false);
 
         List<PatchHandlerSpec> specs = createSpecs(classDataList);
-        PatchlibLogger.info("Discovered " + specs.size() + " patch handlers");
-        PatchlibLogger.info("Finished patch discovery");
-        PatchlibLogger.blank();
+        PatchLibLogger.info("Discovered " + specs.size() + " patch handlers");
+        PatchLibLogger.info("Finished patch discovery");
+        PatchLibLogger.blank();
         return specs;
     }
 
@@ -62,9 +61,9 @@ public class PatchScanner {
                     PatchHandlerSpec spec = createSpec(classData, methodData);
                     if (spec == null) continue;
                     specs.add(spec);
-                    PatchlibLogger.info("Discovered patch " + spec.handlerMethodName() + " in " + spec.handlerClassName() + "   (" + spec.sourceMod().getName() + ")");
+                    PatchLibLogger.info("Discovered patch " + spec.handlerMethodName() + " in " + spec.handlerClassName() + "   (" + spec.sourceMod().getName() + ")");
                 } catch (Exception ex) {
-                    PatchlibLogger.error("Failed to parse the spec for method " + methodData.getName() + " from" + classData.getName() +
+                    PatchLibLogger.error("Failed to parse the spec for method " + methodData.getName() + " from" + classData.getName() +
                             " (" + classData.getSourceMod().getName() + ")", ex);
                 }
             }

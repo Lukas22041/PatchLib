@@ -1,15 +1,14 @@
 package patchlib.agent;
 
-import patchlib.agent.log.PatchlibLogger;
+import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.misc.StarsectorPreloader;
+import patchlib.agent.patch.PatchInstaller;
 import patchlib.agent.scan.ClassDiscoverer;
 import patchlib.agent.scan.ClassScanner;
 import patchlib.agent.scan.DiscoveryData;
 import patchlib.agent.scan.PatchScanner;
 import patchlib.agent.spec.PatchHandlerSpec;
-import patchlib.api.PatchLib;
 import patchlib.api.PatchLibImpl;
-import patchlib.api.data.ClassData;
 
 import java.lang.instrument.Instrumentation;
 import java.util.List;
@@ -35,8 +34,8 @@ public class AgentMain {
 
     public static void init(ClassLoader modClassLoader) {
 
-        PatchlibLogger.blank();
-        PatchlibLogger.info("Starting initialization");
+        PatchLibLogger.blank();
+        PatchLibLogger.info("Starting initialization");
         long start = System.currentTimeMillis();
 
         //Discovery
@@ -51,9 +50,11 @@ public class AgentMain {
 
         //PatchScanner
         PatchScanner patchScanner = new PatchScanner();
-        List<PatchHandlerSpec> specs = patchScanner.scan();
+        List<PatchHandlerSpec> patchSpecs = patchScanner.scan();
 
         //Patch
+        PatchInstaller installer = new PatchInstaller();
+        installer.install(instrumentation, modClassLoader, patchSpecs);
 
         //Preload
         ClassLoader systemLoader = AgentMain.class.getClassLoader();
@@ -61,8 +62,8 @@ public class AgentMain {
         preloader.preload();
 
         float time = (System.currentTimeMillis() - start) / 1000f;
-        PatchlibLogger.info("Finished initialization in " + time + " seconds");
-        PatchlibLogger.blank();
+        PatchLibLogger.info("Finished initialization in " + time + " seconds");
+        PatchLibLogger.blank();
     }
 
 }
