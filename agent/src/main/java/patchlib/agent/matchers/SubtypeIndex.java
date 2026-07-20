@@ -1,11 +1,12 @@
 package patchlib.agent.matchers;
 
+import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.matcher.ElementMatcher;
 import patchlib.agent.data.ClassDataImpl;
+import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.patch.InstallationData;
 import patchlib.agent.scan.DiscoveryData;
-import patchlib.agent.spec.PatchHandlerSpec;
 import patchlib.api.data.ClassData;
 
 import java.util.HashSet;
@@ -28,6 +29,8 @@ public class SubtypeIndex {
     }
 
     public void build(DiscoveryData discoveryData, List<InstallationData> installationDataList) {
+        long start = System.currentTimeMillis();
+
         Set<String> targetSubtypes = new HashSet<>();
 
         for (InstallationData installationData : installationDataList) {
@@ -39,9 +42,33 @@ public class SubtypeIndex {
 
         for (ClassData classData : discoveryData.classes()) {
             ClassDataImpl classDataImpl = (ClassDataImpl) classData;
-            if (isSubtype.matches(classDataImpl.getTypeDescription())) {
+            if (IgnoreMatcher.isIgnored(classDataImpl.getName())) continue;
+
+            TypeDescription typeDescription = classDataImpl.getTypeDescription();
+
+            if (!isSubtype.matches(classDataImpl.getTypeDescription())) continue;
+
+            if (declaresPatchedMethod(typeDescription, installationDataList)) {
                 matches.add(classData.getName());
             }
+        }
+
+        long diff = System.currentTimeMillis() - start;
+        PatchLibLogger.info("Build subtype index in " + diff + "ms");
+    }
+
+    private boolean declaresPatchedMethod(TypeDescription type, List<InstallationData> installationDataList) {
+        try {
+            for (InstallationData data : installationDataList) {
+                if (!data.classMatcher().matches(type)) continue;
+                for (MethodDescription.InDefinedShape method : type.getDeclaredMethods()) {
+                    if (method.isAbstract() || method.isNative()) continue;
+                    if (data.methodMatcher().matches(method)) return true;
+                }
+            }
+            return false;
+        } catch (Throwable t) {
+            return true;
         }
     }
 

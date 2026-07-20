@@ -73,21 +73,21 @@ public class PatchInstaller {
 
     private DynamicType.Builder<?> transform(DynamicType.Builder<?> builder, TypeDescription type, List<InstallationData> installationDataList) {
 
-        List<InstallationData> classmatchedData = new ArrayList<>();
+        List<InstallationData> classMatchedData = new ArrayList<>();
         for (InstallationData installationData : installationDataList) {
             if (installationData.classMatcher().matches(type)) {
-                classmatchedData.add(installationData);
+                classMatchedData.add(installationData);
             }
         }
 
-        if (classmatchedData.isEmpty()) return builder;
+        if (classMatchedData.isEmpty()) return builder;
 
         for (MethodDescription.InDefinedShape methodDescription : type.getDeclaredMethods()) {
 
             //Skip invalid patch targets
             if (methodDescription.isAbstract() || methodDescription.isNative()) continue;
 
-            List<InstallationData> methodMatchedData = classmatchedData.stream().filter(data -> data.methodMatcher().matches(methodDescription)).toList();
+            List<InstallationData> methodMatchedData = classMatchedData.stream().filter(data -> data.methodMatcher().matches(methodDescription)).toList();
 
             List<InstallationData> advicePatches = methodMatchedData.stream().filter(data -> data.spec().isAdvice()).toList();
             List<InstallationData> redirectPatches = methodMatchedData.stream().filter(data -> !data.spec().isAdvice()).toList();
