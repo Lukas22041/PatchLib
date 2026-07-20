@@ -38,7 +38,7 @@ public record PatchHandlerSpec(
             else if (patchSpec instanceof RedirectFieldReadSpec) return FieldReadContext.class;
             else if (patchSpec instanceof RedirectFieldWriteSpec) return FieldWriteContext.class;
         }
-        return null;
+        throw new IllegalStateException("Unknown patch spec type " + patchSpec);
     }
 
     public Class<?> getContextImplClass() {
@@ -47,7 +47,7 @@ public record PatchHandlerSpec(
         else if (patchSpec instanceof RedirectNewSpec) return ConstructorCallContextImpl.class;
         else if (patchSpec instanceof RedirectFieldReadSpec) return FieldReadContextImpl.class;
         else if (patchSpec instanceof RedirectFieldWriteSpec) return FieldWriteContextImpl.class;
-        return null;
+        throw new IllegalStateException("Unknown patch spec type " + patchSpec);
     }
 
 }

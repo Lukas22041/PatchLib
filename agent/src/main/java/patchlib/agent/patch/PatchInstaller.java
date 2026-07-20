@@ -72,24 +72,24 @@ public class PatchInstaller {
 
     private DynamicType.Builder<?> transform(DynamicType.Builder<?> builder, TypeDescription type, List<InstallationData> installationDataList) {
 
-        List<InstallationData> matched = new ArrayList<>();
+        List<InstallationData> classmatchedData = new ArrayList<>();
         for (InstallationData installationData : installationDataList) {
             if (installationData.classMatcher().matches(type)) {
-                matched.add(installationData);
+                classmatchedData.add(installationData);
             }
         }
 
-        if (matched.isEmpty()) return builder;
+        if (classmatchedData.isEmpty()) return builder;
 
         for (MethodDescription.InDefinedShape methodDescription : type.getDeclaredMethods()) {
 
             //Skip invalid patch targets
             if (methodDescription.isAbstract() || methodDescription.isNative()) continue;
 
-            List<InstallationData> passed = installationDataList.stream().filter(data -> data.methodMatcher().matches(methodDescription)).toList();
+            List<InstallationData> methodMatchedData = classmatchedData.stream().filter(data -> data.methodMatcher().matches(methodDescription)).toList();
 
-            List<InstallationData> advicePatches = passed.stream().filter(data -> data.spec().isAdvice()).toList();
-            List<InstallationData> redirectPatches = passed.stream().filter(data -> !data.spec().isAdvice()).toList();
+            List<InstallationData> advicePatches = methodMatchedData.stream().filter(data -> data.spec().isAdvice()).toList();
+            List<InstallationData> redirectPatches = methodMatchedData.stream().filter(data -> !data.spec().isAdvice()).toList();
 
             if (!advicePatches.isEmpty()) {
                 builder = AdviceInstaller.transform(builder, type, methodDescription, advicePatches);
@@ -108,7 +108,7 @@ public class PatchInstaller {
     private ElementMatcher.Junction<TypeDescription> createTypeMatcher(List<InstallationData> installationDataList) {
         ElementMatcher.Junction<TypeDescription> allMatcher = none();
         for (InstallationData data : installationDataList) {
-            allMatcher = allMatcher.or(ClassMatcher.fromQuery(data.spec().targetClass()));
+            allMatcher = allMatcher.or(data.classMatcher());
         }
         return allMatcher;
     }
@@ -116,18 +116,25 @@ public class PatchInstaller {
     private List<InstallationData> createInstallationData(List<PatchHandlerSpec> specs, ClassLoader modClassLoader) {
         List<InstallationData> dataList = new ArrayList<>();
         for (PatchHandlerSpec spec : specs) {
+            try {
+                MethodHandle handle = createMethodHandle(spec, modClassLoader);
+                if (handle == null) continue;
 
-            MethodHandle handle = createMethodHandle(spec, modClassLoader);
-            if (handle == null) continue;
+                String errorMessage = "Ran in to some issue while executing " + spec.handlerMethodName() + " in " + spec.handlerClassName() + " from "
+                        + spec.sourceMod().getName();
 
-            InstallationData data = new InstallationData(spec, handle, ClassMatcher.fromQuery(spec.targetClass()), MethodMatcher.fromQuery(spec.targetMethod()));
-            dataList.add(data);
+                InstallationData data = new InstallationData(spec, handle, ClassMatcher.fromQuery(spec.targetClass()), MethodMatcher.fromQuery(spec.targetMethod()), errorMessage);
+                dataList.add(data);
+            } catch (Throwable ex) {
+                PatchLibLogger.error("Failed creating installation data for handler method" + spec.handlerMethodName() + " in " + spec.handlerClassName() + " from mod " + spec.sourceMod().getName(), ex);
+            }
         }
         dataList = sortInstallationData(dataList);
+        PatchLibLogger.info("Collected " + dataList.size() + " patches");
         return dataList;
     }
 
-    /** Sort based on priority, then by mod name */
+    /** Sort based on priority, then by mod name. Execution order for patches is based on this. */
     private List<InstallationData> sortInstallationData(List<InstallationData> installationData) {
         return installationData.stream()
                 .sorted(Comparator.comparingInt((InstallationData data) -> data.spec().priority())
