@@ -31,10 +31,4 @@ public class IgnoreMatcher {
         return ignored.and(not(allowed));
     }
 
-    private static boolean isIgnored(String binaryName) {
-        for (String prefix : ALLOWED_PREFIXES) if (binaryName.startsWith(prefix)) return false;
-        for (String prefix : IGNORED_PREFIXES) if (binaryName.startsWith(prefix)) return true;
-        return false;
-    }
-
 }

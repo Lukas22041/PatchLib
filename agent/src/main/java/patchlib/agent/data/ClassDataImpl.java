@@ -15,10 +15,12 @@ public class ClassDataImpl implements ClassData {
 
     private TypeDescription typeDescription;
     private ModSpecAPI modSpec;
+    private boolean isFromStarsector;
 
-    public ClassDataImpl(TypeDescription typeDescription, ModSpecAPI modSpec) {
+    public ClassDataImpl(TypeDescription typeDescription, ModSpecAPI modSpec, boolean isFromStarsector) {
         this.typeDescription = typeDescription;
         this.modSpec = modSpec;
+        this.isFromStarsector = isFromStarsector;
     }
 
     @Override
@@ -67,6 +69,10 @@ public class ClassDataImpl implements ClassData {
     @Override
     public ModSpecAPI getSourceMod() {
         return modSpec;
+    }
+
+    public boolean isFromStarsector() {
+        return isFromStarsector;
     }
 
     //Internal only

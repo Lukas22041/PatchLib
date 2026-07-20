@@ -8,11 +8,10 @@ import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
 import patchlib.agent.log.PatchLibLogger;
-import patchlib.agent.matchers.ClassMatcher;
-import patchlib.agent.matchers.IgnoreMatcher;
-import patchlib.agent.matchers.MethodMatcher;
+import patchlib.agent.matchers.*;
 import patchlib.agent.patch.advice.AdviceInstaller;
 import patchlib.agent.patch.redirect.RedirectInstaller;
+import patchlib.agent.scan.DiscoveryData;
 import patchlib.agent.spec.PatchHandlerSpec;
 import patchlib.api.store.PatchData;
 
@@ -31,13 +30,15 @@ import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class PatchInstaller {
 
-    public void install(Instrumentation instrumentation, ClassLoader modClassLoader, List<PatchHandlerSpec> specs) {
+    public void install(Instrumentation instrumentation, ClassLoader modClassLoader, List<PatchHandlerSpec> specs, DiscoveryData discoveryData) {
 
         PatchLibLogger.info("Starting patch installation");
         long start = System.currentTimeMillis();
 
         List<InstallationData> installationData = createInstallationData(specs, modClassLoader);
-        ElementMatcher.Junction<TypeDescription> allMatcher = createTypeMatcher(installationData);
+
+        SubtypeIndex subtypeIndex = new SubtypeIndex(discoveryData, installationData);
+        AgentBuilder.RawMatcher gateMatcher = GateMatcher.create(specs, subtypeIndex);
 
         AgentBuilder agentBuilder = new AgentBuilder.Default()
                 //Disable class shape changes entirely
@@ -57,7 +58,7 @@ public class PatchInstaller {
                 .with(new InstallListener())
                 //Ignore specific classes for performance & stability reasons.
                 .ignore(IgnoreMatcher.create())
-                .type(allMatcher)
+                .type(gateMatcher)
                 .transform((builder, type, loader, module, protectionDomain) ->
                         transform(builder, type, installationData));
 
@@ -101,16 +102,6 @@ public class PatchInstaller {
         }
 
         return builder;
-    }
-
-
-
-    private ElementMatcher.Junction<TypeDescription> createTypeMatcher(List<InstallationData> installationDataList) {
-        ElementMatcher.Junction<TypeDescription> allMatcher = none();
-        for (InstallationData data : installationDataList) {
-            allMatcher = allMatcher.or(data.classMatcher());
-        }
-        return allMatcher;
     }
 
     private List<InstallationData> createInstallationData(List<PatchHandlerSpec> specs, ClassLoader modClassLoader) {

@@ -69,7 +69,11 @@ public class ClassDiscoverer {
 
                         try {
                             TypeDescription typeDescription = pool.describe(binaryName).resolve();
-                            ClassData classData = new ClassDataImpl(typeDescription, jarSource.mod);
+                            boolean isStarsectorClass = gameJars.contains(jarSource.jar.getName());
+                            ClassData classData = new ClassDataImpl(typeDescription, jarSource.mod, isStarsectorClass);
+                            if (isStarsectorClass) {
+                                String test = "";
+                            }
                             classDataList.add(classData);
                             count++;
                         } catch (Exception ex) {
@@ -113,11 +117,17 @@ public class ClassDiscoverer {
         List<JarSource> jars = new ArrayList<>();
 
         //Add the games own jars
-        String workingDir = System.getProperty("user.dir");
+        /*String workingDir = System.getProperty("user.dir");
         for (String gameJar : gameJars) {
             File jar = new File(workingDir, gameJar);
             jars.add(new JarSource(null, jar));
             PatchLibLogger.info("Discovered jar: " + jar.getName());
+        }*/
+
+        File coreDir = new File(System.getProperty("user.dir"));
+        for (File coreJar : coreDir.listFiles((dir, name) -> name.endsWith(".jar"))) {
+            jars.add(new JarSource(null, coreJar));
+            PatchLibLogger.info("Discovered jar: " + coreJar.getName());
         }
 
         //Add mod jars

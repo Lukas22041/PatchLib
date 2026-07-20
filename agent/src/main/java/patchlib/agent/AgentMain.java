@@ -54,7 +54,7 @@ public class AgentMain {
 
         //Patch
         PatchInstaller installer = new PatchInstaller();
-        installer.install(instrumentation, modClassLoader, patchSpecs);
+        installer.install(instrumentation, modClassLoader, patchSpecs, discoveryData);
 
         //Preload
         ClassLoader systemLoader = AgentMain.class.getClassLoader();

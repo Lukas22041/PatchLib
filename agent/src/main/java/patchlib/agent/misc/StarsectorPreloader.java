@@ -1,5 +1,6 @@
 package patchlib.agent.misc;
 
+import patchlib.agent.data.ClassDataImpl;
 import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.scan.DiscoveryData;
 import patchlib.api.data.ClassData;
@@ -23,7 +24,8 @@ public class StarsectorPreloader {
         for (ClassData classData : data.classes()) {
             //Skip modded classes for now, only preload starsectors own classes
             //If ever changed, the passed in class loader also needs to be changed to the mod class loader.
-            if (classData.getSourceMod() != null) continue;
+            if (!((ClassDataImpl) classData).isFromStarsector()) continue;
+            //if (classData.getSourceMod() != null) continue;
 
             try {
                 //Load with "initialize" set to false prevents static blocks from being called early.
