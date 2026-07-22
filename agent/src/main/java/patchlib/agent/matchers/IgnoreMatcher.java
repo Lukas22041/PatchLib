@@ -15,7 +15,12 @@ public class IgnoreMatcher {
             "org.apache.log4j.", //Ignore the logger
             "com.azul.", "org.graalvm.", "com.oracle.", "oracle.", //Ignore specific JVMs
             "org.codehaus.janino.", "org.codehaus.commons.", //Ignore Janino
-            "com.intellij.", "org.jetbrains.capture." //Ignore IntelliJ debugger
+            "com.intellij.", "org.jetbrains.capture.", //Ignore IntelliJ debugger
+
+            //Block starsectors mod classloader from being patched.
+            //Alex (the games developer) prefers reflection & io to not be to easily accessed, and one mod
+            //could disable the checks for all other mods by patching the loader.
+            "com.fs.starfarer.loading.scripts."
     };
 
     /** Exceptions to the ignored prefixes. */
