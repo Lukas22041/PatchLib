@@ -48,7 +48,7 @@ public class SubtypeIndex {
 
             if (!isSubtype.matches(classDataImpl.getTypeDescription())) continue;
 
-            if (declaresPatchedMethod(typeDescription, installationDataList)) {
+            if (GateMatcher.declaresPatchedMethod(typeDescription, installationDataList)) {
                 matches.add(classData.getName());
             }
         }
@@ -57,19 +57,6 @@ public class SubtypeIndex {
         PatchLibLogger.info("Build subtype index in " + diff + "ms");
     }
 
-    private boolean declaresPatchedMethod(TypeDescription type, List<InstallationData> installationDataList) {
-        try {
-            for (InstallationData data : installationDataList) {
-                if (!data.classMatcher().matches(type)) continue;
-                for (MethodDescription.InDefinedShape method : type.getDeclaredMethods()) {
-                    if (method.isAbstract() || method.isNative()) continue;
-                    if (data.methodMatcher().matches(method)) return true;
-                }
-            }
-            return false;
-        } catch (Throwable t) {
-            return true;
-        }
-    }
+
 
 }

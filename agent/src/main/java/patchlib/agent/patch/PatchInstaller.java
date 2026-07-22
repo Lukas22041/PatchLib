@@ -44,7 +44,7 @@ public class PatchInstaller {
         List<InstallationData> installationData = createInstallationData(specs, modClassLoader);
 
         SubtypeIndex subtypeIndex = new SubtypeIndex(discoveryData, installationData);
-        AgentBuilder.RawMatcher gateMatcher = GateMatcher.create(specs, subtypeIndex);
+        AgentBuilder.RawMatcher gateMatcher = GateMatcher.create(installationData, subtypeIndex);
 
         AgentBuilder agentBuilder = new AgentBuilder.Default()
                 //Disable class shape changes entirely
