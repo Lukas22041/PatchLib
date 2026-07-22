@@ -1,5 +1,7 @@
 package patchlib.agent.patch;
 
+import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.ModSpecAPI;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.method.MethodDescription;
@@ -15,6 +17,7 @@ import patchlib.agent.scan.DiscoveryData;
 import patchlib.agent.spec.PatchHandlerSpec;
 import patchlib.api.store.PatchData;
 
+import java.io.File;
 import java.lang.instrument.Instrumentation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -33,6 +36,9 @@ public class PatchInstaller {
     public void install(Instrumentation instrumentation, ClassLoader modClassLoader, List<PatchHandlerSpec> specs, DiscoveryData discoveryData) {
 
         PatchLibLogger.info("Starting patch installation");
+        if (InstallListener.ENABLE_TRANSFORMED_CLASS_DEBUG) {
+            PatchLibLogger.warn("Debug output of transformed classes is enabled, should be disabled in non-dev releases");
+        }
         long start = System.currentTimeMillis();
 
         List<InstallationData> installationData = createInstallationData(specs, modClassLoader);

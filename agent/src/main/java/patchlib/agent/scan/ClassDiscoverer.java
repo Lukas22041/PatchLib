@@ -71,9 +71,6 @@ public class ClassDiscoverer {
                             TypeDescription typeDescription = pool.describe(binaryName).resolve();
                             boolean isStarsectorClass = gameJars.contains(jarSource.jar.getName());
                             ClassData classData = new ClassDataImpl(typeDescription, jarSource.mod, isStarsectorClass);
-                            if (isStarsectorClass) {
-                                String test = "";
-                            }
                             classDataList.add(classData);
                             count++;
                         } catch (Exception ex) {
