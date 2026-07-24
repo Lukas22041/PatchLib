@@ -18,5 +18,7 @@ public interface ClassData {
     public AnnotationData getAnnotation(String id);
     public List<AnnotationData> getAnnotations();
 
+    public boolean isFromStarsector();
+
     public ModSpecAPI getSourceMod();
 }

@@ -65,15 +65,18 @@ public class ClassDataImpl implements ClassData {
         return typeDescription.getDeclaredAnnotations().stream().map(annotationDesc -> (AnnotationData) new AnnotationDataImpl(annotationDesc)).toList();
     }
 
+    @Override
+    public boolean isFromStarsector() {
+        return isFromStarsector;
+    }
+
     /** Returns null if not from a mod */
     @Override
     public ModSpecAPI getSourceMod() {
         return modSpec;
     }
 
-    public boolean isFromStarsector() {
-        return isFromStarsector;
-    }
+
 
     //Internal only
     public TypeDescription getTypeDescription() {
