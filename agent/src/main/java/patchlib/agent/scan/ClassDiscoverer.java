@@ -89,7 +89,7 @@ public class ClassDiscoverer {
     }
 
     private ExecutorService createExecutor() {
-        int threads = Math.max(1, Math.min(3, Runtime.getRuntime().availableProcessors()-1));
+        int threads = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors()-1));
 
         AtomicInteger count = new AtomicInteger();
 
