@@ -9,6 +9,7 @@ import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
+import net.bytebuddy.pool.TypePool;
 import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.matchers.*;
 import patchlib.agent.patch.advice.AdviceInstaller;
@@ -60,7 +61,7 @@ public class PatchInstaller {
                 .with(AgentBuilder.TypeStrategy.Default.DECORATE)
                 .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
                 //Caches discovered types, makes installation much faster but adds a permanent increase in memory used.
-                .with(new AgentBuilder.PoolStrategy.WithTypePoolCache.Simple(new ConcurrentHashMap<>()))
+                .with(new AgentBuilder.PoolStrategy.WithTypePoolCache.Simple(TypePool.Default.ReaderMode.FAST, TypePool.Default.WithLazyResolution.LazinessMode.EXTENDED, new ConcurrentHashMap<>()))
                 .with(new InstallListener())
                 //Ignore specific classes for performance & stability reasons.
                 .ignore(IgnoreMatcher.create())
