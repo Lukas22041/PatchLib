@@ -101,7 +101,7 @@ public class ClassDiscoverer {
             try {
                 locators.add(ClassFileLocator.ForJarFile.of(jar.jar));
             } catch (IOException ex) {
-                PatchLibLogger.error("Could not add " + jar.jar.getName() + " to classfile locators");
+                PatchLibLogger.error("Could not add " + jar.jar.getName() + " to classfile locators", ex);
             }
         }
 
@@ -131,6 +131,9 @@ public class ClassDiscoverer {
         for (ModSpecAPI mod : mods) {
             for (String jarPath : mod.getJars()) {
                 File jar = new File(mod.getPath(), jarPath);
+                if (!jar.exists()) {
+                    PatchLibLogger.error("Could not find jar " + jar.getPath() + ", the mod might have an invalid mod_info.json entry.");
+                }
                 jars.add(new JarSource(mod, jar));
                 PatchLibLogger.info("Discovered jar: " + jar.getName() + " from " + mod.getName());
             }
