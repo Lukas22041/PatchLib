@@ -12,12 +12,16 @@ import patchlib.api.data.ClassData;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class ClassDiscoverer {
 
-    record JarSource(ModSpecAPI mod, File jar) { }
+    public record JarSource(ModSpecAPI mod, File jar) { }
 
     private final List<String> gameJars = List.of("starfarer.api.jar", "starfarer_obf.jar", "fs.common_obf.jar", "fs.sound_obf.jar");
 
@@ -43,6 +47,8 @@ public class ClassDiscoverer {
 
         List<ClassFileLocator> locators = getLocators(jars);
 
+        ExecutorService executorService = createExecutor();
+
         try {
 
             ClassFileLocator locator = new ClassFileLocator.Compound(locators);
@@ -51,45 +57,47 @@ public class ClassDiscoverer {
             TypePool.CacheProvider cache = new TypePool.CacheProvider.Simple();
             TypePool pool = new TypePool.Default(cache, locator, TypePool.Default.ReaderMode.FAST);
 
+            List<ClassDiscoverTask> tasks = new ArrayList<>();
             for (JarSource jarSource : jars) {
-                try (JarFile jarFile = new JarFile(jarSource.jar) ){
-                    Enumeration<JarEntry> entries = jarFile.entries();
+                boolean isStarsectorClass = gameJars.contains(jarSource.jar.getName());
+                ClassDiscoverTask task = new ClassDiscoverTask(jarSource, pool, isStarsectorClass);
+                tasks.add(task);
+            }
 
-                    int count = 0;
-                    while (entries.hasMoreElements()) {
-                        JarEntry entry = entries.nextElement();
-                        String name = entry.getName();
-                        if (entry.isDirectory()) continue;
-                        if (!name.endsWith(".class")) continue;
-                        if (name.contains("module-info.class")) continue;
+            List<Future<ClassDiscoverTask.ClassDiscoverTaskResult>> futures = executorService.invokeAll(tasks);
 
-                        //Create actual full class path in package format.
-                        String binaryName = name.substring(0, name.length() - ".class".length())
-                                .replace('/', '.');
+            for (int i = 0; i < futures.size(); i++) {
+                JarSource jar = jars.get(i);
 
-                        try {
-                            TypeDescription typeDescription = pool.describe(binaryName).resolve();
-                            boolean isStarsectorClass = gameJars.contains(jarSource.jar.getName());
-                            ClassData classData = new ClassDataImpl(typeDescription, jarSource.mod, isStarsectorClass);
-                            classDataList.add(classData);
-                            count++;
-                        } catch (Exception ex) {
-                            PatchLibLogger.error("Could not resolve type " + binaryName);
-                        }
-
-                    }
-                    PatchLibLogger.info("Discovered " + count + " classes in " + jarFile.getName());
-
+                try {
+                    ClassDiscoverTask.ClassDiscoverTaskResult result = futures.get(i).get();
+                    classDataList.addAll(result.classDataList());
+                } catch (Exception ex) {
+                    PatchLibLogger.error("Failed to parse jar " + jar.jar.getPath(), ex);
                 }
             }
 
             return new DiscoveryData(pool, locator, classDataList);
 
-        } catch (IOException ex) {
-            PatchLibLogger.error("Ran in to an IOException during class loading.");
+        }  catch (Exception ex) {
+            PatchLibLogger.error("Ran in to an error while scanning game & mod jars.");
             throw new RuntimeException(ex);
+        } finally {
+            executorService.shutdown();
         }
 
+    }
+
+    private ExecutorService createExecutor() {
+        int threads = Math.max(1, Math.min(3, Runtime.getRuntime().availableProcessors()-1));
+
+        AtomicInteger count = new AtomicInteger();
+
+        return Executors.newFixedThreadPool(threads, runnable -> {
+            Thread thread = new Thread(runnable, "PatchLib-" + count.incrementAndGet());
+            thread.setDaemon(true);
+            return thread;
+        });
     }
 
     private List<ClassFileLocator> getLocators(List<JarSource> jars) {
