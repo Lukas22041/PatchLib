@@ -4,6 +4,11 @@ import patchlib.api.context.MethodCallContext;
 import patchlib.api.ref.Ref;
 
 public class MethodCallContextImpl extends BaseContextImpl implements MethodCallContext {
+
+    public MethodCallContextImpl(Class<?> owner, Object self, Object[] args) {
+        super(owner, self, args);
+    }
+
     /**
      * The arguments passed to the intercepted call. Writing to a spot in the array changes what call() passes on.
      */

@@ -4,6 +4,11 @@ import patchlib.api.context.ConstructorCallContext;
 import patchlib.api.ref.Ref;
 
 public class ConstructorCallContextImpl extends BaseContextImpl implements ConstructorCallContext {
+
+    public ConstructorCallContextImpl(Class<?> owner, Object self, Object[] args) {
+        super(owner, self, args);
+    }
+
     /**
      * The arguments passed to the intercepted construction. Writing to a spot in the array changes what call() passes on.
      */

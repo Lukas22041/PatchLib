@@ -42,7 +42,7 @@ public final class ReturnTemplate {
 
             //Throw was caught and handled, so any patch is fine to run
             if (thrown == null) {
-                returned = AdviceDispatcher.exit(siteId, afterHandle, context, returned);
+                returned = AdviceDispatcher.exit(siteId, afterHandle, context, context.getReturnValue());
             }
         } else {
             returned = AdviceDispatcher.exit(siteId, afterHandle, context, returned);

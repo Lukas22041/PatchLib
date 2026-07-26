@@ -29,7 +29,7 @@ public class AdviceHandleChain {
 
         //Layer the handles from the last handle to run up to the first on top.
         MethodHandle chain = wrap(installationDataList.get(installationDataList.size()-1));
-        for (int i = 0; i < installationDataList.size() - 2; i--) {
+        for (int i = installationDataList.size() - 2; i >= 0; i--) {
             chain = MethodHandles.foldArguments(chain, wrap(installationDataList.get(i)));
         }
         return chain;

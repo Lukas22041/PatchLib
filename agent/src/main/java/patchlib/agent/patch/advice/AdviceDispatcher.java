@@ -12,7 +12,7 @@ public class AdviceDispatcher {
             beforeHandle = AdvicePatchRegistry.getSite(siteId).beforeChain;
         }
 
-        HookContextImpl hookContext = new HookContextImpl();
+        HookContextImpl hookContext = new HookContextImpl(owner, self, args, siteId);
         invoke(beforeHandle, hookContext);
         return hookContext;
     }
@@ -38,11 +38,12 @@ public class AdviceDispatcher {
         return context.getThrown();
     }
 
-    private static void invoke(MethodHandle handle, HookContextImpl hookContext) {
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void invoke(MethodHandle handle, HookContextImpl hookContext) throws T{
         try {
             handle.invokeExact(hookContext);
         } catch (Throwable ex) {
-            throw new RuntimeException("Failed to execute patch", ex);
+            throw (T) ex;
         }
     }
 }

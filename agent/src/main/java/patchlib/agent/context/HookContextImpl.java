@@ -5,10 +5,30 @@ import patchlib.api.context.BeforeContext;
 import patchlib.api.context.ExceptContext;
 import patchlib.api.ref.Ref;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class HookContextImpl extends BaseContextImpl implements BeforeContext, AfterContext, ExceptContext {
 
-    private Throwable thrown = null;
-    private boolean suppress = false;
+    private final int siteId;
+
+    private Object returnValue;
+    private boolean skipOriginal;
+    private Throwable thrown;
+    private boolean suppress;
+
+    private Map<String, Object> locals = new HashMap<>();
+
+    public HookContextImpl(Class<?> owner, Object self, Object[] args, int siteId) {
+        super(owner, self, args);
+        this.owner = owner;
+        this.self = self;
+        this.siteId = siteId;
+    }
+
+    public void setSelf(Object self) {
+        this.self = self;
+    }
 
     public void initThrown(Throwable thrown) {
         this.thrown = thrown;

@@ -41,13 +41,13 @@ public class AdviceInstaller {
         //By default, use constant dynamics, which involves having bytebuddy register them in the classes constant pool,
         //which then calls the refered to bootstrap method. This allows the Just-in-Time compiler to optimise the code.
         if (supportsConstantDynamics) {
-            mapping.bind(BeforeHandleMarker.class, JavaConstant.Dynamic.bootstrap(AdviceBootstrap.BEFORE, AdviceBootstrap.BOOTSTRAP_METHOD, site))
-                    .bind(AfterHandleMarker.class, JavaConstant.Dynamic.bootstrap(AdviceBootstrap.AFTER, AdviceBootstrap.BOOTSTRAP_METHOD, site));
+            mapping = mapping.bind(BeforeHandleMarker.class, JavaConstant.Dynamic.bootstrap(AdviceBootstrap.BEFORE, AdviceBootstrap.BOOTSTRAP_METHOD, patchId))
+                    .bind(AfterHandleMarker.class, JavaConstant.Dynamic.bootstrap(AdviceBootstrap.AFTER, AdviceBootstrap.BOOTSTRAP_METHOD, patchId));
         }
         //Older versions of classes do not yet support constant dynamics, and janino is marked as an older class file format, so
         //for the fallback just use the passed in SiteIdMarker to grab the handle chain at runtime.
         else {
-            mapping.bind(BeforeHandleMarker.class, NullConstant.INSTANCE, MethodHandle.class)
+            mapping = mapping.bind(BeforeHandleMarker.class, NullConstant.INSTANCE, MethodHandle.class)
                     .bind(AfterHandleMarker.class, NullConstant.INSTANCE, MethodHandle.class);
         }
 

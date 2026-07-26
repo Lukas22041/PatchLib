@@ -6,6 +6,10 @@ import patchlib.api.ref.Ref;
 
 public class FieldWriteContextImpl extends BaseContextImpl implements FieldWriteContext {
 
+    public FieldWriteContextImpl(Class<?> owner, Object self, Object[] args) {
+        super(owner, self, args);
+    }
+
     /**
      * The instance whose field is written. Null for a static field.
      */

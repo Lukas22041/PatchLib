@@ -8,6 +8,17 @@ import patchlib.api.spec.MethodQuerySpec;
 import patchlib.api.store.PatchData;
 
 public abstract class BaseContextImpl implements Context {
+
+    protected Class<?> owner;
+    protected Object self;
+    protected final Object[] args;
+
+    public BaseContextImpl(Class<?> owner, Object self, Object[] args) {
+        this.owner = owner;
+        this.self = self;
+        this.args = args;
+    }
+
     /**
      * Get the instance that the patched method is called on. Can be null on @Before constructors and on all static methods
      */

@@ -3,6 +3,11 @@ package patchlib.agent.context;
 import patchlib.api.context.FieldReadContext;
 
 public class FieldReadContextImpl extends BaseContextImpl implements FieldReadContext {
+
+    public FieldReadContextImpl(Class<?> owner, Object self, Object[] args) {
+        super(owner, self, args);
+    }
+
     /**
      * The instance whose field is read. Null for a static field.
      */
