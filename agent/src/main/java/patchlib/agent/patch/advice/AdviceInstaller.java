@@ -4,8 +4,10 @@ import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.implementation.bytecode.constant.NullConstant;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
+import net.bytebuddy.utility.JavaConstant;
 import patchlib.agent.context.HookContextImpl;
 import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.patch.InstallationData;
@@ -32,12 +34,24 @@ public class AdviceInstaller {
 
         boolean supportsConstantDynamics = PatchInstaller.supportsConstantDynamic(typeDescription);
 
-        builder = builder.visit(
-                Advice.withCustomMapping()
-                        .bind(SiteIdMarker.class, patchId)
-                        .to(pickTemplate(methodDescription))
-                        .on(ElementMatchers.is(methodDescription))
-        );
+        Advice.WithCustomMapping mapping = Advice.withCustomMapping()
+                .bind(SiteIdMarker.class, patchId);
+
+
+        //By default, use constant dynamics, which involves having bytebuddy register them in the classes constant pool,
+        //which then calls the refered to bootstrap method. This allows the Just-in-Time compiler to optimise the code.
+        if (supportsConstantDynamics) {
+            mapping.bind(BeforeHandleMarker.class, JavaConstant.Dynamic.bootstrap(AdviceBootstrap.BEFORE, AdviceBootstrap.BOOTSTRAP_METHOD, site))
+                    .bind(AfterHandleMarker.class, JavaConstant.Dynamic.bootstrap(AdviceBootstrap.AFTER, AdviceBootstrap.BOOTSTRAP_METHOD, site));
+        }
+        //Older versions of classes do not yet support constant dynamics, and janino is marked as an older class file format, so
+        //for the fallback just use the passed in SiteIdMarker to grab the handle chain at runtime.
+        else {
+            mapping.bind(BeforeHandleMarker.class, NullConstant.INSTANCE, MethodHandle.class)
+                    .bind(AfterHandleMarker.class, NullConstant.INSTANCE, MethodHandle.class);
+        }
+
+        builder = builder.visit(mapping.to(pickTemplate(methodDescription)).on(ElementMatchers.is(methodDescription)));
 
         PatchLibLogger.info("Installed a hook patch site at " + typeDescription.getActualName() + " on method " + methodDescription.getActualName() + " (" + methodDescription.getDescriptor() + ")");
 

@@ -7,6 +7,14 @@ import patchlib.api.ref.Ref;
 
 public class HookContextImpl extends BaseContextImpl implements BeforeContext, AfterContext, ExceptContext {
 
+    private Throwable thrown = null;
+    private boolean suppress = false;
+
+    public void initThrown(Throwable thrown) {
+        this.thrown = thrown;
+        this.suppress = false;
+    }
+
     /**
      * Retrieves the return value from the original method
      */

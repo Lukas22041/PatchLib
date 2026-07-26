@@ -7,13 +7,13 @@ import java.util.List;
 
 public class AdvicePatchSite {
 
-    private final MethodHandle beforeChain;
-    private final MethodHandle afterChain;
-    private final MethodHandle exceptChain;
+    public final MethodHandle beforeChain;
+    public final MethodHandle afterChain;
+    public final MethodHandle exceptChain;
 
-    private final List<InstallationData> before;
-    private final List<InstallationData> after;
-    private final List<InstallationData> except;
+    public final List<InstallationData> before;
+    public final List<InstallationData> after;
+    public final List<InstallationData> except;
 
     private final String hostClass;
     private final String methodName;
