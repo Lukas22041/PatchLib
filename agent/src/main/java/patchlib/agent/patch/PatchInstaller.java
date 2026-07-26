@@ -2,6 +2,7 @@ package patchlib.agent.patch;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModSpecAPI;
+import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.method.MethodDescription;
@@ -109,6 +110,11 @@ public class PatchInstaller {
         }
 
         return builder;
+    }
+
+    public static boolean supportsConstantDynamic(TypeDescription typeDescription) {
+        ClassFileVersion version = typeDescription.getClassFileVersion();
+        return version != null && version.isAtLeast(ClassFileVersion.JAVA_V11);
     }
 
     private List<InstallationData> createInstallationData(List<PatchHandlerSpec> specs, ClassLoader modClassLoader) {

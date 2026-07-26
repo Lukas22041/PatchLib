@@ -9,7 +9,7 @@ import java.util.List;
 
 public class RedirectInstaller {
 
-    public static DynamicType.Builder<?> transform(DynamicType.Builder<?> builder, TypeDescription type,
+    public static DynamicType.Builder<?> transform(DynamicType.Builder<?> builder, TypeDescription typeDescription,
                                                    MethodDescription.InDefinedShape methodDescription, List<InstallationData> installationDataList) {
 
         return builder;
