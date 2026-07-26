@@ -53,7 +53,7 @@ public class AdviceInstaller {
 
         builder = builder.visit(mapping.to(pickTemplate(methodDescription)).on(ElementMatchers.is(methodDescription)));
 
-        PatchLibLogger.info("Installed a hook patch site at " + typeDescription.getActualName() + " on method " + methodDescription.getActualName() + " (" + methodDescription.getDescriptor() + ")");
+        PatchLibLogger.info("Installed a hook patch site at " + typeDescription.getActualName() + " on method " + methodDescription.getActualName() + " " + methodDescription.getParameters() + "");
 
         return builder;
     }
