@@ -21,13 +21,9 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
 
     public HookContextImpl(Class<?> owner, Object self, Object[] args, int siteId) {
         super(owner, self, args);
-        this.owner = owner;
+        this.effectiveClass = owner;
         this.self = self;
         this.siteId = siteId;
-    }
-
-    public void setSelf(Object self) {
-        this.self = self;
     }
 
     public void initThrown(Throwable thrown) {

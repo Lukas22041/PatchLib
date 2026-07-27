@@ -9,14 +9,21 @@ import patchlib.api.store.PatchData;
 
 public abstract class BaseContextImpl implements Context {
 
-    protected Class<?> owner;
+    protected Class<?> effectiveClass;
     protected Object self;
     protected final Object[] args;
 
-    public BaseContextImpl(Class<?> owner, Object self, Object[] args) {
-        this.owner = owner;
+    public BaseContextImpl(Class<?> effectiveClass, Object self, Object[] args) {
+        this.effectiveClass = self != null ? self.getClass() : effectiveClass;
         this.self = self;
         this.args = args;
+    }
+
+    public void setSelf(Object self) {
+        this.self = self;
+        if (self != null) {
+            this.effectiveClass = self.getClass();
+        }
     }
 
     /**
