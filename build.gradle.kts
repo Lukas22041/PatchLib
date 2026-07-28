@@ -98,6 +98,7 @@ dependencies {
 
     //Mod API. Bundled in to the agent, so it is loaded by the agents system class loader. Available for mods as reference.
     compileOnly(project(":api"))
+    annotationProcessor(project(":api"))
 
     //Loads basic starsector dependencies.
     addStarsectorCoreDependencies()
