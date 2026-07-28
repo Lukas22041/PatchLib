@@ -8,7 +8,7 @@ import patchlib.api.match.MethodMatch;
 import patchlib.api.patch.After;
 import patchlib.api.patch.Patch;
 
-@Patch(target = @ClassMatch(subtype = EveryFrameScript.class))
+/*@Patch(target = @ClassMatch(subtype = EveryFrameScript.class))
 public class ScriptPatch {
 
     @After(target = @MethodMatch(methodName = "advance"))
@@ -16,4 +16,4 @@ public class ScriptPatch {
 
     }
 
-}
+}*/

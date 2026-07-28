@@ -9,7 +9,7 @@ import patchlib.api.match.MethodMatch;
 import patchlib.api.patch.After;
 import patchlib.api.patch.Patch;
 
-@Patch(target = @ClassMatch(subtype = CampaignClockAPI.class))
+/*@Patch(target = @ClassMatch(subtype = CampaignClockAPI.class))
 public class TestPatch {
 
     @After(target = @MethodMatch(methodName = "getCycle"))
@@ -17,4 +17,4 @@ public class TestPatch {
         //context.setReturnValue((int) context.getReturnValue() + 1000);
     }
 
-}
+}*/
