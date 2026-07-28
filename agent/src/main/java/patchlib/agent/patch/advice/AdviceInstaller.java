@@ -70,7 +70,7 @@ public class AdviceInstaller {
         MethodHandle exceptChain = AdviceHandleChain.createHandleChain(exceptData);
 
         return new AdvicePatchSite(beforeChain, afterChain, exceptChain,beforeData, afterData, exceptData,
-                typeDescription.getName(), methodDescription.getName(), methodDescription.getDescriptor());
+                typeDescription.getName(), methodDescription.getName(), methodDescription.getDescriptor(), methodDescription.isVirtual());
     }
 
 

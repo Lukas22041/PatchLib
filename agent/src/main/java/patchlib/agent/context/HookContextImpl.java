@@ -1,8 +1,10 @@
 package patchlib.agent.context;
 
+import patchlib.agent.patch.advice.AdvicePatchRegistry;
 import patchlib.api.context.AfterContext;
 import patchlib.api.context.BeforeContext;
 import patchlib.api.context.ExceptContext;
+import patchlib.api.ref.ArgRef;
 import patchlib.api.ref.Ref;
 
 import java.util.HashMap;
@@ -17,12 +19,11 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
     private Throwable thrown;
     private boolean suppress;
 
-    private Map<String, Object> locals = new HashMap<>();
+    //Created lazily on first use
+    private Map<String, Object> locals;
 
     public HookContextImpl(Class<?> owner, Object self, Object[] args, int siteId) {
         super(owner, self, args);
-        this.effectiveClass = owner;
-        this.self = self;
         this.siteId = siteId;
     }
 
@@ -36,7 +37,7 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
      */
     @Override
     public Object getReturnValue() {
-        return null;
+        return returnValue;
     }
 
     /**
@@ -45,7 +46,7 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
      */
     @Override
     public <T> T getInferredReturnValue() {
-        return null;
+        return (T) returnValue;
     }
 
     /**
@@ -55,7 +56,7 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
      */
     @Override
     public void setReturnValue(Object newReturnValue) {
-
+        this.returnValue = newReturnValue;
     }
 
     /**
@@ -65,7 +66,8 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
      */
     @Override
     public void skipOriginal(Object returnValue) {
-
+        this.skipOriginal = true;
+        this.returnValue = returnValue;
     }
 
     /**
@@ -73,7 +75,7 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
      */
     @Override
     public Throwable getThrown() {
-        return null;
+        return thrown;
     }
 
     /**
@@ -83,7 +85,8 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
      */
     @Override
     public void replaceThrown(Throwable newThrown) {
-
+        this.thrown = newThrown;
+        this.suppress = false;
     }
 
     /**
@@ -93,7 +96,9 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
      */
     @Override
     public void suppressException(Object returnValue) {
-
+        this.suppress = true;
+        this.thrown = null;
+        this.returnValue = returnValue;
     }
 
     /**
@@ -101,7 +106,7 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
      */
     @Override
     public boolean isSuppressed() {
-        return false;
+        return suppress;
     }
 
     /**
@@ -112,7 +117,7 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
      */
     @Override
     public void setArg(int index, Object newValue) {
-
+        args[index] = newValue;
     }
 
     /**
@@ -123,7 +128,7 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
      */
     @Override
     public <T> Ref<T> getArgRef(int index) {
-        return null;
+        return new ArgRef<>(args, index);
     }
 
     /**
@@ -131,7 +136,7 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
      */
     @Override
     public boolean isSkipOriginal() {
-        return false;
+        return this.skipOriginal;
     }
 
     /**
@@ -142,7 +147,8 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
      */
     @Override
     public void setLocal(String key, Object value) {
-
+        if (locals == null) locals = new HashMap<>();
+        locals.put(key, value);
     }
 
     /**
@@ -152,7 +158,8 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
      */
     @Override
     public <T> T getLocal(String key) {
-        return null;
+        if (locals == null) return null;
+        return (T) locals.get(key);
     }
 
     /**
@@ -162,6 +169,8 @@ public class HookContextImpl extends BaseContextImpl implements BeforeContext, A
      */
     @Override
     public boolean isMostDerivedCall() {
-        return false;
+        //Static methods
+        if (self == null) return true;
+        return AdvicePatchRegistry.getSite(siteId).isMostDerived(self.getClass());
     }
 }

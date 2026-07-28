@@ -13,7 +13,10 @@ import patchlib.api.store.PatchData;
 
 public abstract class BaseContextImpl implements Context {
 
+    //The actual class being operated on
+    //If something patches a method derived from a parent class, this will still be the class of what is actually being run
     protected Class<?> effectiveClass;
+
     protected Object self;
     protected final Object[] args;
 
