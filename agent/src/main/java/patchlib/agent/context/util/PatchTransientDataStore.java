@@ -10,7 +10,7 @@ public class PatchTransientDataStore {
     private static final ReferenceQueue<Object> CLEANUP_QUEUE = new ReferenceQueue<>();
     private static final ConcurrentHashMap<WeakIdentityKey, ConcurrentHashMap<String, Object>> DATA = new ConcurrentHashMap<>();
 
-    private synchronized static Map<String, Object> getOrCreate(Object instance) {
+    public synchronized static Map<String, Object> getOrCreate(Object instance) {
         if (instance == null) {
             throw new IllegalStateException("Can not use Context.getData on a static method or an an @Before patch on a constructor, as no instance to attach to exists");
         }

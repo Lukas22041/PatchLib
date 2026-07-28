@@ -1,6 +1,10 @@
 package patchlib.agent.context;
 
+import patchlib.agent.context.util.PatchReflection;
+import patchlib.agent.context.util.PatchTransientDataStore;
 import patchlib.api.context.Context;
+import patchlib.api.query.FieldQuery;
+import patchlib.api.query.MethodQuery;
 import patchlib.api.ref.MethodRef;
 import patchlib.api.ref.Ref;
 import patchlib.api.spec.FieldQuerySpec;
@@ -31,7 +35,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public Object getSelf() {
-        return null;
+        return self;
     }
 
     /**
@@ -40,7 +44,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public <T> T getInferredSelf() {
-        return null;
+        return (T) self;
     }
 
     /**
@@ -49,7 +53,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public Object[] getArgs() {
-        return new Object[0];
+        return args;
     }
 
     /**
@@ -60,7 +64,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public Object getArg(int index) {
-        return null;
+        return args[index];
     }
 
     /**
@@ -70,7 +74,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public <T> Ref<T> getField(FieldQuerySpec query) {
-        return null;
+        return PatchReflection.getField(effectiveClass, self, query);
     }
 
     /**
@@ -81,7 +85,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public <T> Ref<T> getField(FieldQuerySpec query, Object instance) {
-        return null;
+        return PatchReflection.getField(instance.getClass(), instance, query);
     }
 
     /**
@@ -91,7 +95,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public <T> Ref<T> getField(String name) {
-        return null;
+        return PatchReflection.getField(effectiveClass, self, FieldQuery.create().fieldName(name).build());
     }
 
     /**
@@ -102,7 +106,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public <T> Ref<T> getField(String name, Object instance) {
-        return null;
+        return PatchReflection.getField(instance.getClass(), instance, FieldQuery.create().fieldName(name).build());
     }
 
     /**
@@ -112,7 +116,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public MethodRef getMethod(MethodQuerySpec query) {
-        return null;
+        return PatchReflection.getMethod(effectiveClass, self, query);
     }
 
     /**
@@ -123,7 +127,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public MethodRef getMethod(MethodQuerySpec query, Object instance) {
-        return null;
+        return PatchReflection.getMethod(instance.getClass(), instance, query);
     }
 
     /**
@@ -133,7 +137,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public MethodRef getMethod(String name) {
-        return null;
+        return PatchReflection.getMethod(effectiveClass, self, MethodQuery.create().methodName(name).build());
     }
 
     /**
@@ -144,7 +148,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public MethodRef getMethod(String name, Object instance) {
-        return null;
+        return PatchReflection.getMethod(instance.getClass(), instance, MethodQuery.create().methodName(name).build());
     }
 
     /**
@@ -154,7 +158,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public boolean hasMethod(MethodQuerySpec query) {
-        return false;
+        return PatchReflection.hasMethod(effectiveClass, self, query);
     }
 
     /**
@@ -165,7 +169,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public boolean hasMethod(MethodQuerySpec query, Object instance) {
-        return false;
+        return PatchReflection.hasMethod(instance.getClass(), instance, query);
     }
 
     /**
@@ -175,7 +179,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public boolean hasMethod(String name) {
-        return false;
+        return PatchReflection.hasMethod(effectiveClass, self, MethodQuery.create().methodName(name).build());
     }
 
     /**
@@ -186,7 +190,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public boolean hasMethod(String name, Object instance) {
-        return false;
+        return PatchReflection.hasMethod(instance.getClass(), instance, MethodQuery.create().methodName(name).build());
     }
 
     /**
@@ -196,7 +200,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public boolean hasField(FieldQuerySpec query) {
-        return false;
+        return PatchReflection.hasField(effectiveClass, self, query);
     }
 
     /**
@@ -207,7 +211,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public boolean hasField(FieldQuerySpec query, Object instance) {
-        return false;
+        return PatchReflection.hasField(instance.getClass(), instance, query);
     }
 
     /**
@@ -217,7 +221,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public boolean hasField(String name) {
-        return false;
+        return PatchReflection.hasField(effectiveClass, self, FieldQuery.create().fieldName(name).build());
     }
 
     /**
@@ -228,7 +232,7 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public boolean hasField(String name, Object instance) {
-        return false;
+        return PatchReflection.hasField(instance.getClass(), instance, FieldQuery.create().fieldName(name).build());
     }
 
     /**
@@ -238,6 +242,6 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public PatchData getData() {
-        return null;
+        return new PatchData(PatchTransientDataStore.getOrCreate(self));
     }
 }
