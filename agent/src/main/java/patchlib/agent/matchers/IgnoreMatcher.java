@@ -25,7 +25,7 @@ public class IgnoreMatcher {
 
     /** Exceptions to the ignored prefixes. */
     private static final String[] ALLOWED_PREFIXES = {
-            "patchlib.test.", //PatchLibs tests
+            "patchlib.test.targets.", //PatchLibs tests
     };
 
     public static ElementMatcher.Junction<TypeDescription> create() {

@@ -3,25 +3,14 @@ package patchlib;
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModSpecAPI;
-import com.fs.starfarer.api.combat.BaseHullMod;
-import com.fs.util.DoNotObfuscate;
 import com.sun.tools.attach.AgentInitializationException;
 import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.VirtualMachine;
 import patchlib.agent.AgentMain;
-import patchlib.api.PatchLib;
-import patchlib.api.data.ClassData;
-import patchlib.api.patch.Before;
-import patchlib.api.patch.Patch;
-import patchlib.api.query.AnnotationQuery;
-import patchlib.api.query.ClassQuery;
-import patchlib.api.query.FieldQuery;
-import patchlib.api.query.MethodQuery;
-import patchlib.api.spec.ClassQuerySpec;
+import patchlib.test.PatchLibTests;
 
 import java.io.IOException;
-import java.util.List;
 
 public class PatchLibModPlugin extends BaseModPlugin {
 
@@ -41,6 +30,8 @@ public class PatchLibModPlugin extends BaseModPlugin {
         //Pass the mod classloader, as it is needed to bind the patches method handlers later.
         AgentMain.init(this.getClass().getClassLoader());
 
+        PatchLibTests patchLibTests = new PatchLibTests();
+        patchLibTests.runTests();
     }
 
     /** Check if the agent was already attached by a -javaagent flag in the vmparams.
