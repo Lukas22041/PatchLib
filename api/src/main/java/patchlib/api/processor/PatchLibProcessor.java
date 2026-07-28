@@ -72,13 +72,14 @@ public class PatchLibProcessor extends AbstractProcessor {
         if (element.getKind() != ElementKind.METHOD) {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
                     "@" + annotation.getSimpleName() + " annotations can only be used on methods.", element);
+            return;
         }
 
         ExecutableElement method = (ExecutableElement) element;
 
         if (!method.getModifiers().contains(Modifier.STATIC)) {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                    "@" + annotation.getSimpleName() + " patches need to be used with static methods methods. If this is kotlin code, make sure to also annotate it with @JvmStatic.", element);
+                    "@" + annotation.getSimpleName() + " patches need to be used with static methods. If this is kotlin code, make sure to also annotate it with @JvmStatic.", element);
         }
 
         if (method.getEnclosingElement().getAnnotation(Patch.class) == null) {
