@@ -17,12 +17,24 @@ public record PatchHandlerSpec(
         PatchSpec patchSpec
 ) {
 
+    public enum RedirectType {
+        METHOD_CALL, CONSTRUCTOR, FIELD_WRITE, FIELD_READ
+    }
+
     public boolean isAdvice() {
         return patchSpec instanceof AdviceSpec;
     }
 
     public boolean isRedirect() {
         return !isAdvice();
+    }
+
+    public RedirectType getRedirectType() {
+        if (patchSpec instanceof RedirectCallSpec) return RedirectType.METHOD_CALL;
+        else if (patchSpec instanceof RedirectNewSpec) return RedirectType.CONSTRUCTOR;
+        else if (patchSpec instanceof RedirectFieldReadSpec) return RedirectType.FIELD_READ;
+        else if (patchSpec instanceof RedirectFieldWriteSpec) return RedirectType.FIELD_WRITE;
+        throw new IllegalStateException("getRedirectType called on non-redirect spec");
     }
 
     public Class<?> getContextClass() {
