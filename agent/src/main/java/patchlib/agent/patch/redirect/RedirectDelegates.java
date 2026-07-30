@@ -22,7 +22,7 @@ public class RedirectDelegates {
             @MemberSubstitution.This(source = MemberSubstitution.Source.ENCLOSING_METHOD, optional = true) Object hostSelf,
             @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD) Object[] hostArgs
     ) throws Throwable {
-        return handle.invokeExact(callReceiver, callArgs, hostArgs, hostArgs);
+        return handle.invokeExact(callReceiver, callArgs, hostSelf, hostArgs);
     }
 
     /** There's an issue where bytebuddy internally creates an array with -1 size when the method is static and has no input parameters,
@@ -34,7 +34,7 @@ public class RedirectDelegates {
             @MemberSubstitution.This(source = MemberSubstitution.Source.ENCLOSING_METHOD, optional = true) Object hostSelf,
             @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD) Object[] hostArgs
             ) throws Throwable {
-        return handle.invokeExact(callReceiver, callArgs, hostArgs, hostArgs);
+        return handle.invokeExact(callReceiver, callArgs, hostSelf, hostArgs);
     }
 
     /** Constructors have the same issue with the -1 array size, so the includeSelf is checked to true here as well */
