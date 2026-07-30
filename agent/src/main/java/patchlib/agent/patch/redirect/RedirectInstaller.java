@@ -34,10 +34,10 @@ public class RedirectInstaller {
         AsmVisitorWrapper fieldReadVisitor = createRedirectVisitor(PatchHandlerSpec.RedirectType.FIELD_READ, installationDataList, typeDescription, methodDescription);
         AsmVisitorWrapper fieldWriteVisitor = createRedirectVisitor(PatchHandlerSpec.RedirectType.FIELD_WRITE, installationDataList, typeDescription, methodDescription);
 
-        if (callVisitor != null) builder.visit(callVisitor);
-        if (constructorVisitor != null) builder.visit(constructorVisitor);
-        if (fieldReadVisitor != null) builder.visit(fieldReadVisitor);
-        if (fieldWriteVisitor != null) builder.visit(fieldWriteVisitor);
+        if (callVisitor != null) builder = builder.visit(callVisitor);
+        if (constructorVisitor != null) builder = builder.visit(constructorVisitor);
+        if (fieldReadVisitor != null) builder = builder.visit(fieldReadVisitor);
+        if (fieldWriteVisitor != null) builder = builder.visit(fieldWriteVisitor);
 
         return builder;
     }
