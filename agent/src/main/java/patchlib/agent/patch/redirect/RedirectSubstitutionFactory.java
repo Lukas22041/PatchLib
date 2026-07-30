@@ -11,6 +11,7 @@ import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.pool.TypePool;
 import net.bytebuddy.utility.JavaConstant;
+import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.patch.InstallationData;
 import patchlib.agent.spec.PatchHandlerSpec;
 
@@ -96,6 +97,9 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
             Method delegate = getDelegateMethod(original);
             //The constant dynamic requires a constant-pool valid entry, and booleans aren't a real type there and are just represented as integers.
             int hasReceiver = hasReceiver(original) ? 1 : 0;
+
+            PatchLibLogger.info("Installed a redirect patch site at " + typeDescription.getActualName() + " on method " + instrumentedMethod.getActualName() + " " + instrumentedMethod.getParameters()
+                    + " with " + matched.size() + " " + redirectType.toString() + " patches");
 
             //ForDelegation replaces the original bytecode with an invokestatic member that calls the delegate
             return MemberSubstitution.Substitution.Chain.with(Assigner.DEFAULT, Assigner.Typing.DYNAMIC)
