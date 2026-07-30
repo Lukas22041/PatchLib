@@ -92,7 +92,7 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
             //Takes in the redirect type as otherwise field read & write may get the same site key.
             String siteKey = RedirectPatchRegistry.getSiteKey(hostKey, redirectType.toString(), original);
             RedirectPatchSite site = createRedirectSite(matched);
-            int id = RedirectPatchRegistry.register(siteKey, site);
+            int siteId = RedirectPatchRegistry.register(siteKey, site);
 
             Method delegate = getDelegateMethod(original);
             //The constant dynamic requires a constant-pool valid entry, and booleans aren't a real type there and are just represented as integers.
@@ -105,7 +105,7 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
             return MemberSubstitution.Substitution.Chain.with(Assigner.DEFAULT, Assigner.Typing.DYNAMIC)
                     .executing(MemberSubstitution.Substitution.Chain.Step.ForDelegation
                             .withCustomMapping()
-                            .bind(RedirectHandleMarker.class, JavaConstant.Dynamic.bootstrap())
+                            .bind(RedirectHandleMarker.class, JavaConstant.Dynamic.bootstrap(redirectType.name(), RedirectBootstrap.BOOTSTRAP_METHOD, siteId, methodHandle, hasReceiver))
                             .to(delegate))
                     .make(instrumentedType, instrumentedMethod, typePool)
                     .resolve(target, parameters, result, methodHandle, stackManipulation, freeOffset);
@@ -115,14 +115,14 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
         private Method getDelegateMethod(ByteCodeElement.Member original) {
             if (redirectType.equals(PatchHandlerSpec.RedirectType.METHOD_CALL) && original instanceof MethodDescription methodDescription) {
                 if (methodDescription.isStatic()) {
-                    return ;
+                    return RedirectDelegates.METHOD_CALL_STATIC_DELEGATE;
                 } else {
-                    return ;
+                    return RedirectDelegates.METHOD_CALL_DELEGATE ;
                 }
             }
-            else if (redirectType.equals(PatchHandlerSpec.RedirectType.CONSTRUCTOR)) return ;
-            else if (redirectType.equals(PatchHandlerSpec.RedirectType.FIELD_READ)) return ;
-            else if (redirectType.equals(PatchHandlerSpec.RedirectType.FIELD_WRITE)) return ;
+            else if (redirectType.equals(PatchHandlerSpec.RedirectType.CONSTRUCTOR)) return RedirectDelegates.CONSTRUCTOR_CALL_DELEGATE ;
+            else if (redirectType.equals(PatchHandlerSpec.RedirectType.FIELD_READ)) return RedirectDelegates.FIELD_READ_DELEGATE;
+            else if (redirectType.equals(PatchHandlerSpec.RedirectType.FIELD_WRITE)) return RedirectDelegates.FIELD_WRITE_DELEGATE;
             throw new IllegalArgumentException("Called getBridge with unknown redirect type");
         }
 

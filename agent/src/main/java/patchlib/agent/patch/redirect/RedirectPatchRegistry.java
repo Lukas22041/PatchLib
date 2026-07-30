@@ -1,6 +1,7 @@
 package patchlib.agent.patch.redirect;
 
 import net.bytebuddy.description.ByteCodeElement;
+import patchlib.agent.patch.advice.AdvicePatchSite;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +23,10 @@ public class RedirectPatchRegistry {
         REDIRECT_PATCH_SITE_IDS.put(siteKey, patchId);
 
         return patchId;
+    }
+
+    public static RedirectPatchSite getSite(int patchId) {
+        return REDIRECT_PATCH_SITES.get(patchId);
     }
 
     public static String getSiteKey(String methodKey, String kind, ByteCodeElement.Member member) {
