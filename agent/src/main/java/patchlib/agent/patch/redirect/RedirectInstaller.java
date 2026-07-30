@@ -30,7 +30,7 @@ public class RedirectInstaller {
                                                    MethodDescription.InDefinedShape methodDescription, List<InstallationData> installationDataList) {
 
         if (!PatchInstaller.supportsConstantDynamic(typeDescription)) {
-            PatchLibLogger.error("One ore multiple redirect patches tried modifying the class " + typeDescription.getActualName() + " on method " + methodDescription.getActualName() +
+            PatchLibLogger.error("One or multiple redirect patches tried modifying the class " + typeDescription.getActualName() + " on method " + methodDescription.getActualName() +
                     "that is compiled with an unsupported classfile version (i.e janino compiled code). Those patches are being skipped for this target.");
             return builder;
         }
@@ -105,15 +105,15 @@ public class RedirectInstaller {
         if (methodDescription.isConstructor()) {
             anyMatcher = anyMatcher.and(not(isDeclaredBy(typeDescription)));
             TypeDescription.Generic superClass = typeDescription.getSuperClass();
-            anyMatcher = anyMatcher.and(not(isDeclaredBy(superClass.asErasure())));
+            if (superClass != null) anyMatcher = anyMatcher.and(not(isDeclaredBy(superClass.asErasure())));
         }
 
         RedirectSubstitutionFactory factory = createSubstitutionFactory(PatchHandlerSpec.RedirectType.CONSTRUCTOR, typeDescription, methodDescription, candidates);
 
-        return MemberSubstitution.relaxed() //Relaxed allows skipping safely over undecipherable elements
-                .method(anyMatcher) //Process any method call that matches any of the patches that affect this method
-                .replaceWith(factory) //The factory that creates the replacement bytecode. This decides in detail which actual call gets replaced by which patch
-                .on(ElementMatchers.is(methodDescription)); //Applied to the currently worked on method.
+        return MemberSubstitution.relaxed()
+                .constructor(anyMatcher)
+                .replaceWith(factory)
+                .on(ElementMatchers.is(methodDescription));
 
     }
 
@@ -124,7 +124,7 @@ public class RedirectInstaller {
         for (InstallationData data : fieldReadDataList) {
             RedirectFieldReadSpec spec = (RedirectFieldReadSpec) data.spec().patchSpec();
             ElementMatcher.Junction<FieldDescription> matcher = FieldMatcher.fromQuery(spec.field(), spec.owner());
-            anyMatcher.or(matcher);
+            anyMatcher = anyMatcher.or(matcher);
             RedirectSubstitutionFactory.RedirectCandidate candidate = new RedirectSubstitutionFactory.RedirectCandidate(member ->
                     member instanceof FieldDescription field && matcher.matches(field), data);
             candidates.add(candidate);
@@ -145,7 +145,7 @@ public class RedirectInstaller {
         for (InstallationData data : fieldWriteDataList) {
             RedirectFieldWriteSpec spec = (RedirectFieldWriteSpec) data.spec().patchSpec();
             ElementMatcher.Junction<FieldDescription> matcher = FieldMatcher.fromQuery(spec.field(), spec.owner());
-            anyMatcher.or(matcher);
+            anyMatcher = anyMatcher.or(matcher);
             RedirectSubstitutionFactory.RedirectCandidate candidate = new RedirectSubstitutionFactory.RedirectCandidate(member ->
                     member instanceof FieldDescription field && matcher.matches(field), data);
             candidates.add(candidate);

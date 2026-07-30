@@ -93,7 +93,7 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
             RedirectPatchSite site = createRedirectSite(matched);
             int id = RedirectPatchRegistry.register(siteKey, site);
 
-            Method delegate = getDelegate(original);
+            Method delegate = getDelegateMethod(original);
             //The constant dynamic requires a constant-pool valid entry, and booleans aren't a real type there and are just represented as integers.
             int hasReceiver = hasReceiver(original) ? 1 : 0;
 
@@ -108,7 +108,7 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
 
         }
 
-        private Method getDelegate(ByteCodeElement.Member original) {
+        private Method getDelegateMethod(ByteCodeElement.Member original) {
             if (redirectType.equals(PatchHandlerSpec.RedirectType.METHOD_CALL) && original instanceof MethodDescription methodDescription) {
                 if (methodDescription.isStatic()) {
                     return ;
