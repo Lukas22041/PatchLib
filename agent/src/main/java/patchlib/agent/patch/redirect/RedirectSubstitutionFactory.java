@@ -1,16 +1,35 @@
 package patchlib.agent.patch.redirect;
 
 import net.bytebuddy.asm.MemberSubstitution;
+import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.description.type.TypeList;
 import net.bytebuddy.implementation.bytecode.StackManipulation;
+import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.pool.TypePool;
 import net.bytebuddy.utility.JavaConstant;
+import patchlib.agent.patch.InstallationData;
+import patchlib.agent.spec.PatchHandlerSpec;
+
+import java.util.List;
+import java.util.function.Predicate;
 
 public class RedirectSubstitutionFactory implements MemberSubstitution.Substitution.Factory<MemberSubstitution.Target.ForMember> {
 
-    protected record RedirectCandidate(/**TODO This replaces the "Layer" thing from the original code, just a better name*/) { }
+    protected record RedirectCandidate(ElementMatcher<ByteCodeElement.Member> matcher, InstallationData data) { }
+
+    private final PatchHandlerSpec.RedirectType redirectType;
+    private final String hostKey;
+    private final TypeDescription typeDescription;
+    private final List<RedirectCandidate> candidates;
+
+    public RedirectSubstitutionFactory(PatchHandlerSpec.RedirectType redirectType, String hostKey, TypeDescription typeDescription, List<RedirectCandidate> candidates) {
+        this.redirectType = redirectType;
+        this.hostKey = hostKey;
+        this.typeDescription = typeDescription;
+        this.candidates = candidates;
+    }
 
     /**
      * Creates a substitution for an instrumented method.
