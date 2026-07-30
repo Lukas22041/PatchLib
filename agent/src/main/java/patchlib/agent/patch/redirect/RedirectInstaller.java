@@ -2,21 +2,27 @@ package patchlib.agent.patch.redirect;
 
 import net.bytebuddy.asm.AsmVisitorWrapper;
 import net.bytebuddy.asm.MemberSubstitution;
+import net.bytebuddy.description.field.FieldDescription;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
 import patchlib.agent.log.PatchLibLogger;
+import patchlib.agent.matchers.FieldMatcher;
 import patchlib.agent.matchers.MethodMatcher;
 import patchlib.agent.patch.InstallationData;
 import patchlib.agent.patch.PatchInstaller;
-import patchlib.agent.spec.PatchHandlerSpec;
-import patchlib.agent.spec.RedirectCallSpec;
+import patchlib.agent.spec.*;
+import patchlib.api.patch.RedirectFieldWrite;
+import patchlib.api.query.FieldQuery;
+import patchlib.api.spec.FieldQuerySpec;
 import patchlib.api.spec.MethodQuerySpec;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class RedirectInstaller {
 
@@ -59,12 +65,12 @@ public class RedirectInstaller {
     private static AsmVisitorWrapper createCallVisitor(List<InstallationData> callDataList, TypeDescription typeDescription, MethodDescription.InDefinedShape methodDescription) {
         List<RedirectSubstitutionFactory.RedirectCandidate> candidates = new ArrayList<>();
         //The matcher that decides which calls are processed by the factory
-        ElementMatcher.Junction<MethodDescription> callMatcher = ElementMatchers.none();
+        ElementMatcher.Junction<MethodDescription> anyMatcher = ElementMatchers.none();
 
         for (InstallationData data : callDataList) {
             RedirectCallSpec spec = (RedirectCallSpec) data.spec().patchSpec();
-            ElementMatcher.Junction<MethodDescription> matcher = MethodMatcher.fromQuery(spec.call());
-            callMatcher.or(matcher);
+            ElementMatcher.Junction<MethodDescription> matcher = MethodMatcher.fromQuery(spec.call(), spec.owner());
+            anyMatcher = anyMatcher.or(matcher);
             RedirectSubstitutionFactory.RedirectCandidate candidate = new RedirectSubstitutionFactory.RedirectCandidate(member ->
                     member instanceof MethodDescription memberMethod && matcher.matches(memberMethod), data);
             candidates.add(candidate);
@@ -73,22 +79,84 @@ public class RedirectInstaller {
         RedirectSubstitutionFactory factory = createSubstitutionFactory(PatchHandlerSpec.RedirectType.METHOD_CALL, typeDescription, methodDescription, candidates);
 
         return MemberSubstitution.relaxed() //Relaxed allows skipping safely over undecipherable elements
-                .method(callMatcher) //Process any method call that matches any of the patches that affect this method
+                .method(anyMatcher) //Process any method call that matches any of the patches that affect this method
                 .replaceWith(factory) //The factory that creates the replacement bytecode. This decides in detail which actual call gets replaced by which patch
                 .on(ElementMatchers.is(methodDescription)); //Applied to the currently worked on method.
 
     }
 
     private static AsmVisitorWrapper createConstructorVisitor(List<InstallationData> constructorDataList, TypeDescription typeDescription, MethodDescription.InDefinedShape methodDescription) {
+        List<RedirectSubstitutionFactory.RedirectCandidate> candidates = new ArrayList<>();
+        //The matcher that decides which calls are processed by the factory
+        ElementMatcher.Junction<MethodDescription> anyMatcher = ElementMatchers.none();
+
+        for (InstallationData data : constructorDataList) {
+            RedirectNewSpec spec = (RedirectNewSpec) data.spec().patchSpec();
+            ElementMatcher.Junction<MethodDescription> matcher = MethodMatcher.fromQuery(spec.constructor(), spec.constructed());
+            anyMatcher = anyMatcher.or(matcher);
+            RedirectSubstitutionFactory.RedirectCandidate candidate = new RedirectSubstitutionFactory.RedirectCandidate(member ->
+                    member instanceof MethodDescription memberMethod && matcher.matches(memberMethod), data);
+            candidates.add(candidate);
+        }
+
+        //this() and super() calls have the same bytecode invokespecial shape as a "new" instruction
+        //So this code prevents those from being potentially targeted by a new redirect, by checking that they arent
+        //The targeted classes constructors.
+        if (methodDescription.isConstructor()) {
+            anyMatcher = anyMatcher.and(not(isDeclaredBy(typeDescription)));
+            TypeDescription.Generic superClass = typeDescription.getSuperClass();
+            anyMatcher = anyMatcher.and(not(isDeclaredBy(superClass.asErasure())));
+        }
+
+        RedirectSubstitutionFactory factory = createSubstitutionFactory(PatchHandlerSpec.RedirectType.CONSTRUCTOR, typeDescription, methodDescription, candidates);
+
+        return MemberSubstitution.relaxed() //Relaxed allows skipping safely over undecipherable elements
+                .method(anyMatcher) //Process any method call that matches any of the patches that affect this method
+                .replaceWith(factory) //The factory that creates the replacement bytecode. This decides in detail which actual call gets replaced by which patch
+                .on(ElementMatchers.is(methodDescription)); //Applied to the currently worked on method.
 
     }
 
     private static AsmVisitorWrapper createFieldReadVisitor(List<InstallationData> fieldReadDataList, TypeDescription typeDescription, MethodDescription.InDefinedShape methodDescription) {
+        List<RedirectSubstitutionFactory.RedirectCandidate> candidates = new ArrayList<>();
+        ElementMatcher.Junction<FieldDescription> anyMatcher = ElementMatchers.none();
 
+        for (InstallationData data : fieldReadDataList) {
+            RedirectFieldReadSpec spec = (RedirectFieldReadSpec) data.spec().patchSpec();
+            ElementMatcher.Junction<FieldDescription> matcher = FieldMatcher.fromQuery(spec.field(), spec.owner());
+            anyMatcher.or(matcher);
+            RedirectSubstitutionFactory.RedirectCandidate candidate = new RedirectSubstitutionFactory.RedirectCandidate(member ->
+                    member instanceof FieldDescription field && matcher.matches(field), data);
+            candidates.add(candidate);
+        }
+
+        RedirectSubstitutionFactory factory = createSubstitutionFactory(PatchHandlerSpec.RedirectType.FIELD_READ, typeDescription, methodDescription, candidates);
+
+        return MemberSubstitution.relaxed()
+                .field(anyMatcher).onRead()
+                .replaceWith(factory)
+                .on(ElementMatchers.is(methodDescription));
     }
 
     private static AsmVisitorWrapper createFieldWriteVisitor(List<InstallationData> fieldWriteDataList, TypeDescription typeDescription, MethodDescription.InDefinedShape methodDescription) {
+        List<RedirectSubstitutionFactory.RedirectCandidate> candidates = new ArrayList<>();
+        ElementMatcher.Junction<FieldDescription> anyMatcher = ElementMatchers.none();
 
+        for (InstallationData data : fieldWriteDataList) {
+            RedirectFieldWriteSpec spec = (RedirectFieldWriteSpec) data.spec().patchSpec();
+            ElementMatcher.Junction<FieldDescription> matcher = FieldMatcher.fromQuery(spec.field(), spec.owner());
+            anyMatcher.or(matcher);
+            RedirectSubstitutionFactory.RedirectCandidate candidate = new RedirectSubstitutionFactory.RedirectCandidate(member ->
+                    member instanceof FieldDescription field && matcher.matches(field), data);
+            candidates.add(candidate);
+        }
+
+        RedirectSubstitutionFactory factory = createSubstitutionFactory(PatchHandlerSpec.RedirectType.FIELD_WRITE, typeDescription, methodDescription, candidates);
+
+        return MemberSubstitution.relaxed()
+                .field(anyMatcher).onWrite()
+                .replaceWith(factory)
+                .on(ElementMatchers.is(methodDescription));
     }
 
     private static RedirectSubstitutionFactory createSubstitutionFactory(PatchHandlerSpec.RedirectType redirectType, TypeDescription typeDescription,
