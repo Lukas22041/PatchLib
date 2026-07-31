@@ -1,21 +1,20 @@
 package patchlib.agent.context;
 
 import patchlib.api.context.FieldWriteContext;
-import patchlib.api.ref.Ref;
 
 import java.lang.invoke.MethodHandle;
 
 public class FieldWriteContextImpl extends BaseContextImpl implements FieldWriteContext {
 
     private final Object owner;
-    private final Object writtenValue;
-    private final MethodHandle next;
+    private Object valueToWrite;
+    private final MethodHandle nextLayer;
 
-    public FieldWriteContextImpl(Class<?> effectiveClass, Object self, Object[] args, Object owner, Object writtenValue, MethodHandle next) {
+    public FieldWriteContextImpl(Class<?> effectiveClass, Object self, Object[] args, Object owner, Object valueToWrite, MethodHandle nextLayer) {
         super(effectiveClass, self, args);
         this.owner = owner;
-        this.writtenValue = writtenValue;
-        this.next = next;
+        this.valueToWrite = valueToWrite;
+        this.nextLayer = nextLayer;
     }
 
     /**
@@ -23,7 +22,7 @@ public class FieldWriteContextImpl extends BaseContextImpl implements FieldWrite
      */
     @Override
     public Object getFieldOwner() {
-        return null;
+        return owner;
     }
 
     /**
@@ -31,41 +30,23 @@ public class FieldWriteContextImpl extends BaseContextImpl implements FieldWrite
      */
     @Override
     public <T> T getInferredFieldOwner() {
-        return null;
+        return (T) owner;
     }
 
     /**
      * The value being written to the field.
      */
     @Override
-    public Object getValue() {
-        return null;
+    public Object getValueToWrite() {
+        return valueToWrite;
     }
 
     /**
      * The value being written, cast to the type you assign it to.
      */
     @Override
-    public <T> T getInferredValue() {
-        return null;
-    }
-
-    /**
-     * Replaces the value being written to the field.
-     *
-     * @param value
-     */
-    @Override
-    public void setValue(Object value) {
-
-    }
-
-    /**
-     * A typed read/writeable reference to the value being written.
-     */
-    @Override
-    public <T> Ref<T> getValueRef() {
-        return null;
+    public <T> T getInferredValueToWrite() {
+        return (T) valueToWrite;
     }
 
     /**
@@ -74,16 +55,25 @@ public class FieldWriteContextImpl extends BaseContextImpl implements FieldWrite
      */
     @Override
     public void write() {
-
+        write(valueToWrite);
     }
 
     /**
-     * Same as write() but stores the given value instead of the current one.
+     * Same as write() but stores the given written value instead of the current one.
      *
-     * @param value
+     * @param valueToWrite
      */
     @Override
-    public void write(Object value) {
+    public void write(Object valueToWrite) {
+        try {
+            nextLayer.invokeExact(owner, valueToWrite, self, this.args);
+        } catch (Throwable ex) {
+            throw uncheckedThrow(ex);
+        }
+    }
 
+    @SuppressWarnings("unchecked")
+    private <T extends Throwable> T uncheckedThrow(Throwable ex) throws T {
+        throw (T) ex;
     }
 }
