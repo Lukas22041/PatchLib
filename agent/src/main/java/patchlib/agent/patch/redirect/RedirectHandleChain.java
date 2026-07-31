@@ -1,9 +1,14 @@
 package patchlib.agent.patch.redirect;
 
-import patchlib.agent.context.HookContextImpl;
+import patchlib.agent.context.ConstructorCallContextImpl;
+import patchlib.agent.context.FieldReadContextImpl;
+import patchlib.agent.context.FieldWriteContextImpl;
+import patchlib.agent.context.MethodCallContextImpl;
+import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.patch.InstallationData;
-import patchlib.agent.patch.advice.AdviceHandleChain;
 import patchlib.agent.spec.PatchHandlerSpec;
+import patchlib.api.context.ConstructorCallContext;
+import patchlib.api.context.Context;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -20,7 +25,10 @@ public class RedirectHandleChain {
     private static final MethodType FIELD_READ_CHAIN_TYPE = MethodType.methodType(Object.class, Object.class, Object.class, Object[].class);
     private static final MethodType FIELD_WRITE_CHAIN_TYPE = MethodType.methodType(void.class, Object.class, Object.class, Object.class, Object[].class);
 
-    private static final MethodHandle CALL_CHAIN_RUN = createRunLayerHandle(, CALL_CHAIN_TYPE);
+    private static final MethodHandle METHOD_CALL_CHAIN_RUN = createRunLayerHandle("runMethodCallLayer", CALL_CHAIN_TYPE);
+    private static final MethodHandle CONSTRUCTOR_CALL_CHAIN_RUN = createRunLayerHandle("runConstructorCallLayer", CONSTRUCTOR_CHAIN_TYPE);
+    private static final MethodHandle FIELD_READ_CHAIN_RUN = createRunLayerHandle("runFieldReadLayer", FIELD_READ_CHAIN_TYPE);
+    private static final MethodHandle FIELD_WRITE_CHAIN_RUN = createRunLayerHandle("runFieldWriteLayer", FIELD_WRITE_CHAIN_TYPE);
 
     static MethodHandle wrapLayers(RedirectPatchSite site, MethodHandle convertedOriginal, Class<?> hostClass) {
         MethodHandle chain = convertedOriginal;
@@ -50,19 +58,39 @@ public class RedirectHandleChain {
 
     private static MethodHandle getLayerRunHandle(PatchHandlerSpec.RedirectType redirectType) {
         return switch (redirectType) {
-            case METHOD_CALL ->
-            case CONSTRUCTOR ->
-            case FIELD_READ ->
-            case FIELD_WRITE ->
-        }
+            case METHOD_CALL -> METHOD_CALL_CHAIN_RUN;
+            case CONSTRUCTOR -> CONSTRUCTOR_CALL_CHAIN_RUN;
+            case FIELD_READ -> FIELD_READ_CHAIN_RUN;
+            case FIELD_WRITE -> FIELD_WRITE_CHAIN_RUN;
+        };
     }
 
 
-    private static Object runCallLayer(MethodHandle handler, String errorMessage, MethodHandle chain, Class<?> hostClass,
-                                       Object callReceiver, Object[] callArgs, Object hostSelf, Object[] hostArgs) {
+    private static Object runMethodCallLayer(MethodHandle handler, String errorMessage, MethodHandle chain, Class<?> hostClass,
+                                             Object callReceiver, Object[] callArgs, Object hostSelf, Object[] hostArgs) {
+        MethodCallContextImpl context = new MethodCallContextImpl(hostClass, hostSelf, hostArgs, callReceiver, callArgs, chain);
+        invoke(handler, context, errorMessage);
+        return context.getResult();
+    }
 
+    private static Object runConstructorCallLayer(MethodHandle handler, String errorMessage, MethodHandle chain, Class<?> hostClass,
+                                             Object[] constructorArgs, Object hostSelf, Object[] hostArgs) {
+        ConstructorCallContextImpl context = new ConstructorCallContextImpl(hostClass, hostSelf, hostArgs, constructorArgs, chain);
+        invoke(handler, context, errorMessage);
+        return context.getResult();
+    }
 
+    private static Object runFieldReadLayer(MethodHandle handler, String errorMessage, MethodHandle chain, Class<?> hostClass,
+                                             Object owner, Object hostSelf, Object[] hostArgs) {
+        FieldReadContextImpl context = new FieldReadContextImpl(hostClass, hostSelf, hostArgs, owner, chain);
+        invoke(handler, context, errorMessage);
+        return context.getResult();
+    }
 
+    private static void runFieldWriteLayer(MethodHandle handler, String errorMessage, MethodHandle chain, Class<?> hostClass,
+                                             Object owner, Object writtenValue, Object hostSelf, Object[] hostArgs) {
+        FieldWriteContextImpl context = new FieldWriteContextImpl(hostClass, hostSelf, hostArgs, owner, writtenValue, chain);
+        invoke(handler, context, errorMessage);
     }
 
     private static MethodHandle createRunLayerHandle(String methodName, MethodType chainType) {
@@ -73,6 +101,20 @@ public class RedirectHandleChain {
         } catch (NoSuchMethodException|IllegalAccessException ex) {
             throw new RuntimeException("Failed to create handle to redirect run method", ex);
         }
+    }
+
+    private static void invoke(MethodHandle handler, Context context, String error) {
+        try {
+            handler.invokeExact(context);
+        } catch (Throwable ex) {
+            PatchLibLogger.error(error);
+            throw uncheckedThrow(ex);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> T uncheckedThrow(Throwable ex) throws T {
+        throw (T) ex;
     }
 
 }

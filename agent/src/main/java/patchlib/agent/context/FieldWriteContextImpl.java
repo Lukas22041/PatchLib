@@ -1,13 +1,21 @@
 package patchlib.agent.context;
 
-import patchlib.api.context.FieldReadContext;
 import patchlib.api.context.FieldWriteContext;
 import patchlib.api.ref.Ref;
 
+import java.lang.invoke.MethodHandle;
+
 public class FieldWriteContextImpl extends BaseContextImpl implements FieldWriteContext {
 
-    public FieldWriteContextImpl(Class<?> owner, Object self, Object[] args) {
-        super(owner, self, args);
+    private final Object owner;
+    private final Object writtenValue;
+    private final MethodHandle next;
+
+    public FieldWriteContextImpl(Class<?> effectiveClass, Object self, Object[] args, Object owner, Object writtenValue, MethodHandle next) {
+        super(effectiveClass, self, args);
+        this.owner = owner;
+        this.writtenValue = writtenValue;
+        this.next = next;
     }
 
     /**

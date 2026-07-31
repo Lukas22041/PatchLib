@@ -2,10 +2,23 @@ package patchlib.agent.context;
 
 import patchlib.api.context.FieldReadContext;
 
+import java.lang.invoke.MethodHandle;
+
 public class FieldReadContextImpl extends BaseContextImpl implements FieldReadContext {
 
-    public FieldReadContextImpl(Class<?> owner, Object self, Object[] args) {
-        super(owner, self, args);
+    private final Object owner;
+    private final MethodHandle next;
+
+    private Object result = null;
+
+    public FieldReadContextImpl(Class<?> effectiveClass, Object self, Object[] args, Object owner, MethodHandle next) {
+        super(effectiveClass, self, args);
+        this.owner = owner;
+        this.next = next;
+    }
+
+    public Object getResult() {
+        return result;
     }
 
     /**

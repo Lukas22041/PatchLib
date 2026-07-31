@@ -3,10 +3,23 @@ package patchlib.agent.context;
 import patchlib.api.context.ConstructorCallContext;
 import patchlib.api.ref.Ref;
 
+import java.lang.invoke.MethodHandle;
+
 public class ConstructorCallContextImpl extends BaseContextImpl implements ConstructorCallContext {
 
-    public ConstructorCallContextImpl(Class<?> owner, Object self, Object[] args) {
-        super(owner, self, args);
+    private final Object[] constructorArgs;
+    private final MethodHandle next;
+
+    private Object result = null;
+
+    public ConstructorCallContextImpl(Class<?> effectiveClass, Object self, Object[] args, Object[] constructorArgs, MethodHandle next) {
+        super(effectiveClass, self, args);
+        this.constructorArgs = constructorArgs;
+        this.next = next;
+    }
+
+    public Object getResult() {
+        return result;
     }
 
     /**

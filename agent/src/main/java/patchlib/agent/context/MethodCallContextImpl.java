@@ -3,12 +3,25 @@ package patchlib.agent.context;
 import patchlib.api.context.MethodCallContext;
 import patchlib.api.ref.Ref;
 
+import java.lang.invoke.MethodHandle;
+
 public class MethodCallContextImpl extends BaseContextImpl implements MethodCallContext {
 
+    private final Object receiver;
+    private final Object[] callArgs;
+    private final MethodHandle next;
 
+    private Object result = null;
 
-    public MethodCallContextImpl(Class<?> owner, Object self, Object[] args) {
-        super(owner, self, args);
+    public MethodCallContextImpl(Class<?> effectiveClass, Object self, Object[] args, Object receiver, Object[] callArgs, MethodHandle next) {
+        super(effectiveClass, self, args);
+        this.receiver = receiver;
+        this.callArgs = callArgs;
+        this.next = next;
+    }
+
+    public Object getResult() {
+        return result;
     }
 
     /**
