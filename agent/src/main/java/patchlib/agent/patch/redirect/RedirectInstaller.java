@@ -29,7 +29,7 @@ public class RedirectInstaller {
         if (!PatchInstaller.supportsConstantDynamic(typeDescription)) {
             ClassFileVersion version = typeDescription.getClassFileVersion();
             PatchLibLogger.error("One or multiple redirect patches tried modifying the class " + typeDescription.getActualName() + " on method " + methodDescription.getActualName() +
-                    "that is compiled with an unsupported classfile version (" + version.getMajorVersion() + "), which potentialy comes from being janino compiled code. Those patches are being skipped for this target.");
+                    "that is compiled with an unsupported classfile version (" + version.getMajorVersion() + "), which potentialy comes from being janino compiled code or not yet compiled for java17. Those patches are being skipped for this target.");
 
 
             return builder;
