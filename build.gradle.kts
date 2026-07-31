@@ -495,20 +495,6 @@ fun parseLauncher(): StarsectorLaunchSpec {
 
 val launcherInfo by lazy { starsectorLayout() to parseLauncher() }
 
-//JetBrains Runtime, downloaded on demand via the foojay resolver (see settings.gradle.kts).
-//Used in place of the bundled Starsector JRE for these tasks so an attached debugger can
-//redefine classes with structural changes (added/removed methods, including lambdas).
-//Requires the -XX:+AllowEnhancedClassRedefinition vmparams flag to be set.
-val jbrLauncher = javaToolchains.launcherFor {
-    languageVersion = JavaLanguageVersion.of(javaVersion)
-    vendor = JvmVendorSpec.JETBRAINS
-}
-
-//AllowEnhancedClassRedefinition requires Serial or G1 GC, but Starsector's vmparams
-//configures Shenandoah. Drop the Shenandoah-specific flags so JBR falls back to its
-//default (G1). Only affects these gradle tasks; the in-game launcher (vmparams) is
-//untouched, so normal runs still use Shenandoah.
-fun List<String>.forJbr(): List<String> = filterNot { it.contains("Shenandoah") || it.contains("PrintCodeCache") }
 
 //Builds the mod jar, then runs Starsector using the same classpath/jvmArgs the launcher would use.
 tasks.register<JavaExec>("runStarsector") {
@@ -517,15 +503,13 @@ tasks.register<JavaExec>("runStarsector") {
     dependsOn(tasks.jar)
 
     val (layout, parsed) = launcherInfo
-    javaLauncher.set(jbrLauncher)
+    setExecutable(layout.javaExecutable.absolutePath)
     workingDir = layout.gameWorkingDir
     mainClass.set(parsed.mainClass)
     classpath = files(parsed.classpath)
     //Stops treating game-crashes as build errors
     isIgnoreExitValue = true
-    jvmArgs = listOf(
-        "-XX:+AllowEnhancedClassRedefinition",
-    ) + parsed.jvmArgs.forJbr()
+    jvmArgs = parsed.jvmArgs
 }
 
 //Same as above, but skips the launcher window and jumps straight in to the game.
@@ -536,18 +520,17 @@ tasks.register<JavaExec>("runStarsectorNoLauncher") {
     dependsOn(tasks.jar)
 
     val (layout, parsed) = launcherInfo
-    javaLauncher.set(jbrLauncher)
+    setExecutable(layout.javaExecutable.absolutePath)
     workingDir = layout.gameWorkingDir
     mainClass.set(parsed.mainClass)
     classpath = files(parsed.classpath)
     isIgnoreExitValue = true
     jvmArgs = listOf(
-        "-XX:+AllowEnhancedClassRedefinition",
         "-DstartRes=$devResolution",
         "-DlaunchDirect=true",
         "-DstartFS=false",
         "-DstartSound=true",
-    ) + parsed.jvmArgs.forJbr()
+    ) + parsed.jvmArgs
 }
 
 //Ensure IntelliJ's "Build and run using" stays on IDEA (not Gradle) so HotSwap can recompile

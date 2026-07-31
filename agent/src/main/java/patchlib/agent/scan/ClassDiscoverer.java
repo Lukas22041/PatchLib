@@ -7,6 +7,7 @@ import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.pool.TypePool;
 import patchlib.agent.data.ClassDataImpl;
 import patchlib.agent.log.PatchLibLogger;
+import patchlib.agent.misc.PatchLibUtils;
 import patchlib.api.data.ClassData;
 
 import java.io.File;
@@ -89,7 +90,7 @@ public class ClassDiscoverer {
     }
 
     private ExecutorService createExecutor() {
-        int threads = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors()-1));
+        int threads = PatchLibUtils.getAvailableThreads();
 
         AtomicInteger count = new AtomicInteger();
 

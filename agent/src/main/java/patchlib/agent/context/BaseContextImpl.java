@@ -33,6 +33,11 @@ public abstract class BaseContextImpl implements Context {
         }
     }
 
+    @Override
+    public Class<?> getEffectiveClass() {
+        return effectiveClass;
+    }
+
     /**
      * Get the instance that the patched method is called on. Can be null on @Before constructors and on all static methods
      */

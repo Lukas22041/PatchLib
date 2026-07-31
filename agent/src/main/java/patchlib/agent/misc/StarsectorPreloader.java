@@ -29,7 +29,7 @@ public class StarsectorPreloader {
         //If ever changed, the passed in class loader also needs to be changed to the mod class loader.
         List<ClassData> starsectorClasses = data.classes().stream().filter(ClassData::isFromStarsector).toList();
 
-        int threads = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors()-1));
+        int threads = PatchLibUtils.getAvailableThreads();
         ExecutorService executorService = createExecutor(threads);
         List<StarsectorPreloadTask> tasks = new ArrayList<>();
 

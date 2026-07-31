@@ -24,6 +24,8 @@ public interface Context {
      * While you can not replace the instance itself with this, you can still modify the member variables of the object. */
     Object getArg(int index);
 
+    Class<?> getEffectiveClass();
+
     /** Reflection utility for reading/writing a typed field from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
     <T> Ref<T> getField(FieldQuerySpec query);
 
