@@ -16,8 +16,8 @@ public interface FieldWriteContext extends Context {
     /** The value being written, cast to the type you assign it to. */
     <T> T getInferredValueToWrite();
 
-    /** Performs the write at the next layer down, or the original write if this is the innermost layer, using the
-     * current written value. Skip the write entirely by never calling this. */
+    /** Performs the next write at the next layer down, or the original write if this is the innermost layer, using the
+     * current written value. Skip the next write entirely by never calling this. */
     void write();
 
     /** Same as write() but stores the given valueToWrite instead of the current one. */

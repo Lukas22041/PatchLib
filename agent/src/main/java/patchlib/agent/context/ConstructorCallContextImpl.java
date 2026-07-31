@@ -12,6 +12,7 @@ public class ConstructorCallContextImpl extends BaseContextImpl implements Const
     private final MethodHandle nextLayer;
 
     private Object result = null;
+    private Throwable thrownFromNextLayer;
 
     public ConstructorCallContextImpl(Class<?> effectiveClass, Object self, Object[] args, Object[] constructorArgs, MethodHandle nextLayer) {
         super(effectiveClass, self, args);
@@ -54,6 +55,7 @@ public class ConstructorCallContextImpl extends BaseContextImpl implements Const
         try {
             return nextLayer.invokeExact(args, self, this.args);
         } catch (Throwable ex) {
+            thrownFromNextLayer = ex;
             throw uncheckedThrow(ex);
         }
     }
@@ -61,6 +63,10 @@ public class ConstructorCallContextImpl extends BaseContextImpl implements Const
     @Override
     public void setResult(Object result) {
         this.result = result;
+    }
+
+    public boolean isResponsibleForException(Throwable thrown) {
+        return thrownFromNextLayer != thrown;
     }
 
     @SuppressWarnings("unchecked")

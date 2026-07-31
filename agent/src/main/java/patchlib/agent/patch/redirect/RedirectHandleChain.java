@@ -126,7 +126,9 @@ public class RedirectHandleChain {
         try {
             handler.invokeExact(context);
         } catch (Throwable ex) {
-            PatchLibLogger.error(errorMessage);
+            //Only show the blame message when this layer is responsible for it, checks if this is the case by recording
+            //Exceptions thrown from deeper layers
+            if (context.isResponsibleForException(ex)) PatchLibLogger.error(errorMessage);
             throw uncheckedThrow(ex);
         }
         return context.getResult();
@@ -138,7 +140,7 @@ public class RedirectHandleChain {
         try {
             handler.invokeExact(context);
         } catch (Throwable ex) {
-            PatchLibLogger.error(errorMessage);
+            if (context.isResponsibleForException(ex)) PatchLibLogger.error(errorMessage);
             throw uncheckedThrow(ex);
         }
         return context.getResult();
@@ -150,7 +152,7 @@ public class RedirectHandleChain {
         try {
             handler.invokeExact(context);
         } catch (Throwable ex) {
-            PatchLibLogger.error(errorMessage);
+            if (context.isResponsibleForException(ex)) PatchLibLogger.error(errorMessage);
             throw uncheckedThrow(ex);
         }
         return context.getResult();
@@ -162,7 +164,7 @@ public class RedirectHandleChain {
         try {
             handler.invokeExact(context);
         } catch (Throwable ex) {
-            PatchLibLogger.error(errorMessage);
+            if (context.isResponsibleForException(ex)) PatchLibLogger.error(errorMessage);
             throw uncheckedThrow(ex);
         }
     }

@@ -10,6 +10,7 @@ public class FieldReadContextImpl extends BaseContextImpl implements FieldReadCo
     private final MethodHandle nextLayer;
 
     private Object result = null;
+    private Throwable thrownFromNextLayer;
 
     public FieldReadContextImpl(Class<?> effectiveClass, Object self, Object[] args, Object owner, MethodHandle nextLayer) {
         super(effectiveClass, self, args);
@@ -36,6 +37,7 @@ public class FieldReadContextImpl extends BaseContextImpl implements FieldReadCo
         try {
             return nextLayer.invokeExact(owner, self, this.args);
         } catch (Throwable ex) {
+            thrownFromNextLayer = ex;
             throw uncheckedThrow(ex);
         }
     }
@@ -43,6 +45,10 @@ public class FieldReadContextImpl extends BaseContextImpl implements FieldReadCo
     @Override
     public void setResult(Object result) {
         this.result = result;
+    }
+
+    public boolean isResponsibleForException(Throwable thrown) {
+        return thrownFromNextLayer != thrown;
     }
 
     @SuppressWarnings("unchecked")

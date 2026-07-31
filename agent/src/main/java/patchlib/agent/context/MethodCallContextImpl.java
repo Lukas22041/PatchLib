@@ -13,6 +13,7 @@ public class MethodCallContextImpl extends BaseContextImpl implements MethodCall
     private final MethodHandle nextLayer;
 
     private Object result = null;
+    private Throwable thrownFromNextLayer;
 
     public MethodCallContextImpl(Class<?> effectiveClass, Object self, Object[] args, Object receiver, Object[] callArgs, MethodHandle nextLayer) {
         super(effectiveClass, self, args);
@@ -65,6 +66,7 @@ public class MethodCallContextImpl extends BaseContextImpl implements MethodCall
         try {
             return nextLayer.invokeExact(receiver, args, self, this.args);
         } catch (Throwable ex) {
+            thrownFromNextLayer = ex;
             throw uncheckedThrow(ex);
         }
     }
@@ -72,6 +74,10 @@ public class MethodCallContextImpl extends BaseContextImpl implements MethodCall
     @Override
     public void setResult(Object result) {
         this.result = result;
+    }
+
+    public boolean isResponsibleForException(Throwable thrown) {
+        return thrownFromNextLayer != thrown;
     }
 
     @SuppressWarnings("unchecked")
