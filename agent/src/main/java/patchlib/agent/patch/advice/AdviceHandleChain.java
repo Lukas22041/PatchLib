@@ -49,8 +49,12 @@ public class AdviceHandleChain {
             handler.invokeExact(context);
         } catch (Throwable e) {
             PatchLibLogger.error(errorMessage);
-            throw new RuntimeException(e);
+            throw uncheckedThrow(e);
         }
+    }
+
+    private static <T extends Throwable> T uncheckedThrow(Throwable ex) throws T {
+        throw (T) ex;
     }
 
 }

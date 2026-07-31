@@ -1,9 +1,11 @@
 package patchlib.agent.patch.advice;
 
+import net.bytebuddy.description.method.MethodDescription;
 import patchlib.agent.patch.InstallationData;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,15 +55,10 @@ public class AdvicePatchSite {
 
             if (!isVirtualMethod) return true;
 
-            MethodType signature = MethodType.fromMethodDescriptorString(methodDescriptor, clazz.getClassLoader());
-
             Class<?> current = clazz;
             while (current != null) {
-                try {
-                    current.getDeclaredMethod(methodName, signature.parameterArray());
+                if (declaresMethod(current)) {
                     return current.getName().equals(hostClass);
-                } catch (NoSuchMethodException ex) {
-                    //Ignore
                 }
 
                 current = current.getSuperclass();
@@ -74,5 +71,14 @@ public class AdvicePatchSite {
             return true;
         }
 
+    }
+
+    private boolean declaresMethod(Class<?> c) {
+        for (Method m : c.getDeclaredMethods()) {
+            if (m.isBridge() || m.isSynthetic()) continue;
+            if (m.getName().equals(methodName)
+                    && new MethodDescription.ForLoadedMethod(m).getDescriptor().equals(methodDescriptor)) return true;
+        }
+        return false;
     }
 }

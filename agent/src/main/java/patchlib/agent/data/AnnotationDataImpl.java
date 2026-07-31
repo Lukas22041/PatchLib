@@ -59,9 +59,9 @@ public class AnnotationDataImpl implements AnnotationData {
     }
 
     @Override
-    public Integer[] getIntArray(String id) {
+    public int[] getIntArray(String id) {
         AnnotationValue<?, ?> value = get(id);
-        return value != null ? value.resolve(Integer[].class) : null;
+        return value != null ? value.resolve(int[].class) : null;
     }
 
     @Override
@@ -71,9 +71,9 @@ public class AnnotationDataImpl implements AnnotationData {
     }
 
     @Override
-    public Float[] getFloatArray(String id) {
+    public float[] getFloatArray(String id) {
         AnnotationValue<?, ?> value = get(id);
-        return value != null ? value.resolve(Float[].class) : null;
+        return value != null ? value.resolve(float[].class) : null;
     }
 
     @Override
@@ -83,9 +83,9 @@ public class AnnotationDataImpl implements AnnotationData {
     }
 
     @Override
-    public Boolean[] getBooleanArray(String id) {
+    public boolean[] getBooleanArray(String id) {
         AnnotationValue<?, ?> value = get(id);
-        return value != null ? value.resolve(Boolean[].class) : null;
+        return value != null ? value.resolve(boolean[].class) : null;
     }
 
     @Override

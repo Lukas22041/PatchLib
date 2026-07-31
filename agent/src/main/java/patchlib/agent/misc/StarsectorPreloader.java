@@ -50,11 +50,11 @@ public class StarsectorPreloader {
                     StarsectorPreloadTask.StarsectorPreloadTaskResult result = future.get();
                     loaded += result.loaded;
                     skipped += result.skipped;
-                } catch (Exception ex) {
+                } catch (Throwable ex) {
                     PatchLibLogger.error("Failed to preload a chunk of starsector classes", ex);
                 }
             }
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             PatchLibLogger.error("Failed to preload starsector classes", ex);
         } finally {
             executorService.shutdown();
@@ -98,7 +98,7 @@ public class StarsectorPreloader {
                     //Load with "initialize" set to false prevents static blocks from being called early.
                     Class.forName(classData.getName(), false, classLoader);
                     loaded++;
-                } catch (Exception ex) {
+                } catch (Throwable ex) {
                     skipped++;
                 }
 

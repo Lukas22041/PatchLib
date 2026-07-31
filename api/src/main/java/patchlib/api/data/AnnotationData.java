@@ -11,13 +11,13 @@ public interface AnnotationData {
     public String[] getStringArray(String id);
 
     public Integer getInt(String id);
-    public Integer[] getIntArray(String id);
+    public int[] getIntArray(String id);
 
     public Float getFloat(String id);
-    public Float[] getFloatArray(String id);
+    public float[] getFloatArray(String id);
 
     public Boolean getBoolean(String id);
-    public Boolean[] getBooleanArray(String id);
+    public boolean[] getBooleanArray(String id);
 
     public String getEnumValue(String id);
 
