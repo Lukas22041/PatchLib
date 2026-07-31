@@ -1,7 +1,7 @@
 # PatchLib
 
 A Starsector library mod that enables patching code at runtime.  
-This can be used to modify the behaviour and values from vanilla methods.
+This can be used to modify the behavior and values from vanilla and modded methods.
 
 A typical patch is registered through an annotation API like this:
 
@@ -16,7 +16,7 @@ public class TestPatch {
 }
 ```
 
-This simple patch hooks after the execution of the games clock "getCycle" and always increases it by 1000 cycles.
+This simple patch hooks after the execution of the games clock "getCycle" and modiofies its retujrn value to always increase it by 1000 cycles.
 
 ## API Documentation
 
