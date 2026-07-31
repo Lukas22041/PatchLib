@@ -5,8 +5,7 @@ import net.bytebuddy.matcher.ElementMatcher;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
-/** Prevents core JVM classes from being targeted by patches. Mostly a performance consideration, but also for stability.
- * Also prevents patches to bytebuddy and patchlib itself*/
+/** Matcher that gates out classes that should not be patchable, for performance or stability reasons */
 public class IgnoreMatcher {
 
     private static final String[] IGNORED_PREFIXES = {
@@ -16,12 +15,17 @@ public class IgnoreMatcher {
             "org.apache.log4j.", //Ignore the logger
             "com.azul.", "org.graalvm.", "com.oracle.", "oracle.", //Ignore specific JVMs
             "org.codehaus.janino.", "org.codehaus.commons.", //Ignore Janino
-            "com.intellij.", "org.jetbrains.capture." //Ignore Intellijs debugger
+            "com.intellij.", "org.jetbrains.capture.", //Ignore IntelliJ debugger
+
+            //Block starsectors mod classloader from being patched.
+            //Alex (the games developer) prefers reflection & io to not be to easily accessed, and one mod
+            //could disable the checks for all other mods by patching the loader.
+            "com.fs.starfarer.loading.scripts."
     };
 
     /** Exceptions to the ignored prefixes. */
     private static final String[] ALLOWED_PREFIXES = {
-            "patchlib.test.targets.", //PatchLibs own test targets, patched by the in-game tests
+            "patchlib.test.targets.", //PatchLibs tests
     };
 
     public static ElementMatcher.Junction<TypeDescription> create() {

@@ -2,8 +2,8 @@ package patchlib.api.context;
 
 import patchlib.api.ref.Ref;
 
-/** Context for a @RedirectNew intercepting a constructor call inside the host method. The inherited Context methods
- * (getSelf, getArgs, reflection utilities, ...) refer to the host method; the methods below refer to the construction. */
+/** Context for a @RedirectConstructorCall intercepting a constructor call inside the host method. The inherited Context methods
+ * (getSelf, getArgs, reflection utilities, ...) refer to the host method; the methods in this interface refer to the construction. */
 public interface ConstructorCallContext extends Context {
 
     /** The arguments passed to the intercepted construction. Writing to a spot in the array changes what call() passes on. */

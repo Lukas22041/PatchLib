@@ -1,22 +1,47 @@
 package patchlib.test;
 
-import patchlib.agent.PatchLibLogger;
-import patchlib.test.regression.LegacyDispatchTests;
-import patchlib.test.regression.RegressionTests;
+import com.fs.starfarer.api.Global;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import patchlib.test.tests.*;
 
-/** In-game test suite. Runs from the mod plugin after the agent is initialized and game classes are preloaded,
- * so test targets get transformed when the tests first load them. */
+import java.util.ArrayList;
+import java.util.List;
+
+/** Runs a bunch of regression tests at game runtime, to ensure that a recent change didn't break functionality and to check for potentially
+ * issues on certain JVMs. */
 public class PatchLibTests {
 
-    /** Master switch for the in-game test suite. Off for releases. */
-    public static final boolean ENABLED = true;
-
-    public static void runIfEnabled() {
-        if (!ENABLED) return;
-        PatchLibLogger.info("Running in-game tests");
-        RegressionTests.run();
-        LegacyDispatchTests.run();
-        PatchLibLogger.info("In-game tests finished");
+    private static final String PREFIX = "[PatchLib] ";
+    private static Logger log = Global.getLogger(PatchLibTests.class);
+    static {
+        log.setLevel(Level.ALL);
     }
+
+    public void runTests() {
+        log.info(PREFIX + "Running tests");
+
+        List<TestResult> results = new ArrayList<>();
+        results.addAll(BeforeTests.runTests());
+        results.addAll(AfterTests.runTests());
+        results.addAll(ExceptTests.runTests());
+        results.addAll(RedirectTests.runTests());
+        results.addAll(ReflectionTests.runTests());
+
+        List<TestResult> failed = results.stream().filter(test -> test.failed()).toList();
+        log.info(PREFIX + (results.size()-failed.size()) + "/" + results.size() + " tests have run successfully");
+
+        for (TestResult fail : failed) {
+            log.error("The test \"" + fail.testName() + " failed with the message \"" + fail.failureMessage() + "\"");
+        }
+
+        if (!failed.isEmpty()) {
+            throw new RuntimeException("PatchLib ran in to an issue during patch testing.");
+        }
+
+        log.info(PREFIX + "Finished running tests");
+    }
+
+
 
 }

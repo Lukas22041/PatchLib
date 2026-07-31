@@ -2,81 +2,64 @@ package patchlib;
 
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
-import patchlib.agent.PatchLibAgentManager;
-import patchlib.install.InstallerLauncher;
+import com.fs.starfarer.api.ModSpecAPI;
+import com.sun.tools.attach.AgentInitializationException;
+import com.sun.tools.attach.AgentLoadException;
+import com.sun.tools.attach.AttachNotSupportedException;
+import com.sun.tools.attach.VirtualMachine;
+import patchlib.agent.AgentMain;
 import patchlib.test.PatchLibTests;
+
+import java.io.IOException;
 
 public class PatchLibModPlugin extends BaseModPlugin {
 
-    //Attempts to check if the java agent is installed
-    static {
-        try {
-            String agentVersion = System.getProperty("patchlib.agent.version");
-            String modVersion = Global.getSettings().getModManager().getModSpec("patchlib").getVersion();
-            evaluate(agentVersion, modVersion);
-        } catch (Throwable t) {
-
-        }
-    }
-
-    /** Checks that the agent loaded and matches the mod version. Authoritative second round,
-     * in case the early static check could not run yet. */
-    public void checkAgentInstall() {
-        String agentVersion = System.getProperty("patchlib.agent.version");
-        String modVersion = Global.getSettings().getModManager().getModSpec("patchlib").getVersion();
-        evaluate(agentVersion, modVersion);
-    }
-
-    //Opens the installer and quits the game if the agent is missing or a different version.
-    private static void evaluate(String agentVersion, String modVersion) {
-        //The agent never loaded. Usually a fresh install or a Starsector update that reset the launcher file.
-        if (agentVersion == null) {
-            InstallerLauncher.launchAndExit(InstallerLauncher.Reason.MISSING_AGENT, modVersion, null);
-            return; // launchAndExit calls System.exit on success
-        }
-
-        //The agent loaded but is a different version than the mod. Usually a mod update.
-        if (!agentVersion.equals(modVersion)) {
-            InstallerLauncher.launchAndExit(InstallerLauncher.Reason.VERSION_MISMATCH, modVersion, agentVersion);
-        }
-    }
-
     @Override
     public void onApplicationLoad() throws Exception {
-        checkAgentInstall();
 
-        //Starts the agents mod scan & patches.
-        //Should be called before most other mods have their onApplicationLoad called, due to the ! at the start of the mods name, bringing it earlier in to load.
-        //Purposefully called from the mods code, as it prevents the agent from running any patches if the mod is disabled.
-        PatchLibAgentManager.getInstance().init(this.getClass().getClassLoader());
+        if (!checkAlreadyAttached()) {
+            try {
+                selfAttachAgent();
+            } catch (Throwable ex) {
+                throw new RuntimeException("PatchLib failed to attach to the game. \n" +
+                        "Check PatchLib's forum thread for guidance on this issue.\n", ex);
+            }
+        }
 
-        PatchLibTests.runIfEnabled();
+        //Init the agent if it managed to attach.
+        //Pass the mod classloader, as it is needed to bind the patches method handlers later.
+        AgentMain.init(this.getClass().getClassLoader());
+
+        PatchLibTests patchLibTests = new PatchLibTests();
+        patchLibTests.runTests();
     }
 
-    @Override
-    public void onGameLoad(boolean newGame) {
-
+    /** Check if the agent was already attached by a -javaagent flag in the vmparams.
+     * Can't just check a static check, as*/
+    public boolean checkAlreadyAttached() {
+        String isAttached = System.getProperty("PatchLib_AgentAttached");
+        return isAttached != null;
     }
 
-    @Override
-    public void onNewGame() {
+    /** Self-attaches PatchLib's agent to the game.
+     * Should be stable, as long as:
+     * 1. The game ships with the "jdk.attach" module included in the bundled JRE/JDK.
+     * 2. The game has the "-Djdk.attach.allowAttachSelf=true -XX:+EnableDynamicAgentLoading" flags set in the vmparams.
+     * Alex has confirmed that both of those will happen with v0.98.5a
+     *
+     * Note: There may be some issues with certain ascii characters if they are not included in the users windows language, but
+     * this has to be tested for first.*/
+    public void selfAttachAgent() throws AgentLoadException, IOException, AgentInitializationException, AttachNotSupportedException {
+        ModSpecAPI modSpec = Global.getSettings().getModManager().getModSpec("patchlib");
+        String agentJar = modSpec.getPath() + "/jars/PatchLibAgent.jar";
 
+        String pid = Long.toString(ProcessHandle.current().pid());
+
+        VirtualMachine vm = VirtualMachine.attach(pid);
+        vm.loadAgent(agentJar);
+        vm.detach();
     }
 
-    @Override
-    public void onNewGameAfterEconomyLoad() {
-
-    }
-
-    @Override
-    public void onNewGameAfterProcGen() {
-
-    }
-
-    @Override
-    public void onNewGameAfterTimePass() {
-
-    }
 
 
 }

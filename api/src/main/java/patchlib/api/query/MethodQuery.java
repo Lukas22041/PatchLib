@@ -1,63 +1,78 @@
 package patchlib.api.query;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import patchlib.api.match.MethodType;
+import patchlib.api.spec.AnnotationQuerySpec;
+import patchlib.api.spec.FieldQuerySpec;
+import patchlib.api.spec.MethodQuerySpec;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/** Matcher builder for finding local methods on a patched class. A default/null value is not considered in the matching selection.
- * The first matching method wins. */
-public final class MethodQuery {
+public class MethodQuery {
 
-    String name;
-    List<Class<?>> parameterTypes;
-    List<Class<?>> paramsContain;
-    int parameterCount = -1;
-    Class<?> returnType;
-    Class<?> returnsSubtypeOf;
-    Boolean staticOnly;
+    private String methodName = "";
+    private List<String> parameterTypeNames = new ArrayList<>();
+    private List<String> containsParameterType = new ArrayList<>();
+    private int parameterCount = -1;
+    private String returnTypeName = "";
+    private MethodType methodType = MethodType.ANY;
+    private boolean staticOnly = false;
+    private List<AnnotationQuery> annotations = new ArrayList<>();
 
-    private MethodQuery() {
-    }
+    private MethodQuery() { }
 
     public static MethodQuery create() {
         return new MethodQuery();
     }
 
-    public static MethodQuery named(String name) {
-        return new MethodQuery().name(name);
+    public MethodQuerySpec build() {
+        List<AnnotationQuerySpec> annotationSpecs = annotations.stream().map(AnnotationQuery::build).toList();
+        return new MethodQuerySpec(methodName, parameterTypeNames, containsParameterType, parameterCount, returnTypeName, methodType, staticOnly, annotationSpecs);
     }
 
-    public MethodQuery name(String name) {
-        this.name = name;
+    public MethodQuery methodName(String methodName) {
+        this.methodName = methodName;
         return this;
     }
 
-    /** Exact parameter matching */
-    public MethodQuery params(Class<?>... parameterTypes) {
-        this.parameterTypes = List.of(parameterTypes);
+    public MethodQuery parameters(Class<?>... parameterTypes) {
+        this.parameterTypeNames = Arrays.stream(parameterTypes).map(Class::getTypeName).toList();
         return this;
     }
 
-    /** Loose parameter matching */
-    public MethodQuery paramsContain(Class<?>... types) {
-        this.paramsContain = List.of(types);
+    public MethodQuery parameterNames(String... parameterTypeNames) {
+        this.parameterTypeNames = Arrays.stream(parameterTypeNames).toList();
         return this;
     }
 
-    public MethodQuery paramCount(int count) {
-        this.parameterCount = count;
+    public MethodQuery containsParameterType(Class<?> parameterType) {
+        this.containsParameterType.add(parameterType.getTypeName());
         return this;
     }
 
-    public MethodQuery returns(Class<?> returnType) {
-        this.returnType = returnType;
+    public MethodQuery containsParameterTypeName(String parameterTypeName) {
+        this.containsParameterType.add(parameterTypeName);
         return this;
     }
 
-    public MethodQuery returnsSubtypeOf(Class<?> returnType) {
-        this.returnsSubtypeOf = returnType;
+    public MethodQuery parameterCount(int parameterCount) {
+        this.parameterCount = parameterCount;
+        return this;
+    }
+
+    public MethodQuery returnType(Class<?> returnType) {
+        this.returnTypeName = returnType.getTypeName();
+        return this;
+    }
+
+    public MethodQuery returnTypeName(String returnTypeName) {
+        this.returnTypeName = returnTypeName;
+        return this;
+    }
+
+    public MethodQuery methodType(MethodType methodType) {
+        this.methodType = methodType;
         return this;
     }
 
@@ -66,34 +81,8 @@ public final class MethodQuery {
         return this;
     }
 
-    public boolean matches(Method m) {
-        if (name != null && !m.getName().equals(name)) return false;
-        if (returnType != null && !m.getReturnType().equals(returnType)) return false;
-        if (returnsSubtypeOf != null && !returnsSubtypeOf.isAssignableFrom(m.getReturnType())) return false;
-        if (staticOnly != null && staticOnly != Modifier.isStatic(m.getModifiers())) return false;
-        if (parameterTypes != null) {
-            if (m.getParameterCount() != parameterTypes.size()) return false;
-            Class<?>[] actual = m.getParameterTypes();
-            for (int i = 0; i < actual.length; i++)
-                if (!actual[i].equals(parameterTypes.get(i))) return false;
-        } else if (parameterCount >= 0 && m.getParameterCount() != parameterCount) {
-            return false;
-        }
-        if (paramsContain != null) {
-            List<Class<?>> remaining = new ArrayList<>(Arrays.asList(m.getParameterTypes()));
-            for (Class<?> required : paramsContain)
-                if (!remaining.remove(required)) {
-                    return false;
-                }
-        }
-        return true;
+    public MethodQuery hasAnnotation(AnnotationQuery annotationQuery) {
+        this.annotations.add(annotationQuery);
+        return this;
     }
-
-    /** Builds a key of the query, relevant for caching the search result later */
-    public Object cacheKey(Class<?> owner) {
-        return new Key(owner, name, parameterTypes, paramsContain, parameterCount, returnType, returnsSubtypeOf, staticOnly);
-    }
-
-    private record Key(Class<?> owner, String name, List<Class<?>> parameterTypes, List<Class<?>> paramsContain,
-                       int parameterCount, Class<?> returnType, Class<?> returnsSubtypeOf, Boolean staticOnly) { }
 }

@@ -4,6 +4,8 @@ import patchlib.api.query.FieldQuery;
 import patchlib.api.query.MethodQuery;
 import patchlib.api.ref.MethodRef;
 import patchlib.api.ref.Ref;
+import patchlib.api.spec.FieldQuerySpec;
+import patchlib.api.spec.MethodQuerySpec;
 import patchlib.api.store.PatchData;
 
 /** Base Context interface. Includes methods that all contexts share */
@@ -23,10 +25,10 @@ public interface Context {
     Object getArg(int index);
 
     /** Reflection utility for reading/writing a typed field from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
-    <T> Ref<T> getField(FieldQuery query);
+    <T> Ref<T> getField(FieldQuerySpec query);
 
     /** Reflection utility for reading/writing a typed field from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
-    <T> Ref<T> getField(FieldQuery query, Object instance);
+    <T> Ref<T> getField(FieldQuerySpec query, Object instance);
 
     /** Reflection utility for reading/writing a typed field from the instance. Most useful for private members of a class, since reflection is otherwise blocked. */
     <T> Ref<T> getField(String name);
@@ -35,10 +37,10 @@ public interface Context {
     <T> Ref<T> getField(String name, Object instance);
 
     /** Reflection utility for receiving a method from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
-    MethodRef getMethod(MethodQuery query);
+    MethodRef getMethod(MethodQuerySpec query);
 
     /** Reflection utility for receiving a method from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
-    MethodRef getMethod(MethodQuery query, Object instance);
+    MethodRef getMethod(MethodQuerySpec query, Object instance);
 
     /** Reflection utility for receiving a method from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
     MethodRef getMethod(String name);
@@ -47,10 +49,10 @@ public interface Context {
     MethodRef getMethod(String name, Object instance);
 
     /** Reflection utility for checking if the patched class has a specific method */
-    boolean hasMethod(MethodQuery query);
+    boolean hasMethod(MethodQuerySpec query);
 
     /** Reflection utility for checking if a specific instance has a specific method */
-    boolean hasMethod(MethodQuery query, Object instance);
+    boolean hasMethod(MethodQuerySpec query, Object instance);
 
     /** Reflection utility for checking if the patched class has a specific method */
     boolean hasMethod(String name);
@@ -59,10 +61,10 @@ public interface Context {
     boolean hasMethod(String name, Object instance);
 
     /** Reflection utility for checking if the patched class has a specific field */
-    boolean hasField(FieldQuery query);
+    boolean hasField(FieldQuerySpec query);
 
     /** Reflection utility for checking if a specific instance has a specific field */
-    boolean hasField(FieldQuery query, Object instance);
+    boolean hasField(FieldQuerySpec query, Object instance);
 
     /** Reflection utility for checking if the patched class has a specific field */
     boolean hasField(String name);

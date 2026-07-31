@@ -1,39 +1,62 @@
 package patchlib.api.query;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+import patchlib.api.spec.AnnotationQuerySpec;
+import patchlib.api.spec.FieldQuerySpec;
 
-/** Matcher builder for finding local fields on a patched class. A default/null value is not considered in the matching selection.
- * The first matching method wins. */
-public final class FieldQuery {
+import java.util.ArrayList;
+import java.util.List;
 
-    String name;
-    Class<?> type;
-    Class<?> subtypeOf;
-    Boolean staticOnly;
+public class FieldQuery {
+
+    private String fieldName = "";
+    private String fieldTypeName = "";
+    private String fieldSubtypeName = "";
+    private boolean staticOnly = false;
+    private List<AnnotationQuery> annotations = new ArrayList<>();
 
     private FieldQuery() { }
 
-    public static FieldQuery create() { return new FieldQuery(); }
-    public static FieldQuery named(String name) { return new FieldQuery().name(name); }
-
-    public FieldQuery name(String name) { this.name = name; return this; }
-    public FieldQuery type(Class<?> type) { this.type = type; return this; }
-    public FieldQuery subtypeOf(Class<?> type) { this.subtypeOf = type; return this; }
-    public FieldQuery staticOnly(boolean staticOnly) { this.staticOnly = staticOnly; return this; }
-
-    public boolean matches(Field f) {
-        if (name != null && !f.getName().equals(name)) return false;
-        if (type != null && !f.getType().equals(type)) return false;
-        if (subtypeOf != null && !subtypeOf.isAssignableFrom(f.getType())) return false;
-        if (staticOnly != null && staticOnly != Modifier.isStatic(f.getModifiers())) return false;
-        return true;
+    public static FieldQuery create() {
+        return new FieldQuery();
     }
 
-    /** Builds a key of the query, relevant for caching the search result later */
-    public Object cacheKey(Class<?> owner) {
-        return new Key(owner, name, type, subtypeOf, staticOnly);
+    public FieldQuerySpec build() {
+        List<AnnotationQuerySpec> annotationSpecs = annotations.stream().map(AnnotationQuery::build).toList();
+        return new FieldQuerySpec(fieldName, fieldTypeName, fieldSubtypeName, staticOnly, annotationSpecs);
     }
 
-    private record Key(Class<?> owner, String name, Class<?> type, Class<?> subtypeOf, Boolean staticOnly) { }
+    public FieldQuery fieldName(String fieldName) {
+        this.fieldName = fieldName;
+        return this;
+    }
+
+    public FieldQuery fieldType(Class<?> fieldType) {
+        this.fieldTypeName = fieldType.getTypeName();
+        return this;
+    }
+
+    public FieldQuery fieldTypeName(String fieldTypeName) {
+        this.fieldTypeName = fieldTypeName;
+        return this;
+    }
+
+    public FieldQuery fieldSubtype(Class<?> fieldSubtype) {
+        this.fieldSubtypeName = fieldSubtype.getTypeName();
+        return this;
+    }
+
+    public FieldQuery fieldSubtypeName(String fieldSubtypeName) {
+        this.fieldSubtypeName = fieldSubtypeName;
+        return this;
+    }
+
+    public FieldQuery staticOnly(boolean staticOnly) {
+        this.staticOnly = staticOnly;
+        return this;
+    }
+
+    public FieldQuery hasAnnotation(AnnotationQuery annotationQuery) {
+        this.annotations.add(annotationQuery);
+        return this;
+    }
 }
