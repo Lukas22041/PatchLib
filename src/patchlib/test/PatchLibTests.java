@@ -3,10 +3,7 @@ package patchlib.test;
 import com.fs.starfarer.api.Global;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import patchlib.test.tests.AfterTests;
-import patchlib.test.tests.BeforeTests;
-import patchlib.test.tests.ExceptTests;
-import patchlib.test.tests.ReflectionTests;
+import patchlib.test.tests.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +25,7 @@ public class PatchLibTests {
         results.addAll(BeforeTests.runTests());
         results.addAll(AfterTests.runTests());
         results.addAll(ExceptTests.runTests());
+        results.addAll(RedirectTests.runTests());
         results.addAll(ReflectionTests.runTests());
 
         List<TestResult> failed = results.stream().filter(test -> test.failed()).toList();
