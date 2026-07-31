@@ -14,10 +14,6 @@ import patchlib.agent.matchers.MethodMatcher;
 import patchlib.agent.patch.InstallationData;
 import patchlib.agent.patch.PatchInstaller;
 import patchlib.agent.spec.*;
-import patchlib.api.patch.RedirectFieldWrite;
-import patchlib.api.query.FieldQuery;
-import patchlib.api.spec.FieldQuerySpec;
-import patchlib.api.spec.MethodQuerySpec;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +64,7 @@ public class RedirectInstaller {
         ElementMatcher.Junction<MethodDescription> anyMatcher = ElementMatchers.none();
 
         for (InstallationData data : callDataList) {
-            RedirectCallSpec spec = (RedirectCallSpec) data.spec().patchSpec();
+            RedirectMethodCallSpec spec = (RedirectMethodCallSpec) data.spec().patchSpec();
             ElementMatcher.Junction<MethodDescription> matcher = MethodMatcher.fromQuery(spec.call(), spec.owner());
             anyMatcher = anyMatcher.or(matcher);
             RedirectSubstitutionFactory.RedirectCandidate candidate = new RedirectSubstitutionFactory.RedirectCandidate(member ->
@@ -91,7 +87,7 @@ public class RedirectInstaller {
         ElementMatcher.Junction<MethodDescription> anyMatcher = ElementMatchers.none();
 
         for (InstallationData data : constructorDataList) {
-            RedirectNewSpec spec = (RedirectNewSpec) data.spec().patchSpec();
+            RedirectConstructorCallSpec spec = (RedirectConstructorCallSpec) data.spec().patchSpec();
             ElementMatcher.Junction<MethodDescription> matcher = MethodMatcher.fromQuery(spec.constructor(), spec.constructed());
             anyMatcher = anyMatcher.or(matcher);
             RedirectSubstitutionFactory.RedirectCandidate candidate = new RedirectSubstitutionFactory.RedirectCandidate(member ->

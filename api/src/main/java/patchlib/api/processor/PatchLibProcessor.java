@@ -10,8 +10,6 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.tools.Diagnostic;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 @SupportedAnnotationTypes({
@@ -21,10 +19,10 @@ import java.util.Set;
 
         "patchlib.api.patch.Patch",
 
-        "patchlib.api.patch.RedirectCall",
+        "patchlib.api.patch.RedirectMethodCall",
         "patchlib.api.patch.RedirectFieldRead",
         "patchlib.api.patch.RedirectFieldWrite",
-        "patchlib.api.patch.RedirectNew",
+        "patchlib.api.patch.RedirectConstructorCall",
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 public class PatchLibProcessor extends AbstractProcessor {
@@ -48,8 +46,8 @@ public class PatchLibProcessor extends AbstractProcessor {
             validateHandler(element, Except.class, ExceptContext.class);
         }
 
-        for (Element element : roundEnv.getElementsAnnotatedWith(RedirectCall.class)) {
-            validateHandler(element, RedirectCall.class, MethodCallContext.class);
+        for (Element element : roundEnv.getElementsAnnotatedWith(RedirectMethodCall.class)) {
+            validateHandler(element, RedirectMethodCall.class, MethodCallContext.class);
         }
 
         for (Element element : roundEnv.getElementsAnnotatedWith(RedirectFieldRead.class)) {
@@ -60,8 +58,8 @@ public class PatchLibProcessor extends AbstractProcessor {
             validateHandler(element, RedirectFieldWrite.class, FieldWriteContext.class);
         }
 
-        for (Element element : roundEnv.getElementsAnnotatedWith(RedirectNew.class)) {
-            validateHandler(element, RedirectNew.class, ConstructorCallContext.class);
+        for (Element element : roundEnv.getElementsAnnotatedWith(RedirectConstructorCall.class)) {
+            validateHandler(element, RedirectConstructorCall.class, ConstructorCallContext.class);
         }
 
         return false;

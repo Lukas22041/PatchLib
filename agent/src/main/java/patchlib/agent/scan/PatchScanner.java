@@ -27,8 +27,8 @@ public class PatchScanner {
     private final static String BEFORE = Before.class.getTypeName();
     private final static String AFTER = After.class.getTypeName();
     private final static String EXCEPT = Except.class.getTypeName();
-    private final static String REDIRECT_CALL = RedirectCall.class.getTypeName();
-    private final static String REDIRECT_NEW = RedirectNew.class.getTypeName();
+    private final static String REDIRECT_CALL = RedirectMethodCall.class.getTypeName();
+    private final static String REDIRECT_NEW = RedirectConstructorCall.class.getTypeName();
     private final static String REDIRECT_FIELD_READ = RedirectFieldRead.class.getTypeName();
     private final static String REDIRECT_FIELD_WRITE = RedirectFieldWrite.class.getTypeName();
 
@@ -99,7 +99,7 @@ public class PatchScanner {
             MethodQuerySpec call = createMethodQuery(patchType.getAnnotation("call"))
                     .methodType(MethodType.METHOD) //Only target methods
                     .build();
-            return new RedirectCallSpec(owner, call);
+            return new RedirectMethodCallSpec(owner, call);
         }
         else if (name.equals(REDIRECT_NEW)) {
             ClassQuerySpec type = createClassQuery(patchType.getAnnotation("type")).build();
@@ -109,7 +109,7 @@ public class PatchScanner {
                     .methodName("") //Constructors have no name
                     .staticOnly(false) //Constructors are never static
                     .build();
-            return new RedirectNewSpec(type, constructor);
+            return new RedirectConstructorCallSpec(type, constructor);
         }
         else if (name.equals(REDIRECT_FIELD_READ)) {
             ClassQuerySpec owner = createClassQuery(patchType.getAnnotation("owner")).build();

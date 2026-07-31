@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
  * to reach the next layer down (eventually the real call), or never calls it to short circuit. */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
-public @interface RedirectCall {
+public @interface RedirectMethodCall {
 
     /** The host method whose body is searched for the call to intercept. The default searches every method of the patched class. */
     MethodMatch target() default @MethodMatch;

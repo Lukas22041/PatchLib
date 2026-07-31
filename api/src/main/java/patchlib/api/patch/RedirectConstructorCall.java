@@ -16,7 +16,7 @@ import java.lang.annotation.Target;
  * In a constructor host, new expressions of the host class or its direct superclass are never intercepted. */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
-public @interface RedirectNew {
+public @interface RedirectConstructorCall {
 
     /** The host method whose body is searched for the construction to intercept. The default searches every method of the patched class. */
     MethodMatch target() default @MethodMatch;

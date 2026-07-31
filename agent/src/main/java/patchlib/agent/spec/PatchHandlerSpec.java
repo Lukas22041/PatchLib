@@ -30,8 +30,8 @@ public record PatchHandlerSpec(
     }
 
     public RedirectType getRedirectType() {
-        if (patchSpec instanceof RedirectCallSpec) return RedirectType.METHOD_CALL;
-        else if (patchSpec instanceof RedirectNewSpec) return RedirectType.CONSTRUCTOR;
+        if (patchSpec instanceof RedirectMethodCallSpec) return RedirectType.METHOD_CALL;
+        else if (patchSpec instanceof RedirectConstructorCallSpec) return RedirectType.CONSTRUCTOR;
         else if (patchSpec instanceof RedirectFieldReadSpec) return RedirectType.FIELD_READ;
         else if (patchSpec instanceof RedirectFieldWriteSpec) return RedirectType.FIELD_WRITE;
         throw new IllegalStateException("getRedirectType called on non-redirect spec");
@@ -45,8 +45,8 @@ public record PatchHandlerSpec(
                 case EXCEPT -> ExceptContext.class;
             };
         } else {
-            if (patchSpec instanceof RedirectCallSpec) return MethodCallContext.class;
-            else if (patchSpec instanceof RedirectNewSpec) return ConstructorCallContext.class;
+            if (patchSpec instanceof RedirectMethodCallSpec) return MethodCallContext.class;
+            else if (patchSpec instanceof RedirectConstructorCallSpec) return ConstructorCallContext.class;
             else if (patchSpec instanceof RedirectFieldReadSpec) return FieldReadContext.class;
             else if (patchSpec instanceof RedirectFieldWriteSpec) return FieldWriteContext.class;
         }
@@ -55,8 +55,8 @@ public record PatchHandlerSpec(
 
     public Class<?> getContextImplClass() {
         if (isAdvice()) return HookContextImpl.class;
-        else if (patchSpec instanceof RedirectCallSpec) return MethodCallContextImpl.class;
-        else if (patchSpec instanceof RedirectNewSpec) return ConstructorCallContextImpl.class;
+        else if (patchSpec instanceof RedirectMethodCallSpec) return MethodCallContextImpl.class;
+        else if (patchSpec instanceof RedirectConstructorCallSpec) return ConstructorCallContextImpl.class;
         else if (patchSpec instanceof RedirectFieldReadSpec) return FieldReadContextImpl.class;
         else if (patchSpec instanceof RedirectFieldWriteSpec) return FieldWriteContextImpl.class;
         throw new IllegalStateException("Unknown patch spec type " + patchSpec);
