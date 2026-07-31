@@ -7,8 +7,6 @@ import patchlib.agent.context.MethodCallContextImpl;
 import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.patch.InstallationData;
 import patchlib.agent.spec.PatchHandlerSpec;
-import patchlib.api.context.ConstructorCallContext;
-import patchlib.api.context.Context;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -71,7 +69,7 @@ public class RedirectHandleChain {
             //Static methods have no receiver, so all input parameters are handled by the array
             convertedHandle = genericHandle.asSpreader(Object[].class, parameterCount);
             //Inserts a placeholder parameter that consumes the receiver parameter and does nothing with it.
-            convertedHandle = MethodHandles.dropArguments(genericHandle, 0, Object.class);
+            convertedHandle = MethodHandles.dropArguments(convertedHandle, 0, Object.class);
         }
         //Appends placeholder parameters for the hostSelf and hostArgs that the handle will receive from the delegate method but doesnt need
         return MethodHandles.dropArguments(convertedHandle, 2, Object.class, Object[].class);
@@ -80,7 +78,7 @@ public class RedirectHandleChain {
     private static MethodHandle convertOriginalToConstructorCallChain(MethodHandle original) {
         int parameterCount = original.type().parameterCount();
         MethodHandle genericHandle = original.asType(MethodType.genericMethodType(parameterCount));
-        MethodHandle converted = original.asSpreader(Object[].class, parameterCount);
+        MethodHandle converted = genericHandle.asSpreader(Object[].class, parameterCount);
         //Appends placeholder parameters for the hostSelf and hostArgs that the handle will receive from the delegate method but doesnt need
         return MethodHandles.dropArguments(converted, 1, Object.class, Object[].class);
     }
@@ -88,17 +86,17 @@ public class RedirectHandleChain {
     private static MethodHandle convertOriginalToFieldReadChain(MethodHandle original, boolean hasReceiver) {
         int parameterCount = original.type().parameterCount();
         MethodHandle genericHandle = original.asType(MethodType.genericMethodType(parameterCount));
-        MethodHandle converted = original.asSpreader(Object[].class, parameterCount);
+        MethodHandle converted;
         if (!hasReceiver) {
-            converted = MethodHandles.dropArguments(converted, 0, Object.class);
+            converted = MethodHandles.dropArguments(genericHandle, 0, Object.class);
+        } else {
+            converted = genericHandle;
         }
         //Appends placeholder parameters for the hostSelf and hostArgs that the handle will receive from the delegate method but doesnt need
         return MethodHandles.dropArguments(converted, 1, Object.class, Object[].class);
     }
 
     private static MethodHandle convertOriginalToFieldWriteChain(MethodHandle original, boolean hasReceiver) {
-        int parameterCount = original.type().parameterCount();
-
         MethodHandle converted;
         if (hasReceiver) {
             converted = original.asType(MethodType.methodType(void.class, Object.class, Object.class));
@@ -125,28 +123,48 @@ public class RedirectHandleChain {
     private static Object runMethodCallLayer(MethodHandle handler, String errorMessage, MethodHandle chain, Class<?> hostClass,
                                              Object callReceiver, Object[] callArgs, Object hostSelf, Object[] hostArgs) {
         MethodCallContextImpl context = new MethodCallContextImpl(hostClass, hostSelf, hostArgs, callReceiver, callArgs, chain);
-        invoke(handler, context, errorMessage);
+        try {
+            handler.invokeExact(context);
+        } catch (Throwable ex) {
+            PatchLibLogger.error(errorMessage);
+            throw uncheckedThrow(ex);
+        }
         return context.getResult();
     }
 
     private static Object runConstructorCallLayer(MethodHandle handler, String errorMessage, MethodHandle chain, Class<?> hostClass,
                                              Object[] constructorArgs, Object hostSelf, Object[] hostArgs) {
         ConstructorCallContextImpl context = new ConstructorCallContextImpl(hostClass, hostSelf, hostArgs, constructorArgs, chain);
-        invoke(handler, context, errorMessage);
+        try {
+            handler.invokeExact(context);
+        } catch (Throwable ex) {
+            PatchLibLogger.error(errorMessage);
+            throw uncheckedThrow(ex);
+        }
         return context.getResult();
     }
 
     private static Object runFieldReadLayer(MethodHandle handler, String errorMessage, MethodHandle chain, Class<?> hostClass,
                                              Object owner, Object hostSelf, Object[] hostArgs) {
         FieldReadContextImpl context = new FieldReadContextImpl(hostClass, hostSelf, hostArgs, owner, chain);
-        invoke(handler, context, errorMessage);
+        try {
+            handler.invokeExact(context);
+        } catch (Throwable ex) {
+            PatchLibLogger.error(errorMessage);
+            throw uncheckedThrow(ex);
+        }
         return context.getResult();
     }
 
     private static void runFieldWriteLayer(MethodHandle handler, String errorMessage, MethodHandle chain, Class<?> hostClass,
                                              Object owner, Object writtenValue, Object hostSelf, Object[] hostArgs) {
         FieldWriteContextImpl context = new FieldWriteContextImpl(hostClass, hostSelf, hostArgs, owner, writtenValue, chain);
-        invoke(handler, context, errorMessage);
+        try {
+            handler.invokeExact(context);
+        } catch (Throwable ex) {
+            PatchLibLogger.error(errorMessage);
+            throw uncheckedThrow(ex);
+        }
     }
 
     private static MethodHandle createRunLayerHandle(String methodName, MethodType chainType) {
@@ -156,15 +174,6 @@ public class RedirectHandleChain {
             return MethodHandles.lookup().findStatic(RedirectHandleChain.class, methodName, layerType);
         } catch (NoSuchMethodException|IllegalAccessException ex) {
             throw new RuntimeException("Failed to create handle to redirect run method", ex);
-        }
-    }
-
-    private static void invoke(MethodHandle handler, Context context, String error) {
-        try {
-            handler.invokeExact(context);
-        } catch (Throwable ex) {
-            PatchLibLogger.error(error);
-            throw uncheckedThrow(ex);
         }
     }
 
