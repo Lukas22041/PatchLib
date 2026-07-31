@@ -1,5 +1,6 @@
 package patchlib.agent.patch.redirect;
 
+import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.asm.AsmVisitorWrapper;
 import net.bytebuddy.asm.MemberSubstitution;
 import net.bytebuddy.description.field.FieldDescription;
@@ -26,8 +27,11 @@ public class RedirectInstaller {
                                                    MethodDescription.InDefinedShape methodDescription, List<InstallationData> installationDataList) {
 
         if (!PatchInstaller.supportsConstantDynamic(typeDescription)) {
+            ClassFileVersion version = typeDescription.getClassFileVersion();
             PatchLibLogger.error("One or multiple redirect patches tried modifying the class " + typeDescription.getActualName() + " on method " + methodDescription.getActualName() +
-                    "that is compiled with an unsupported classfile version (i.e janino compiled code). Those patches are being skipped for this target.");
+                    "that is compiled with an unsupported classfile version (" + version.getMajorVersion() + "), which potentialy comes from being janino compiled code. Those patches are being skipped for this target.");
+
+
             return builder;
         }
 
