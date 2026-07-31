@@ -32,7 +32,7 @@ public class RedirectInstaller {
         }
 
         AsmVisitorWrapper callVisitor = createRedirectVisitor(PatchHandlerSpec.RedirectType.METHOD_CALL, installationDataList, typeDescription, methodDescription);
-        AsmVisitorWrapper constructorVisitor = createRedirectVisitor(PatchHandlerSpec.RedirectType.CONSTRUCTOR, installationDataList, typeDescription, methodDescription);
+        AsmVisitorWrapper constructorVisitor = createRedirectVisitor(PatchHandlerSpec.RedirectType.CONSTRUCTOR_CALL, installationDataList, typeDescription, methodDescription);
         AsmVisitorWrapper fieldReadVisitor = createRedirectVisitor(PatchHandlerSpec.RedirectType.FIELD_READ, installationDataList, typeDescription, methodDescription);
         AsmVisitorWrapper fieldWriteVisitor = createRedirectVisitor(PatchHandlerSpec.RedirectType.FIELD_WRITE, installationDataList, typeDescription, methodDescription);
 
@@ -52,7 +52,7 @@ public class RedirectInstaller {
 
         return switch (redirectType) {
             case METHOD_CALL -> createCallVisitor(typeData, typeDescription, methodDescription);
-            case CONSTRUCTOR -> createConstructorVisitor(typeData, typeDescription, methodDescription);
+            case CONSTRUCTOR_CALL -> createConstructorVisitor(typeData, typeDescription, methodDescription);
             case FIELD_READ -> createFieldReadVisitor(typeData, typeDescription, methodDescription);
             case FIELD_WRITE -> createFieldWriteVisitor(typeData, typeDescription, methodDescription);
         };
@@ -104,7 +104,7 @@ public class RedirectInstaller {
             if (superClass != null) anyMatcher = anyMatcher.and(not(isDeclaredBy(superClass.asErasure())));
         }
 
-        RedirectSubstitutionFactory factory = createSubstitutionFactory(PatchHandlerSpec.RedirectType.CONSTRUCTOR, typeDescription, methodDescription, candidates);
+        RedirectSubstitutionFactory factory = createSubstitutionFactory(PatchHandlerSpec.RedirectType.CONSTRUCTOR_CALL, typeDescription, methodDescription, candidates);
 
         return MemberSubstitution.relaxed()
                 .constructor(anyMatcher)

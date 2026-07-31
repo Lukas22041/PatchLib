@@ -48,7 +48,7 @@ public class RedirectHandleChain {
     static MethodHandle convertOriginalToChainHandle(PatchHandlerSpec.RedirectType redirectType, MethodHandle original, boolean hasReceiver) {
         return switch (redirectType) {
             case METHOD_CALL -> convertOriginalToMethodCallChain(original, hasReceiver);
-            case CONSTRUCTOR -> convertOriginalToConstructorCallChain(original);
+            case CONSTRUCTOR_CALL -> convertOriginalToConstructorCallChain(original);
             case FIELD_READ -> convertOriginalToFieldReadChain(original, hasReceiver);
             case FIELD_WRITE -> convertOriginalToFieldWriteChain(original, hasReceiver);
         };
@@ -113,7 +113,7 @@ public class RedirectHandleChain {
     private static MethodHandle getLayerRunHandle(PatchHandlerSpec.RedirectType redirectType) {
         return switch (redirectType) {
             case METHOD_CALL -> METHOD_CALL_CHAIN_RUN;
-            case CONSTRUCTOR -> CONSTRUCTOR_CALL_CHAIN_RUN;
+            case CONSTRUCTOR_CALL -> CONSTRUCTOR_CALL_CHAIN_RUN;
             case FIELD_READ -> FIELD_READ_CHAIN_RUN;
             case FIELD_WRITE -> FIELD_WRITE_CHAIN_RUN;
         };

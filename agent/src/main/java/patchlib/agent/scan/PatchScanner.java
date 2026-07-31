@@ -27,13 +27,13 @@ public class PatchScanner {
     private final static String BEFORE = Before.class.getTypeName();
     private final static String AFTER = After.class.getTypeName();
     private final static String EXCEPT = Except.class.getTypeName();
-    private final static String REDIRECT_CALL = RedirectMethodCall.class.getTypeName();
-    private final static String REDIRECT_NEW = RedirectConstructorCall.class.getTypeName();
+    private final static String REDIRECT_METHOD_CALL = RedirectMethodCall.class.getTypeName();
+    private final static String REDIRECT_CONSTRUCTOR_CALL = RedirectConstructorCall.class.getTypeName();
     private final static String REDIRECT_FIELD_READ = RedirectFieldRead.class.getTypeName();
     private final static String REDIRECT_FIELD_WRITE = RedirectFieldWrite.class.getTypeName();
 
     private static Set<String> PATCH_TYPES = new HashSet<>(Set.of(BEFORE, AFTER, EXCEPT,
-            REDIRECT_CALL, REDIRECT_NEW, REDIRECT_FIELD_READ, REDIRECT_FIELD_WRITE));
+            REDIRECT_METHOD_CALL, REDIRECT_CONSTRUCTOR_CALL, REDIRECT_FIELD_READ, REDIRECT_FIELD_WRITE));
 
     public List<PatchHandlerSpec> scan() {
         PatchLibLogger.info("Starting patch discovery");
@@ -94,14 +94,14 @@ public class PatchScanner {
         if (name.equals(BEFORE) || name.equals(AFTER) || name.equals(EXCEPT)) {
             return new AdviceSpec(getAdviceType(patchType));
         }
-        else if (name.equals(REDIRECT_CALL)) {
+        else if (name.equals(REDIRECT_METHOD_CALL)) {
             ClassQuerySpec owner = createClassQuery(patchType.getAnnotation("owner")).build();
             MethodQuerySpec call = createMethodQuery(patchType.getAnnotation("call"))
                     .methodType(MethodType.METHOD) //Only target methods
                     .build();
             return new RedirectMethodCallSpec(owner, call);
         }
-        else if (name.equals(REDIRECT_NEW)) {
+        else if (name.equals(REDIRECT_CONSTRUCTOR_CALL)) {
             ClassQuerySpec type = createClassQuery(patchType.getAnnotation("type")).build();
             MethodQuerySpec constructor = createMethodQuery(patchType.getAnnotation("constructor"))
                     .methodType(MethodType.CONSTRUCTOR) //Only target constructors

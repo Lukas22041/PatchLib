@@ -79,7 +79,7 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
 
             //Return the original bytecode if there are no patches
             if (matched.isEmpty()) {
-                if (redirectType != PatchHandlerSpec.RedirectType.CONSTRUCTOR) return stackManipulation;
+                if (redirectType != PatchHandlerSpec.RedirectType.CONSTRUCTOR_CALL) return stackManipulation;
 
                 //Constructors are handled a bit differently, so this uses bytebuddy's member substitution to recreate the original bytecode
                 return MemberSubstitution.Substitution.Chain.with(Assigner.DEFAULT, Assigner.Typing.DYNAMIC)
@@ -120,7 +120,7 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
                     return RedirectDelegates.METHOD_CALL_DELEGATE ;
                 }
             }
-            else if (redirectType.equals(PatchHandlerSpec.RedirectType.CONSTRUCTOR)) return RedirectDelegates.CONSTRUCTOR_CALL_DELEGATE ;
+            else if (redirectType.equals(PatchHandlerSpec.RedirectType.CONSTRUCTOR_CALL)) return RedirectDelegates.CONSTRUCTOR_CALL_DELEGATE ;
             else if (redirectType.equals(PatchHandlerSpec.RedirectType.FIELD_READ)) return RedirectDelegates.FIELD_READ_DELEGATE;
             else if (redirectType.equals(PatchHandlerSpec.RedirectType.FIELD_WRITE)) return RedirectDelegates.FIELD_WRITE_DELEGATE;
             throw new IllegalArgumentException("Called getBridge with unknown redirect type");
@@ -129,7 +129,7 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
         /** Checks if the replaced element has a receiver, needed for the constant dynamic bootstrap */
         private boolean hasReceiver(ByteCodeElement.Member original) {
             if (redirectType.equals(PatchHandlerSpec.RedirectType.METHOD_CALL)) return original instanceof MethodDescription methodDescription && !methodDescription.isStatic();
-            else if (redirectType.equals(PatchHandlerSpec.RedirectType.CONSTRUCTOR)) return false;
+            else if (redirectType.equals(PatchHandlerSpec.RedirectType.CONSTRUCTOR_CALL)) return false;
             else if (redirectType.equals(PatchHandlerSpec.RedirectType.FIELD_READ) || redirectType.equals(PatchHandlerSpec.RedirectType.FIELD_WRITE))
                 return original instanceof FieldDescription fieldDescription && !fieldDescription.isStatic();
             throw new IllegalArgumentException("Called hasReceiver with unknown redirect type");

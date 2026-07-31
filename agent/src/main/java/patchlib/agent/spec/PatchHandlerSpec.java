@@ -18,7 +18,7 @@ public record PatchHandlerSpec(
 ) {
 
     public enum RedirectType {
-        METHOD_CALL, CONSTRUCTOR, FIELD_WRITE, FIELD_READ
+        METHOD_CALL, CONSTRUCTOR_CALL, FIELD_WRITE, FIELD_READ
     }
 
     public boolean isAdvice() {
@@ -31,7 +31,7 @@ public record PatchHandlerSpec(
 
     public RedirectType getRedirectType() {
         if (patchSpec instanceof RedirectMethodCallSpec) return RedirectType.METHOD_CALL;
-        else if (patchSpec instanceof RedirectConstructorCallSpec) return RedirectType.CONSTRUCTOR;
+        else if (patchSpec instanceof RedirectConstructorCallSpec) return RedirectType.CONSTRUCTOR_CALL;
         else if (patchSpec instanceof RedirectFieldReadSpec) return RedirectType.FIELD_READ;
         else if (patchSpec instanceof RedirectFieldWriteSpec) return RedirectType.FIELD_WRITE;
         throw new IllegalStateException("getRedirectType called on non-redirect spec");

@@ -21,7 +21,7 @@ public @interface RedirectMethodCall {
     MethodMatch target() default @MethodMatch;
 
     /** The call to intercept inside the host method. The default intercepts every method call in the host body.
-     * methodType is ignored, an intercepted call is never a constructor, use @RedirectNew for those. */
+     * methodType is ignored, an intercepted call is never a constructor, use @RedirectConstructorCall for those. */
     MethodMatch call() default @MethodMatch;
 
     /** The class declaring the called method. The default applies no owner constraint. */
