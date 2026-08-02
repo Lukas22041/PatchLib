@@ -8,6 +8,10 @@ java {
     }
 }
 
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.add("-parameters")
+}
+
 val coreDir = File(rootProject.extra["starsectorCoreDir"] as String)
 
 dependencies {
@@ -38,4 +42,10 @@ dependencies {
 tasks.jar {
     archiveFileName.set("PatchLibAPI.jar")
     destinationDirectory.set(file("$rootDir/jars"))
+
+    //Includes the .java and .kt sources for documentation detection
+    from(sourceSets.main.get().allSource) {
+        include("**/*.java", "**/*.kt")
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

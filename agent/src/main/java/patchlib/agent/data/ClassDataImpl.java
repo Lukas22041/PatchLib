@@ -76,8 +76,6 @@ public class ClassDataImpl implements ClassData {
         return modSpec;
     }
 
-
-
     //Internal only
     public TypeDescription getTypeDescription() {
         return typeDescription;
