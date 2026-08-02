@@ -1,15 +1,10 @@
 package patchlib.agent.patch;
 
-import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.ModSpecAPI;
 import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.agent.builder.AgentBuilder;
-import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
-import net.bytebuddy.matcher.ElementMatcher;
-import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.pool.TypePool;
 import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.matchers.*;
@@ -17,9 +12,7 @@ import patchlib.agent.patch.advice.AdviceInstaller;
 import patchlib.agent.patch.redirect.RedirectInstaller;
 import patchlib.agent.scan.DiscoveryData;
 import patchlib.agent.spec.PatchHandlerSpec;
-import patchlib.api.store.PatchData;
 
-import java.io.File;
 import java.lang.instrument.Instrumentation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -30,8 +23,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class PatchInstaller {
 
@@ -138,10 +129,10 @@ public class PatchInstaller {
         return dataList;
     }
 
-    /** Sort based on priority, then by mod name. Execution order for patches is based on this. */
+    /** Sort based on order, then by mod name. Execution order for patches is based on this. */
     private List<InstallationData> sortInstallationData(List<InstallationData> installationData) {
         return installationData.stream()
-                .sorted(Comparator.comparingInt((InstallationData data) -> data.spec().priority())
+                .sorted(Comparator.comparingInt((InstallationData data) -> data.spec().order())
                         .thenComparing((InstallationData data) -> data.spec().sourceMod().getName())
                 )
                 .toList();

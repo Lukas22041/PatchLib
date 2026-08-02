@@ -11,7 +11,7 @@ public record PatchHandlerSpec(
         String handlerClassName,
         String handlerMethodName,
         ModSpecAPI sourceMod,
-        int priority,
+        int order,
         ClassQuerySpec targetClass,
         MethodQuerySpec targetMethod,
         PatchSpec patchSpec

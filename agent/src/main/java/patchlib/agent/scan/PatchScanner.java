@@ -80,7 +80,7 @@ public class PatchScanner {
         if (patchTypeAnnotation == null) return null;
         PatchSpec patchSpec = createPatchSpec(patchTypeAnnotation);
         if (patchSpec == null) return null;
-        int priority = patchTypeAnnotation.getInt("priority");
+        int priority = patchTypeAnnotation.getInt("order");
 
         ClassQuerySpec targetClass = createClassQuery(patchAnnotation.getAnnotation("target")).build();
         MethodQuerySpec targetMethod = createMethodQuery(patchTypeAnnotation.getAnnotation("target")).build();

@@ -11,8 +11,8 @@ import java.lang.annotation.Target;
 
 /** Redirects a field write inside a method. The target picks the host method to instrument, and field picks the
  * field whose write to intercept. A handler can pass the written value through, transform it, or drop the write.
- * When several mods redirect the same write they nest as layers, lowest priority outermost. Each layer calls ctx.write()
- * to reach the next layer down (eventually the real write), or never calls it to short circuit. */
+ * When several mods redirect the same call they nest as layers, with the patch with the lowest order being outermost. Each layer calls ctx.call()
+ * to reach the next layer down (eventually the real call), or never calls it to short circuit. */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
 public @interface RedirectFieldWrite {
@@ -27,6 +27,6 @@ public @interface RedirectFieldWrite {
     ClassMatch owner() default @ClassMatch;
 
     /** Order in which layers are applied, lower numbers are the outermost layer and run first.
-    Two redirects with the same priority are ordered based on mod name */
-    int priority() default 0;
+     Two redirects with the same order are ordered based on mod name */
+    int order() default 0;
 }

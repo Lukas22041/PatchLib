@@ -12,8 +12,8 @@ import java.lang.annotation.Target;
  * constructor pick the new expression within it to intercept. A handler can run code around the construction,
  * change its arguments, or supply a different instance entirely.
  * When several mods redirect the same construction they nest as layers, lowest priority outermost. Each layer calls
- * ctx.call() to reach the next layer down (eventually the real construction), or never calls it to short circuit.
- * In a constructor host, new expressions of the host class or its direct superclass are never intercepted. */
+ * When several mods redirect the same call they nest as layers, with the patch with the lowest order being outermost. Each layer calls ctx.call()
+ * to reach the next layer down (eventually the real call), or never calls it to short circuit. */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
 public @interface RedirectConstructorCall {
@@ -28,6 +28,6 @@ public @interface RedirectConstructorCall {
     MethodMatch constructor() default @MethodMatch;
 
     /** Order in which layers are applied, lower numbers are the outermost layer and run first.
-    Two redirects with the same priority are ordered based on mod name */
-    int priority() default 0;
+    Two redirects with the same order are ordered based on mod name */
+    int order() default 0;
 }

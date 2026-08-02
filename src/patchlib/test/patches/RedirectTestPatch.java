@@ -38,13 +38,13 @@ public class RedirectTestPatch {
     }
 
 
-    @RedirectMethodCall(target = @MethodMatch(methodName = "testRedirectLayers"), call = @MethodMatch(methodName = "testCall"), priority = 5)
+    @RedirectMethodCall(target = @MethodMatch(methodName = "testRedirectLayers"), call = @MethodMatch(methodName = "testCall"), order = 5)
     public static void testRedirectLayer3Patch(MethodCallContext context) {
         String value = (String) context.call();
         context.setResult(value + "3");
     }
 
-    @RedirectMethodCall(target = @MethodMatch(methodName = "testRedirectLayers"), call = @MethodMatch(methodName = "testCall"), priority = 10)
+    @RedirectMethodCall(target = @MethodMatch(methodName = "testRedirectLayers"), call = @MethodMatch(methodName = "testCall"), order = 10)
     public static void testRedirectLayer2Patch(MethodCallContext context) {
         String value = (String) context.call();
         context.setResult(value + "2");

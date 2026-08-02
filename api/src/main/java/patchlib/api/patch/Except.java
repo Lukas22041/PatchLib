@@ -19,7 +19,7 @@ public @interface Except {
     MethodMatch target() default @MethodMatch;
 
     /** Order in which patches are executed, lower numbers are run first.
-    Two patches with the same priority are ordered based on mod name */
-    int priority() default 0;
+    Two patches with the same order are ordered based on mod name */
+    int order() default 0;
 
 }
