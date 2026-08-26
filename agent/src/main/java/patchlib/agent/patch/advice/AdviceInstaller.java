@@ -51,7 +51,9 @@ public class AdviceInstaller {
                     .bind(AfterHandleMarker.class, NullConstant.INSTANCE, MethodHandle.class);
         }
 
-        builder = builder.visit(mapping.to(pickTemplate(methodDescription)).on(ElementMatchers.is(methodDescription)));
+        Class<?> enterTemplate = pickTemplate(methodDescription);
+        Class<?> exitTemplate = pickExitTemplate(methodDescription, !site.except.isEmpty());
+        builder = builder.visit(mapping.to(enterTemplate, exitTemplate).on(ElementMatchers.is(methodDescription)));
 
         PatchLibLogger.info("Installed a hook patch site at " + typeDescription.getActualName() + " on method " + methodDescription.getActualName() + " " + methodDescription.getParameters() + "");
 
@@ -78,6 +80,14 @@ public class AdviceInstaller {
         if (methodDescription.isConstructor()) return ConstructorTemplate.class;
         else if (methodDescription.getReturnType().represents(void.class)) return VoidTemplate.class;
         return ReturnTemplate.class;
+    }
+
+    private static Class<?> pickExitTemplate(MethodDescription methodDescription, boolean handlesExceptions) {
+        if (methodDescription.isConstructor()) return ConstructorTemplate.class;
+        else if (methodDescription.getReturnType().represents(void.class)) {
+            return handlesExceptions ? VoidTemplate.class : VoidTemplate.WithoutExceptionHandling.class;
+        }
+        return handlesExceptions ? ReturnTemplate.class : ReturnTemplate.WithoutExceptionHandling.class;
     }
 
     private static AdviceSpec.AdviceType getAdviceType(InstallationData data) {

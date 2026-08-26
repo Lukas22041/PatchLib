@@ -49,4 +49,16 @@ public class VoidTemplate {
 
     }
 
+    public static final class WithoutExceptionHandling {
+
+        @Advice.OnMethodExit
+        public static void exit(
+                @SiteIdMarker int siteId,
+                @AfterHandleMarker MethodHandle afterHandle,
+                @Advice.Local("context") HookContextImpl context) {
+
+            AdviceDispatcher.exit(siteId, afterHandle, context, null);
+        }
+    }
+
 }
