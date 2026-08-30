@@ -16,7 +16,7 @@ public class TestPatch {
 }
 ```
 
-This simple patch hooks after the execution of the games clock "getCycle" and modiofies its retujrn value to always increase it by 1000 cycles.
+This simple patch hooks after the execution of the games clock "getCycle" and modifies its return value to always increase it by 1000 cycles.
 
 ## API Documentation
 
