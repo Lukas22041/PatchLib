@@ -21,3 +21,16 @@ This simple patch hooks after the execution of the games clock "getCycle" and mo
 ## API Documentation
 
 Full documentation can be found on the [wiki](https://github.com/Lukas22041/PatchLib/wiki).
+
+## Contribution
+
+The goal of the library is stay relatively focused on its specific feature set and to keep the underlying code easy to maintain.
+I would recommend to approach the mods main maintainer (Lukas04) before working on large contributions, as for the reasons above, they may be denied by default. 
+
+### AI generated code
+
+AI generated code is permitted for contributions, however:
+
+- Vibe-coded contributions are not permitted and will not be merged. There needs to be a significant amount of human involvement and testing.
+- Overly massive branches, or branches that do not follow repo conventions will not merged.
+- Merge requests from largely autonomous, ai agent steered accounts will not be merged.
