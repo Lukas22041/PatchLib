@@ -33,7 +33,7 @@ public class ClassScanner {
                 //Load with "initialize" set to false prevents static blocks from being called early.
                 Class<?> type = Class.forName(name, false, loader);
                 classes.add(new ClassData(type, discoveredClass.sourceMod(), discoveredClass.isFromStarsector()));
-            } catch (ClassNotFoundException | LinkageError ex) {
+            } catch (Exception | LinkageError ex) {
                 PatchLibLogger.warn("Skipped " + name + " in a scan, as it could not be loaded: " + ex);
             }
         }

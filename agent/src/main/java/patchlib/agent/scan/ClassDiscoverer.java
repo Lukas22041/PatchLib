@@ -100,9 +100,8 @@ public class ClassDiscoverer {
 
     private List<ClassFileLocator> getLocators(List<JarSource> jars) {
         List<ClassFileLocator> locators = new ArrayList<>();
-        locators.add(ClassFileLocator.ForClassLoader.ofSystemLoader()); //Required to read JVM and game Classes that appear on the annotations
-        locators.add(ClassFileLocator.ForClassLoader.of(ClassDiscoverer.class.getClassLoader()));
 
+        //Jars first, as reading from them directly is much cheaper than going through a class loader.
         for (JarSource jar : jars) {
             try {
                 locators.add(ClassFileLocator.ForJarFile.of(jar.jar));
@@ -110,6 +109,9 @@ public class ClassDiscoverer {
                 PatchLibLogger.error("Could not add " + jar.jar.getName() + " to classfile locators", ex);
             }
         }
+
+        locators.add(ClassFileLocator.ForClassLoader.ofSystemLoader()); //Required to read JVM Classes that appear on the annotations
+        locators.add(ClassFileLocator.ForClassLoader.of(ClassDiscoverer.class.getClassLoader()));
 
         return locators;
     }

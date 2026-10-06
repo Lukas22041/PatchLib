@@ -12,7 +12,7 @@ import java.io.File;
 
 public class InstallListener extends AgentBuilder.Listener.Adapter {
 
-    public final static boolean ENABLE_TRANSFORMED_CLASS_DEBUG = true;
+    public final static boolean ENABLE_TRANSFORMED_CLASS_DEBUG = false;
 
     private File outputDir;
 
