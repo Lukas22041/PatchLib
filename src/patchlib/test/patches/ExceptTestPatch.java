@@ -23,4 +23,19 @@ public class ExceptTestPatch {
         context.replaceThrown(new RuntimeException(context.getThrown().getMessage()+"_REPLACED"));
     }
 
+    @Except(target = @MethodMatch(methodName = "testSuppressPrimitiveTarget"))
+    public static void testSuppressPrimitivePatch(ExceptContext context) {
+        context.suppressException(context.getArg(0));
+    }
+
+    @Except(target = @MethodMatch(methodName = "testExceptAndAfterTarget"))
+    public static void testExceptAndAfterExceptPatch(ExceptContext context) {
+        context.suppressException(context.getArg(0) + "_SUPPRESSED");
+    }
+
+    @After(target = @MethodMatch(methodName = "testExceptAndAfterTarget"))
+    public static void testExceptAndAfterAfterPatch(AfterContext context) {
+        context.setReturnValue(context.getReturnValue() + "_AFTER");
+    }
+
 }

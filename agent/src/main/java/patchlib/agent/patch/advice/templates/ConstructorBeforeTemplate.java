@@ -5,15 +5,14 @@ import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import patchlib.agent.context.HookContextImpl;
 import patchlib.agent.patch.SiteIdMarker;
 import patchlib.agent.patch.advice.AdviceDispatcher;
-import patchlib.agent.patch.advice.AfterHandleMarker;
 import patchlib.agent.patch.advice.BeforeHandleMarker;
 
 import java.lang.invoke.MethodHandle;
 
-public class ConstructorTemplate {
+/** Constructors can not be skipped and have no instance yet, the instance is set by ConstructorAfterTemplate. */
+public final class ConstructorBeforeTemplate {
 
-
-    @Advice.OnMethodEnter()
+    @Advice.OnMethodEnter
     public static void enter(
             @SiteIdMarker int siteId,
             @BeforeHandleMarker MethodHandle beforeHandle,
@@ -25,18 +24,6 @@ public class ConstructorTemplate {
 
         //Re-assign the args to apply any changes
         args = context.getArgs();
-    }
-
-
-    @Advice.OnMethodExit()
-    public static void exit(
-            @SiteIdMarker int siteId,
-            @AfterHandleMarker MethodHandle afterHandle,
-            @Advice.This(optional = true) Object self,
-            @Advice.Local("context") HookContextImpl context) {
-
-        context.setSelf(self);
-        AdviceDispatcher.exit(siteId, afterHandle, context, null);
     }
 
 }

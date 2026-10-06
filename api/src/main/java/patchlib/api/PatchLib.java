@@ -31,6 +31,8 @@ public abstract class PatchLib {
      * Method that enables scanning for classes in the game.
      * It has a notable limitation as in that it can not locate janino loaded classes, and is limited in general
      * to classes that are included in the games or mods jars.
+     * Can only be used during onApplicationLoad, its data is released once a save is loaded. The returned classes stay usable after that.
+     * Matched classes are loaded without being initialised, classes that fail to load are skipped.
      * */
     public static List<ClassData> scan(ClassQuerySpec querySpec) {
         return getInstance().scanImpl(querySpec, false, false);
@@ -40,6 +42,8 @@ public abstract class PatchLib {
      * Method that enables scanning for classes in the game.
      * It has a notable limitation as in that it can not locate janino loaded classes, and is limited in general
      * to classes that are included in the games or mods jars.
+     * Can only be used during onApplicationLoad, its data is released once a save is loaded. The returned classes stay usable after that.
+     * Matched classes are loaded without being initialised, classes that fail to load are skipped.
      * */
     public static List<ClassData> scan(ClassQuerySpec querySpec, boolean excludeGameClasses, boolean excludeModClasses) {
         return getInstance().scanImpl(querySpec, excludeGameClasses, excludeModClasses);

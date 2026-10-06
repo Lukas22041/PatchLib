@@ -6,28 +6,10 @@ import patchlib.agent.context.HookContextImpl;
 import patchlib.agent.patch.SiteIdMarker;
 import patchlib.agent.patch.advice.AdviceDispatcher;
 import patchlib.agent.patch.advice.AfterHandleMarker;
-import patchlib.agent.patch.advice.BeforeHandleMarker;
 
 import java.lang.invoke.MethodHandle;
 
-public final class ReturnTemplate {
-
-    @Advice.OnMethodEnter(skipOn = Advice.OnNonDefaultValue.class)
-    public static boolean enter(
-            @SiteIdMarker int siteId,
-            @BeforeHandleMarker MethodHandle beforeHandle,
-            @Advice.Origin Class<?> owner,
-            @Advice.This(optional = true) Object self,
-            @Advice.AllArguments(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object[] args,
-            @Advice.Local("context") HookContextImpl context) {
-
-        context = AdviceDispatcher.enter(siteId, beforeHandle, owner, self, args);
-
-        //Re-assign the args to apply any changes
-        args = context.getArgs();
-
-        return context.isSkipOriginal();
-    }
+public final class ExceptTemplate {
 
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void exit(
@@ -45,20 +27,6 @@ public final class ReturnTemplate {
                 returned = AdviceDispatcher.exit(siteId, afterHandle, context, context.getReturnValue());
             }
         } else {
-            returned = AdviceDispatcher.exit(siteId, afterHandle, context, returned);
-        }
-
-    }
-
-    public static final class WithoutExceptionHandling {
-
-        @Advice.OnMethodExit
-        public static void exit(
-                @SiteIdMarker int siteId,
-                @AfterHandleMarker MethodHandle afterHandle,
-                @Advice.Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object returned,
-                @Advice.Local("context") HookContextImpl context) {
-
             returned = AdviceDispatcher.exit(siteId, afterHandle, context, returned);
         }
     }

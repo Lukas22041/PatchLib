@@ -20,4 +20,14 @@ public class BeforeTestPatch {
         context.skipOriginal(context.getArg(0));
     }
 
+    @Before(target = @MethodMatch(methodName = "testSkipVoidTarget"))
+    public static void testSkipVoidPatch(BeforeContext context) {
+        context.skipOriginal(null);
+    }
+
+    @Before(target = @MethodMatch(methodName = "testSkipPrimitiveTarget"))
+    public static void testSkipPrimitivePatch(BeforeContext context) {
+        context.skipOriginal(context.getArg(0));
+    }
+
 }

@@ -1,9 +1,8 @@
 package patchlib.agent.misc;
 
-import patchlib.agent.data.ClassDataImpl;
 import patchlib.agent.log.PatchLibLogger;
+import patchlib.agent.scan.DiscoveredClass;
 import patchlib.agent.scan.DiscoveryData;
-import patchlib.api.data.ClassData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +26,7 @@ public class StarsectorPreloader {
 
         //Skip modded classes for now, only preload starsectors own classes
         //If ever changed, the passed in class loader also needs to be changed to the mod class loader.
-        List<ClassData> starsectorClasses = data.classes().stream().filter(ClassData::isFromStarsector).toList();
+        List<DiscoveredClass> starsectorClasses = data.classes().stream().filter(DiscoveredClass::isFromStarsector).toList();
 
         int threads = PatchLibUtils.getAvailableThreads();
         ExecutorService executorService = createExecutor(threads);
@@ -37,7 +36,7 @@ public class StarsectorPreloader {
         int chunkSize = (starsectorClasses.size() + chunkCount - 1) / chunkCount;
 
         for (int from = 0; from < starsectorClasses.size(); from += chunkSize) {
-            List<ClassData> chunk = starsectorClasses.subList(from, Math.min(from + chunkSize, starsectorClasses.size()));
+            List<DiscoveredClass> chunk = starsectorClasses.subList(from, Math.min(from + chunkSize, starsectorClasses.size()));
             tasks.add(new StarsectorPreloadTask(chunk, classLoader));
         }
 
@@ -81,11 +80,11 @@ public class StarsectorPreloader {
 
         public record StarsectorPreloadTaskResult(int loaded, int skipped) { }
 
-        private List<ClassData> classDataList;
+        private List<DiscoveredClass> classes;
         private ClassLoader classLoader;
 
-        public StarsectorPreloadTask(List<ClassData> classDataList, ClassLoader classLoader) {
-            this.classDataList = classDataList;
+        public StarsectorPreloadTask(List<DiscoveredClass> classes, ClassLoader classLoader) {
+            this.classes = classes;
             this.classLoader = classLoader;
         }
 
@@ -93,10 +92,10 @@ public class StarsectorPreloader {
         public StarsectorPreloadTaskResult call() throws Exception {
             int loaded = 0;
             int skipped = 0;
-            for (ClassData classData : classDataList) {
+            for (DiscoveredClass discoveredClass : classes) {
                 try {
                     //Load with "initialize" set to false prevents static blocks from being called early.
-                    Class.forName(classData.getName(), false, classLoader);
+                    Class.forName(discoveredClass.type().getName(), false, classLoader);
                     loaded++;
                 } catch (Throwable ex) {
                     skipped++;

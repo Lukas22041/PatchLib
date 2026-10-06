@@ -12,6 +12,8 @@ public class BeforeTests {
         List<TestResult> results = new ArrayList<>();
         results.add(testReplaceArg());
         results.add(testSkipMethodTarget());
+        results.add(testSkipVoid());
+        results.add(testSkipPrimitive());
         return results;
     }
 
@@ -35,6 +37,18 @@ public class BeforeTests {
         boolean failed = !result.equals(input);
 
         return new TestResult("testSkipMethodTarget", failed, "The method content was not skipped");
+    }
+
+    public static TestResult testSkipVoid() {
+        BeforeTestTarget target = new BeforeTestTarget();
+        target.testSkipVoidTarget();
+        return new TestResult("testSkipVoid", target.skipVoidRan, "The void method content was not skipped");
+    }
+
+    public static TestResult testSkipPrimitive() {
+        BeforeTestTarget target = new BeforeTestTarget();
+        int result = target.testSkipPrimitiveTarget(5);
+        return new TestResult("testSkipPrimitive", result != 5, "The primitive method was not skipped with the given return value");
     }
 
 }

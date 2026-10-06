@@ -10,4 +10,12 @@ public class ExceptTestTarget {
         throw new RuntimeException("TEST");
     }
 
+    public int testSuppressPrimitiveTarget(int input) {
+        throw new RuntimeException("TEST");
+    }
+
+    public String testExceptAndAfterTarget(String input) {
+        throw new RuntimeException("TEST");
+    }
+
 }

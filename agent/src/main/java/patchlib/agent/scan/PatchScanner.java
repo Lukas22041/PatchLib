@@ -1,11 +1,10 @@
 package patchlib.agent.scan;
 
+import net.bytebuddy.description.annotation.AnnotationDescription;
+import net.bytebuddy.description.annotation.AnnotationList;
+import net.bytebuddy.description.method.MethodDescription;
 import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.spec.*;
-import patchlib.api.PatchLib;
-import patchlib.api.data.AnnotationData;
-import patchlib.api.data.ClassData;
-import patchlib.api.data.MethodData;
 import patchlib.api.match.MethodType;
 import patchlib.api.match.Unset;
 import patchlib.api.patch.*;
@@ -35,6 +34,12 @@ public class PatchScanner {
     private static Set<String> PATCH_TYPES = new HashSet<>(Set.of(BEFORE, AFTER, EXCEPT,
             REDIRECT_METHOD_CALL, REDIRECT_CONSTRUCTOR_CALL, REDIRECT_FIELD_READ, REDIRECT_FIELD_WRITE));
 
+    private final ClassScanner classScanner;
+
+    public PatchScanner(ClassScanner classScanner) {
+        this.classScanner = classScanner;
+    }
+
     public List<PatchHandlerSpec> scan() {
         PatchLibLogger.info("Starting patch discovery");
 
@@ -44,39 +49,39 @@ public class PatchScanner {
                 .build();
 
         //No point in checking game classes
-        List<ClassData> classDataList = PatchLib.scan(query, true, false);
+        List<DiscoveredClass> patchClasses = classScanner.match(query, true, false);
 
-        List<PatchHandlerSpec> specs = createSpecs(classDataList);
+        List<PatchHandlerSpec> specs = createSpecs(patchClasses);
         PatchLibLogger.info("Discovered " + specs.size() + " patch handlers");
         PatchLibLogger.info("Finished patch discovery");
         PatchLibLogger.blank();
         return specs;
     }
 
-    private List<PatchHandlerSpec> createSpecs(List<ClassData> classDataList) {
+    private List<PatchHandlerSpec> createSpecs(List<DiscoveredClass> patchClasses) {
         List<PatchHandlerSpec> specs = new ArrayList<>();
-        for (ClassData classData : classDataList) {
-            for (MethodData methodData: classData.getMethods()) {
+        for (DiscoveredClass patchClass : patchClasses) {
+            for (MethodDescription.InDefinedShape method : patchClass.type().getDeclaredMethods()) {
                 try {
-                    PatchHandlerSpec spec = createSpec(classData, methodData);
+                    PatchHandlerSpec spec = createSpec(patchClass, method);
                     if (spec == null) continue;
                     specs.add(spec);
                     PatchLibLogger.info("Discovered patch " + spec.handlerMethodName() + " in " + spec.handlerClassName() + "   (" + spec.sourceMod().getName() + ")");
                 } catch (Exception ex) {
-                    PatchLibLogger.error("Failed to parse the spec for method " + methodData.getName() + " from" + classData.getName() +
-                            " (" + classData.getSourceMod().getName() + ")", ex);
+                    PatchLibLogger.error("Failed to parse the spec for method " + method.getActualName() + " from" + patchClass.type().getActualName() +
+                            " (" + patchClass.sourceMod().getName() + ")", ex);
                 }
             }
         }
         return specs;
     }
 
-    private PatchHandlerSpec createSpec(ClassData classData, MethodData methodData) {
-        String className = classData.getName();
+    private PatchHandlerSpec createSpec(DiscoveredClass patchClass, MethodDescription.InDefinedShape method) {
+        String className = patchClass.type().getActualName();
 
-        AnnotationData patchAnnotation = classData.getAnnotation(Patch.class.getTypeName());
+        AnnotationReader patchAnnotation = getAnnotation(patchClass.type().getDeclaredAnnotations(), Patch.class.getTypeName());
 
-        AnnotationData patchTypeAnnotation = getFirstPatchAnnotation(methodData);
+        AnnotationReader patchTypeAnnotation = getFirstPatchAnnotation(method);
         if (patchTypeAnnotation == null) return null;
         PatchSpec patchSpec = createPatchSpec(patchTypeAnnotation);
         if (patchSpec == null) return null;
@@ -85,10 +90,10 @@ public class PatchScanner {
         ClassQuerySpec targetClass = createClassQuery(patchAnnotation.getAnnotation("target")).build();
         MethodQuerySpec targetMethod = createMethodQuery(patchTypeAnnotation.getAnnotation("target")).build();
 
-        return new PatchHandlerSpec(className, methodData.getName(), classData.getSourceMod(), priority, targetClass, targetMethod, patchSpec);
+        return new PatchHandlerSpec(className, method.getActualName(), patchClass.sourceMod(), priority, targetClass, targetMethod, patchSpec);
     }
 
-    private PatchSpec createPatchSpec(AnnotationData patchType) {
+    private PatchSpec createPatchSpec(AnnotationReader patchType) {
         String name = patchType.getName();
 
         if (name.equals(BEFORE) || name.equals(AFTER) || name.equals(EXCEPT)) {
@@ -125,23 +130,34 @@ public class PatchScanner {
         return null;
     }
 
-    private AdviceSpec.AdviceType getAdviceType(AnnotationData patchType) {
+    private AdviceSpec.AdviceType getAdviceType(AnnotationReader patchType) {
         String name = patchType.getName();
         if (name.equals(BEFORE)) return AdviceSpec.AdviceType.BEFORE;
         else if (name.equals(AFTER)) return AdviceSpec.AdviceType.AFTER;
         else return AdviceSpec.AdviceType.EXCEPT;
     }
 
-    private AnnotationData getFirstPatchAnnotation(MethodData methodData) {
-        for (AnnotationData annotationData : methodData.getAnnotations()) {
-            if (PATCH_TYPES.contains(annotationData.getName())) {
-                return annotationData;
+    private AnnotationReader getFirstPatchAnnotation(MethodDescription.InDefinedShape method) {
+        for (AnnotationDescription annotation : method.getDeclaredAnnotations()) {
+            AnnotationReader reader = new AnnotationReader(annotation);
+            if (PATCH_TYPES.contains(reader.getName())) {
+                return reader;
             }
         }
         return null;
     }
 
-    private ClassQuery createClassQuery(AnnotationData classMatch) {
+    private AnnotationReader getAnnotation(AnnotationList annotations, String name) {
+        for (AnnotationDescription annotation : annotations) {
+            AnnotationReader reader = new AnnotationReader(annotation);
+            if (reader.getName().equals(name)) {
+                return reader;
+            }
+        }
+        return null;
+    }
+
+    private ClassQuery createClassQuery(AnnotationReader classMatch) {
         ClassQuery query = ClassQuery.create()
                 .className(classOrString(classMatch.getClassName("type"), classMatch.getString("typeName")))
                 .subtypeName(classOrString(classMatch.getClassName("subtype"), classMatch.getString("subtypeName")))
@@ -150,11 +166,11 @@ public class PatchScanner {
                 .excludedPackageName(classMatch.getString("excludePackage"))
                 .excludeSubpackages(classMatch.getBoolean("excludeSubpackages"));
 
-        for (AnnotationData methodMatch : classMatch.getAnnotationArray("methodMatches")) {
+        for (AnnotationReader methodMatch : classMatch.getAnnotationArray("methodMatches")) {
             query.hasMethod(createMethodQuery(methodMatch));
         }
 
-        for (AnnotationData fieldMatches : classMatch.getAnnotationArray("fieldMatches")) {
+        for (AnnotationReader fieldMatches : classMatch.getAnnotationArray("fieldMatches")) {
             query.hasField(createFieldQuery(fieldMatches));
         }
 
@@ -165,7 +181,7 @@ public class PatchScanner {
         return query;
     }
 
-    private MethodQuery createMethodQuery(AnnotationData methodMatch) {
+    private MethodQuery createMethodQuery(AnnotationReader methodMatch) {
         MethodQuery query = MethodQuery.create()
                 .methodName(methodMatch.getString("methodName"))
                 .parameterNames(classOrStringArray(methodMatch.getClassNameArray("parameters"), methodMatch.getStringArray("parameterNames")))
@@ -181,7 +197,7 @@ public class PatchScanner {
         return query;
     }
 
-    private FieldQuery createFieldQuery(AnnotationData fieldMatch) {
+    private FieldQuery createFieldQuery(AnnotationReader fieldMatch) {
         FieldQuery query = FieldQuery.create()
                 .fieldName(fieldMatch.getString("fieldName"))
                 .fieldTypeName(classOrString(fieldMatch.getClassName("type"), fieldMatch.getString("typeName")))

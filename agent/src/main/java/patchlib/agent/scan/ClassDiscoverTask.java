@@ -2,9 +2,7 @@ package patchlib.agent.scan;
 
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.pool.TypePool;
-import patchlib.agent.data.ClassDataImpl;
 import patchlib.agent.log.PatchLibLogger;
-import patchlib.api.data.ClassData;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -16,7 +14,7 @@ import java.util.jar.JarFile;
 /** One task per jar that scans for class files in parallel on multiple threads. */
 public class ClassDiscoverTask implements Callable<ClassDiscoverTask.ClassDiscoverTaskResult> {
 
-    public record ClassDiscoverTaskResult(String path, List<ClassData> classDataList, List<String> unresolvedClasses) { }
+    public record ClassDiscoverTaskResult(String path, List<DiscoveredClass> classes, List<String> unresolvedClasses) { }
 
     private final ClassDiscoverer.JarSource jarSource;
     private final TypePool pool;
@@ -31,7 +29,7 @@ public class ClassDiscoverTask implements Callable<ClassDiscoverTask.ClassDiscov
     @Override
     public ClassDiscoverTaskResult call() throws Exception {
 
-        List<ClassData> classDataList = new ArrayList<>();
+        List<DiscoveredClass> classes = new ArrayList<>();
 
         try (JarFile jarFile = new JarFile(jarSource.jar()) ){
             Enumeration<JarEntry> entries = jarFile.entries();
@@ -50,8 +48,7 @@ public class ClassDiscoverTask implements Callable<ClassDiscoverTask.ClassDiscov
 
                 try {
                     TypeDescription typeDescription = pool.describe(binaryName).resolve();
-                    ClassData classData = new ClassDataImpl(typeDescription, jarSource.mod(), isStarsectorJar);
-                    classDataList.add(classData);
+                    classes.add(new DiscoveredClass(typeDescription, jarSource.mod(), isStarsectorJar));
                     count++;
                 } catch (Exception ex) {
                     PatchLibLogger.error("Could not resolve type " + binaryName);
@@ -61,6 +58,6 @@ public class ClassDiscoverTask implements Callable<ClassDiscoverTask.ClassDiscov
             PatchLibLogger.info("Discovered " + count + " classes in " + jarFile.getName());
         }
 
-        return new ClassDiscoverTaskResult(jarSource.jar().getPath(), classDataList, null);
+        return new ClassDiscoverTaskResult(jarSource.jar().getPath(), classes, null);
     }
 }

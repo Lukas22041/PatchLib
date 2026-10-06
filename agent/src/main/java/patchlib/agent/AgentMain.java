@@ -17,6 +17,7 @@ public class AgentMain {
 
     private final static String ATTACHED_PROPERTY = "PatchLib_AgentAttached";
     private static Instrumentation instrumentation;
+    private static ClassScanner classScanner;
 
     /** Called if "selfAttachAgent" succeeded from PatchLibModplugin. */
     public static void agentmain(String args, Instrumentation instrumentation) {
@@ -43,13 +44,13 @@ public class AgentMain {
         DiscoveryData discoveryData = discoverer.discover();
 
         //Scan
-        ClassScanner classScanner = new ClassScanner(discoveryData);
+        classScanner = new ClassScanner(discoveryData, modClassLoader);
 
         //API init
         PatchLibImpl.init(classScanner);
 
         //PatchScanner
-        PatchScanner patchScanner = new PatchScanner();
+        PatchScanner patchScanner = new PatchScanner(classScanner);
         List<PatchHandlerSpec> patchSpecs = patchScanner.scan();
 
         //Patch
@@ -64,6 +65,13 @@ public class AgentMain {
         float time = (System.currentTimeMillis() - start) / 1000f;
         PatchLibLogger.info("Finished initialization in " + time + " seconds");
         PatchLibLogger.blank();
+    }
+
+    /** PatchLib.scan() is only usable during onApplicationLoad, so its data is released once a save is loaded. */
+    public static void releaseScanData() {
+        if (classScanner != null) {
+            classScanner.close();
+        }
     }
 
 }

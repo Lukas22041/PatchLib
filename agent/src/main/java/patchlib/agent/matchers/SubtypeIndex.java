@@ -3,11 +3,10 @@ package patchlib.agent.matchers;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.matcher.ElementMatcher;
-import patchlib.agent.data.ClassDataImpl;
 import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.patch.InstallationData;
+import patchlib.agent.scan.DiscoveredClass;
 import patchlib.agent.scan.DiscoveryData;
-import patchlib.api.data.ClassData;
 
 import java.util.HashSet;
 import java.util.List;
@@ -40,16 +39,14 @@ public class SubtypeIndex {
 
         ElementMatcher.Junction<TypeDescription> isSubtype = failSafe(hasSuperType(type -> targetSubtypes.contains(type.getActualName())));
 
-        for (ClassData classData : discoveryData.classes()) {
-            ClassDataImpl classDataImpl = (ClassDataImpl) classData;
-            if (IgnoreMatcher.isIgnored(classDataImpl.getName())) continue;
+        for (DiscoveredClass discoveredClass : discoveryData.classes()) {
+            TypeDescription typeDescription = discoveredClass.type();
+            if (IgnoreMatcher.isIgnored(typeDescription.getName())) continue;
 
-            TypeDescription typeDescription = classDataImpl.getTypeDescription();
-
-            if (!isSubtype.matches(classDataImpl.getTypeDescription())) continue;
+            if (!isSubtype.matches(typeDescription)) continue;
 
             if (GateMatcher.declaresPatchedMethod(typeDescription, installationDataList)) {
-                matches.add(classData.getName());
+                matches.add(typeDescription.getName());
             }
         }
 

@@ -13,9 +13,7 @@ import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.patch.InstallationData;
 import patchlib.agent.patch.PatchInstaller;
 import patchlib.agent.patch.SiteIdMarker;
-import patchlib.agent.patch.advice.templates.ConstructorTemplate;
-import patchlib.agent.patch.advice.templates.ReturnTemplate;
-import patchlib.agent.patch.advice.templates.VoidTemplate;
+import patchlib.agent.patch.advice.templates.*;
 import patchlib.agent.spec.AdviceSpec;
 
 import java.lang.invoke.MethodHandle;
@@ -51,9 +49,20 @@ public class AdviceInstaller {
                     .bind(AfterHandleMarker.class, NullConstant.INSTANCE, MethodHandle.class);
         }
 
-        Class<?> enterTemplate = pickTemplate(methodDescription);
-        Class<?> exitTemplate = pickExitTemplate(methodDescription, !site.except.isEmpty());
-        builder = builder.visit(mapping.to(enterTemplate, exitTemplate).on(ElementMatchers.is(methodDescription)));
+        if (methodDescription.isConstructor()) {
+            warnAboutConstructorExcepts(typeDescription, site);
+        }
+
+        Class<?> enterTemplate = pickEnterTemplate(methodDescription, site);
+        Class<?> exitTemplate = pickExitTemplate(methodDescription, site);
+        if (enterTemplate == null && exitTemplate == null) return builder;
+
+        Advice advice;
+        if (enterTemplate == null) advice = mapping.to(exitTemplate);
+        else if (exitTemplate == null) advice = mapping.to(enterTemplate);
+        else advice = mapping.to(enterTemplate, exitTemplate);
+
+        builder = builder.visit(advice.on(ElementMatchers.is(methodDescription)));
 
         PatchLibLogger.info("Installed a hook patch site at " + typeDescription.getActualName() + " on method " + methodDescription.getActualName() + " " + methodDescription.getParameters() + "");
 
@@ -76,18 +85,27 @@ public class AdviceInstaller {
     }
 
 
-    private static Class<?> pickTemplate(MethodDescription methodDescription) {
-        if (methodDescription.isConstructor()) return ConstructorTemplate.class;
-        else if (methodDescription.getReturnType().represents(void.class)) return VoidTemplate.class;
-        return ReturnTemplate.class;
+    private static Class<?> pickEnterTemplate(MethodDescription methodDescription, AdvicePatchSite site) {
+        if (!site.before.isEmpty()) return methodDescription.isConstructor() ? ConstructorBeforeTemplate.class : BeforeTemplate.class;
+        if (!site.after.isEmpty()) return ContextTemplate.class;
+        //Except only, ExceptOnlyTemplate creates its own context
+        return null;
     }
 
-    private static Class<?> pickExitTemplate(MethodDescription methodDescription, boolean handlesExceptions) {
-        if (methodDescription.isConstructor()) return ConstructorTemplate.class;
-        else if (methodDescription.getReturnType().represents(void.class)) {
-            return handlesExceptions ? VoidTemplate.class : VoidTemplate.WithoutExceptionHandling.class;
+    /** The exit templates are also used for void methods, Byte Buddy reads their return value as null and ignores writes to it. */
+    private static Class<?> pickExitTemplate(MethodDescription methodDescription, AdvicePatchSite site) {
+        if (methodDescription.isConstructor()) return site.after.isEmpty() ? null : ConstructorAfterTemplate.class;
+        if (!site.except.isEmpty()) return site.before.isEmpty() && site.after.isEmpty() ? ExceptOnlyTemplate.class : ExceptTemplate.class;
+        if (!site.after.isEmpty()) return AfterTemplate.class;
+        return methodDescription.getReturnType().represents(void.class) ? null : SkipTemplate.class;
+    }
+
+    /** Byte Buddy can not catch exceptions thrown in constructors, so @Except patches on them are skipped. */
+    private static void warnAboutConstructorExcepts(TypeDescription typeDescription, AdvicePatchSite site) {
+        for (InstallationData data : site.except) {
+            PatchLibLogger.warn("Skipped the @Except patch " + data.spec().handlerMethodName() + " in " + data.spec().handlerClassName() + " from "
+                    + data.spec().sourceMod().getName() + ", as it targets a constructor of " + typeDescription.getActualName());
         }
-        return handlesExceptions ? ReturnTemplate.class : ReturnTemplate.WithoutExceptionHandling.class;
     }
 
     private static AdviceSpec.AdviceType getAdviceType(InstallationData data) {

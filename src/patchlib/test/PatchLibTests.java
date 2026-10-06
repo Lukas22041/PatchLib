@@ -25,6 +25,7 @@ public class PatchLibTests {
         results.addAll(BeforeTests.runTests());
         results.addAll(AfterTests.runTests());
         results.addAll(ExceptTests.runTests());
+        results.addAll(ConstructorTests.runTests());
         results.addAll(RedirectTests.runTests());
         results.addAll(ReflectionTests.runTests());
 

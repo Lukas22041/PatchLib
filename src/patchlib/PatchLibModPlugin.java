@@ -34,6 +34,11 @@ public class PatchLibModPlugin extends BaseModPlugin {
         patchLibTests.runTests();
     }
 
+    @Override
+    public void onGameLoad(boolean newGame) {
+        AgentMain.releaseScanData();
+    }
+
     /** Check if the agent was already attached by a -javaagent flag in the vmparams.
      * Can't just check a static check, as*/
     public boolean checkAlreadyAttached() {

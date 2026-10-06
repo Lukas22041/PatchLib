@@ -13,6 +13,8 @@ public class ExceptTests {
         List<TestResult> results = new ArrayList<>();
         results.add(testSuppressException());
         results.add(testReplaceException());
+        results.add(testSuppressPrimitive());
+        results.add(testExceptAndAfter());
         return results;
     }
 
@@ -37,6 +39,29 @@ public class ExceptTests {
         } catch (Exception ex) {
             boolean failed = !ex.getMessage().equals("TEST_REPLACED");
             return new TestResult("testReplaceException", failed, "The exception was not replaced");
+        }
+    }
+
+    public static TestResult testSuppressPrimitive() {
+        ExceptTestTarget target = new ExceptTestTarget();
+        try {
+            int result = target.testSuppressPrimitiveTarget(5);
+            return new TestResult("testSuppressPrimitive", result != 5, "The exception was suppressed, but returned the wrong value");
+        } catch (Exception ex) {
+            return new TestResult("testSuppressPrimitive", true, "The exception was not suppressed");
+        }
+    }
+
+    //The after patch should run on the suppressed return value.
+    public static TestResult testExceptAndAfter() {
+        ExceptTestTarget target = new ExceptTestTarget();
+        try {
+            String input = "Test";
+            String result = target.testExceptAndAfterTarget(input);
+            boolean failed = !result.equals(input + "_SUPPRESSED_AFTER");
+            return new TestResult("testExceptAndAfter", failed, "The after patch did not run on the suppressed value");
+        } catch (Exception ex) {
+            return new TestResult("testExceptAndAfter", true, "The exception was not suppressed");
         }
     }
 

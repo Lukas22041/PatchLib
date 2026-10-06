@@ -1,32 +1,29 @@
-package patchlib.agent.data;
+package patchlib.agent.scan;
 
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.annotation.AnnotationValue;
 import net.bytebuddy.description.enumeration.EnumerationDescription;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
-import patchlib.api.data.AnnotationData;
 
-public class AnnotationDataImpl implements AnnotationData {
+/** Reads the values of an annotation found during discovery, mainly used to read the patch annotations. */
+public class AnnotationReader {
 
     private AnnotationDescription annotationDescription;
 
-    public AnnotationDataImpl(AnnotationDescription annotationDescription) {
+    public AnnotationReader(AnnotationDescription annotationDescription) {
         this.annotationDescription = annotationDescription;
     }
 
-    @Override
     public String getName() {
         return annotationDescription.getAnnotationType().asErasure().getActualName();
     }
 
-    @Override
     public String getClassName(String id) {
         AnnotationValue<?, ?> value = get(id);
         return value != null ? value.resolve(TypeDescription.class).getActualName() : null;
     }
 
-    @Override
     public String[] getClassNameArray(String id) {
         AnnotationValue<?, ?> value = get(id);
         if (value == null) return null;
@@ -40,76 +37,65 @@ public class AnnotationDataImpl implements AnnotationData {
         return names;
     }
 
-    @Override
     public String getString(String id) {
         AnnotationValue<?, ?> value = get(id);
         return value != null ? value.resolve(String.class) : null;
     }
 
-    @Override
     public String[] getStringArray(String id) {
         AnnotationValue<?, ?> value = get(id);
         return value != null ? value.resolve(String[].class) : null;
     }
 
-    @Override
     public Integer getInt(String id) {
         AnnotationValue<?, ?> value = get(id);
         return value != null ? value.resolve(Integer.class) : null;
     }
 
-    @Override
     public int[] getIntArray(String id) {
         AnnotationValue<?, ?> value = get(id);
         return value != null ? value.resolve(int[].class) : null;
     }
 
-    @Override
     public Float getFloat(String id) {
         AnnotationValue<?, ?> value = get(id);
         return value != null ? value.resolve(Float.class) : null;
     }
 
-    @Override
     public float[] getFloatArray(String id) {
         AnnotationValue<?, ?> value = get(id);
         return value != null ? value.resolve(float[].class) : null;
     }
 
-    @Override
     public Boolean getBoolean(String id) {
         AnnotationValue<?, ?> value = get(id);
         return value != null ? value.resolve(Boolean.class) : null;
     }
 
-    @Override
     public boolean[] getBooleanArray(String id) {
         AnnotationValue<?, ?> value = get(id);
         return value != null ? value.resolve(boolean[].class) : null;
     }
 
-    @Override
     public String getEnumValue(String id) {
         AnnotationValue<?, ?> value = get(id);
         return value != null ? value.resolve(EnumerationDescription.class).getValue() : null;
     }
 
-    @Override
-    public AnnotationData getAnnotation(String id) {
+    public AnnotationReader getAnnotation(String id) {
         AnnotationValue<?, ?> value = get(id);
-        return value != null ? new AnnotationDataImpl(value.resolve(AnnotationDescription.class)) : null;
+        return value != null ? new AnnotationReader(value.resolve(AnnotationDescription.class)) : null;
     }
 
-    @Override
-    public AnnotationData[] getAnnotationArray(String id) {
+    public AnnotationReader[] getAnnotationArray(String id) {
         AnnotationValue<?, ?> value = get(id);
         if (value == null) return null;
 
         AnnotationDescription[] descriptions = value.resolve(AnnotationDescription[].class);
-        AnnotationData[] data = new AnnotationData[descriptions.length];
+        AnnotationReader[] data = new AnnotationReader[descriptions.length];
 
         for (int i = 0; i < descriptions.length; i++) {
-            data[i] = new AnnotationDataImpl(descriptions[i]);
+            data[i] = new AnnotationReader(descriptions[i]);
         }
 
         return data;

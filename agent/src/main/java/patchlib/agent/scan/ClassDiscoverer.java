@@ -2,13 +2,10 @@ package patchlib.agent.scan;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModSpecAPI;
-import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.pool.TypePool;
-import patchlib.agent.data.ClassDataImpl;
 import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.misc.PatchLibUtils;
-import patchlib.api.data.ClassData;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +39,7 @@ public class ClassDiscoverer {
     }
 
     private DiscoveryData discoverClasses() {
-        List<ClassData> classDataList = new ArrayList<>();
+        List<DiscoveredClass> classes = new ArrayList<>();
 
         List<JarSource> jars = getAllJars();
 
@@ -72,13 +69,13 @@ public class ClassDiscoverer {
 
                 try {
                     ClassDiscoverTask.ClassDiscoverTaskResult result = futures.get(i).get();
-                    classDataList.addAll(result.classDataList());
+                    classes.addAll(result.classes());
                 } catch (Exception ex) {
                     PatchLibLogger.error("Failed to parse jar " + jar.jar.getPath(), ex);
                 }
             }
 
-            return new DiscoveryData(pool, locator, classDataList);
+            return new DiscoveryData(pool, locators, classes);
 
         }  catch (Exception ex) {
             PatchLibLogger.error("Ran in to an error while scanning game & mod jars.");
