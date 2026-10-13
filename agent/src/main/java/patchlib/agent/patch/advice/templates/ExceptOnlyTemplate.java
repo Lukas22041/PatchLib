@@ -17,7 +17,7 @@ public final class ExceptOnlyTemplate {
             @SiteIdMarker int siteId,
             @Advice.Origin Class<?> owner,
             @Advice.This(optional = true) Object self,
-            @Advice.AllArguments(typing = Assigner.Typing.DYNAMIC) Object[] args,
+            @Advice.AllArguments(typing = Assigner.Typing.DYNAMIC, nullIfEmpty = true) Object[] args,
             @Advice.Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object returned,
             @Advice.Thrown(readOnly = false, typing = Assigner.Typing.DYNAMIC) Throwable thrown) {
 

@@ -17,7 +17,7 @@ public final class BeforeTemplate {
             @BeforeHandleMarker MethodHandle beforeHandle,
             @Advice.Origin Class<?> owner,
             @Advice.This(optional = true) Object self,
-            @Advice.AllArguments(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object[] args,
+            @Advice.AllArguments(readOnly = false, typing = Assigner.Typing.DYNAMIC, nullIfEmpty = true) Object[] args,
             @Advice.Local("context") HookContextImpl context) {
 
         context = AdviceDispatcher.enter(siteId, beforeHandle, owner, self, args);

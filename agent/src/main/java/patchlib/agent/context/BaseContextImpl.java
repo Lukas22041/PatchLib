@@ -17,13 +17,16 @@ public abstract class BaseContextImpl implements Context {
     //If something patches a method derived from a parent class, this will still be the class of what is actually being run
     protected Class<?> effectiveClass;
 
+    //Shared by methods without parameters
+    private static final Object[] NO_ARGS = new Object[0];
+
     protected Object self;
     protected final Object[] args;
 
     public BaseContextImpl(Class<?> effectiveClass, Object self, Object[] args) {
         this.effectiveClass = self != null ? self.getClass() : effectiveClass;
         this.self = self;
-        this.args = args;
+        this.args = args != null ? args : NO_ARGS;
     }
 
     public void setSelf(Object self) {

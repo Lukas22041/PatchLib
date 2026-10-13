@@ -13,7 +13,7 @@ public final class ContextTemplate {
             @SiteIdMarker int siteId,
             @Advice.Origin Class<?> owner,
             @Advice.This(optional = true) Object self,
-            @Advice.AllArguments(typing = Assigner.Typing.DYNAMIC) Object[] args,
+            @Advice.AllArguments(typing = Assigner.Typing.DYNAMIC, nullIfEmpty = true) Object[] args,
             @Advice.Local("context") HookContextImpl context) {
 
         context = new HookContextImpl(owner, self, args, siteId);

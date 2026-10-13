@@ -20,7 +20,7 @@ public class RedirectDelegates {
             @MemberSubstitution.This(source = MemberSubstitution.Source.SUBSTITUTED_ELEMENT, optional = true) Object callReceiver,
             @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.SUBSTITUTED_ELEMENT) Object[] callArgs,
             @MemberSubstitution.This(source = MemberSubstitution.Source.ENCLOSING_METHOD, optional = true) Object hostSelf,
-            @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD) Object[] hostArgs
+            @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD, nullIfEmpty = true) Object[] hostArgs
     ) throws Throwable {
         return handle.invokeExact(callReceiver, callArgs, hostSelf, hostArgs);
     }
@@ -32,7 +32,7 @@ public class RedirectDelegates {
             @MemberSubstitution.This(source = MemberSubstitution.Source.SUBSTITUTED_ELEMENT, optional = true) Object callReceiver,
             @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.SUBSTITUTED_ELEMENT, includeSelf = true) Object[] callArgs,
             @MemberSubstitution.This(source = MemberSubstitution.Source.ENCLOSING_METHOD, optional = true) Object hostSelf,
-            @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD) Object[] hostArgs
+            @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD, nullIfEmpty = true) Object[] hostArgs
             ) throws Throwable {
         return handle.invokeExact(callReceiver, callArgs, hostSelf, hostArgs);
     }
@@ -42,7 +42,7 @@ public class RedirectDelegates {
             @RedirectHandleMarker MethodHandle handle,
             @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.SUBSTITUTED_ELEMENT, includeSelf = true) Object[] constructorArgs,
             @MemberSubstitution.This(source = MemberSubstitution.Source.ENCLOSING_METHOD, optional = true) Object hostSelf,
-            @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD) Object[] hostArgs
+            @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD, nullIfEmpty = true) Object[] hostArgs
     ) throws Throwable {
         return handle.invokeExact(constructorArgs, hostSelf, hostArgs);
     }
@@ -51,7 +51,7 @@ public class RedirectDelegates {
             @RedirectHandleMarker MethodHandle handle,
             @MemberSubstitution.This(source = MemberSubstitution.Source.SUBSTITUTED_ELEMENT, optional = true) Object owner,
             @MemberSubstitution.This(source = MemberSubstitution.Source.ENCLOSING_METHOD, optional = true) Object hostSelf,
-            @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD) Object[] hostArgs
+            @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD, nullIfEmpty = true) Object[] hostArgs
     ) throws Throwable {
         return handle.invokeExact(owner, hostSelf, hostArgs);
     }
@@ -61,7 +61,7 @@ public class RedirectDelegates {
             @MemberSubstitution.This(source = MemberSubstitution.Source.SUBSTITUTED_ELEMENT, optional = true) Object owner,
             @MemberSubstitution.Argument(source = MemberSubstitution.Source.SUBSTITUTED_ELEMENT, value = 0) Object writtenValue,
             @MemberSubstitution.This(source = MemberSubstitution.Source.ENCLOSING_METHOD, optional = true) Object hostSelf,
-            @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD) Object[] hostArgs
+            @MemberSubstitution.AllArguments(source = MemberSubstitution.Source.ENCLOSING_METHOD, nullIfEmpty = true) Object[] hostArgs
     ) throws Throwable {
         handle.invokeExact(owner, writtenValue, hostSelf, hostArgs);
     }
