@@ -7,16 +7,23 @@ This can be used to modify the behavior and values from vanilla and modded metho
 
 The mod is installed like any other mod, by dropping it in to your /mods/ folder.
 
-> **INCOMPATIBILITY**: PatchLib is currently incompatible with community made upgrades of the games **java** version to Java25 or higher. However, if you have the [Fast Rendering](https://fractalsoftworks.com/forum/index.php?topic=33870.0) mod installed, it will work fine. This is due to the fact that fast rendering fixes the issue that causes this incompatibility in the first place. 
+> **INCOMPATIBILITY**: PatchLib is currently incompatible with community made upgrades of the games **java** version to Java 25 or higher. However, if you have the [Fast Rendering](https://fractalsoftworks.com/forum/index.php?topic=33870.0) mod installed, it will work fine. This is due to the fact that fast rendering fixes the issue that causes this incompatibility in the first place. 
 
-## AI-Generated Content Disclaimer
-The library has been developed with the use of Claude Code with the models Claude Fable 5, Claude Fable 5.1 and Claude Opus 5.5.  
-The generated code has been heavily tested by real people and the code is understood by the maintainer(s).  
+## AI-Generated content disclaimer
+The library has been developed together with the use of Claude Code with the models Claude Fable 5, Claude Fable 5.1 and Claude Opus 5.5. 
+The generated code has been heavily tested by real people and the code is understood by the maintainer(s). 
 No visual assets were created with generative AI.
 
-# For Developers
+All documentation is written by hand, but has grammatical corrections applied through AI tools.
 
-A typical patch is registered through an annotation API like this:
+---
+
+# For developers
+
+PatchLib provides a relatively simple annotation API for patching the games code.  
+If you are not used to such patterns in java, it may feel a bit alien, but the concept is simple once you get used to it.  
+
+Following is an example patch, which modifies the return value of the campaign clocks ``getCycle`` method, changing it to always return the original value + 1000.
 
 ```java
 @Patch(target = @ClassMatch(subtype = CampaignClockAPI.class))
@@ -29,11 +36,10 @@ public class TestPatch {
 }
 ```
 
-This simple patch hooks after the execution of the games clock "getCycle" and modifies its return value to always increase it by 1000 cycles.
-
-## API Documentation
+## Documentation
 
 Full documentation for mod developers can be found on the [wiki](https://github.com/Lukas22041/PatchLib/wiki).  
+The documentation asumes that you have basic java programming knowledge.  
 Please mention on discord or the forum post if you find issues/mistakes within it, or if things are unclear.
 
 ## Contribution
