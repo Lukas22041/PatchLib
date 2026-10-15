@@ -8,12 +8,12 @@ import patchlib.api.query.MethodQuery;
 import java.util.List;
 
 public record ClassQuerySpec(
-        String className,
+        String typeName,
         String subtypeName,
         String packageName,
-        boolean includeSubpackages,
+        boolean packageRecursive,
         String excludedPackageName,
-        boolean excludeSubpackages,
+        boolean excludedPackageRecursive,
         List<MethodQuerySpec>methods,
         List<FieldQuerySpec> fields,
         List<AnnotationQuerySpec> annotations

@@ -6,6 +6,7 @@ import net.bytebuddy.description.method.MethodDescription;
 import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.spec.*;
 import patchlib.api.match.MethodType;
+import patchlib.api.match.StaticType;
 import patchlib.api.match.Unset;
 import patchlib.api.patch.*;
 import patchlib.api.query.AnnotationQuery;
@@ -112,7 +113,7 @@ public class PatchScanner {
                     .methodType(MethodType.CONSTRUCTOR) //Only target constructors
                     .returnTypeName("") //Constructors have no return type
                     .methodName("") //Constructors have no name
-                    .staticOnly(false) //Constructors are never static
+                    .staticType(StaticType.ANY) //Constructors are never static, so the filter is ignored
                     .build();
             return new RedirectConstructorCallSpec(type, constructor);
         }
@@ -159,12 +160,12 @@ public class PatchScanner {
 
     private ClassQuery createClassQuery(AnnotationReader classMatch) {
         ClassQuery query = ClassQuery.create()
-                .className(classOrString(classMatch.getClassName("type"), classMatch.getString("typeName")))
+                .typeName(classOrString(classMatch.getClassName("type"), classMatch.getString("typeName")))
                 .subtypeName(classOrString(classMatch.getClassName("subtype"), classMatch.getString("subtypeName")))
-                .packageName(classMatch.getString("targetPackage"))
-                .includeSubpackages(classMatch.getBoolean("includeSubpackages"))
-                .excludedPackageName(classMatch.getString("excludePackage"))
-                .excludeSubpackages(classMatch.getBoolean("excludeSubpackages"));
+                .packageName(classMatch.getString("packageName"))
+                .packageRecursive(classMatch.getBoolean("packageRecursive"))
+                .excludedPackageName(classMatch.getString("excludedPackageName"))
+                .excludedPackageRecursive(classMatch.getBoolean("excludedPackageRecursive"));
 
         for (AnnotationReader methodMatch : classMatch.getAnnotationArray("methodMatches")) {
             query.hasMethod(createMethodQuery(methodMatch));
@@ -184,11 +185,11 @@ public class PatchScanner {
     private MethodQuery createMethodQuery(AnnotationReader methodMatch) {
         MethodQuery query = MethodQuery.create()
                 .methodName(methodMatch.getString("methodName"))
-                .parameterNames(classOrStringArray(methodMatch.getClassNameArray("parameters"), methodMatch.getStringArray("parameterNames")))
+                .parameterTypeNames(classOrStringArray(methodMatch.getClassNameArray("parameterTypes"), methodMatch.getStringArray("parameterTypeNames")))
                 .parameterCount(methodMatch.getInt("parameterCount"))
                 .returnTypeName(classOrString(methodMatch.getClassName("returnType"), methodMatch.getString("returnTypeName")))
                 .methodType(MethodType.valueOf(methodMatch.getEnumValue("methodType")))
-                .staticOnly(methodMatch.getBoolean("staticOnly"));
+                .staticType(StaticType.valueOf(methodMatch.getEnumValue("staticType")));
 
         for (String annotationTypeName : classOrStringArray(methodMatch.getClassNameArray("annotations"), methodMatch.getStringArray("annotationNames"))) {
             query.hasAnnotation(AnnotationQuery.create().annotationName(annotationTypeName));
@@ -200,9 +201,9 @@ public class PatchScanner {
     private FieldQuery createFieldQuery(AnnotationReader fieldMatch) {
         FieldQuery query = FieldQuery.create()
                 .fieldName(fieldMatch.getString("fieldName"))
-                .fieldTypeName(classOrString(fieldMatch.getClassName("type"), fieldMatch.getString("typeName")))
-                .fieldSubtypeName(classOrString(fieldMatch.getClassName("subtype"), fieldMatch.getString("subtypeName")))
-                .staticOnly(fieldMatch.getBoolean("staticOnly"));
+                .typeName(classOrString(fieldMatch.getClassName("type"), fieldMatch.getString("typeName")))
+                .subtypeName(classOrString(fieldMatch.getClassName("subtype"), fieldMatch.getString("subtypeName")))
+                .staticType(StaticType.valueOf(fieldMatch.getEnumValue("staticType")));
 
         return query;
     }

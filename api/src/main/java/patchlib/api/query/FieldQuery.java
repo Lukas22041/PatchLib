@@ -1,5 +1,6 @@
 package patchlib.api.query;
 
+import patchlib.api.match.StaticType;
 import patchlib.api.spec.AnnotationQuerySpec;
 import patchlib.api.spec.FieldQuerySpec;
 
@@ -9,9 +10,9 @@ import java.util.List;
 public class FieldQuery {
 
     private String fieldName = "";
-    private String fieldTypeName = "";
-    private String fieldSubtypeName = "";
-    private boolean staticOnly = false;
+    private String typeName = "";
+    private String subtypeName = "";
+    private StaticType staticType = StaticType.ANY;
     private List<AnnotationQuery> annotations = new ArrayList<>();
 
     private FieldQuery() { }
@@ -22,7 +23,7 @@ public class FieldQuery {
 
     public FieldQuerySpec build() {
         List<AnnotationQuerySpec> annotationSpecs = annotations.stream().map(AnnotationQuery::build).toList();
-        return new FieldQuerySpec(fieldName, fieldTypeName, fieldSubtypeName, staticOnly, annotationSpecs);
+        return new FieldQuerySpec(fieldName, typeName, subtypeName, staticType, annotationSpecs);
     }
 
     public FieldQuery fieldName(String fieldName) {
@@ -30,28 +31,28 @@ public class FieldQuery {
         return this;
     }
 
-    public FieldQuery fieldType(Class<?> fieldType) {
-        this.fieldTypeName = fieldType.getTypeName();
+    public FieldQuery type(Class<?> type) {
+        this.typeName = type.getTypeName();
         return this;
     }
 
-    public FieldQuery fieldTypeName(String fieldTypeName) {
-        this.fieldTypeName = fieldTypeName;
+    public FieldQuery typeName(String typeName) {
+        this.typeName = typeName;
         return this;
     }
 
-    public FieldQuery fieldSubtype(Class<?> fieldSubtype) {
-        this.fieldSubtypeName = fieldSubtype.getTypeName();
+    public FieldQuery subtype(Class<?> subtype) {
+        this.subtypeName = subtype.getTypeName();
         return this;
     }
 
-    public FieldQuery fieldSubtypeName(String fieldSubtypeName) {
-        this.fieldSubtypeName = fieldSubtypeName;
+    public FieldQuery subtypeName(String subtypeName) {
+        this.subtypeName = subtypeName;
         return this;
     }
 
-    public FieldQuery staticOnly(boolean staticOnly) {
-        this.staticOnly = staticOnly;
+    public FieldQuery staticType(StaticType staticType) {
+        this.staticType = staticType;
         return this;
     }
 

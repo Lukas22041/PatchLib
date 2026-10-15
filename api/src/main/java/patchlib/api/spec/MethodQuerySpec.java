@@ -1,6 +1,7 @@
 package patchlib.api.spec;
 
 import patchlib.api.match.MethodType;
+import patchlib.api.match.StaticType;
 import patchlib.api.query.AnnotationQuery;
 
 import java.util.ArrayList;
@@ -13,7 +14,7 @@ public record MethodQuerySpec(
     int parameterCount,
     String returnTypeName,
     MethodType methodType,
-    boolean staticOnly,
+    StaticType staticType,
     List<AnnotationQuerySpec> annotations
 ) {
 

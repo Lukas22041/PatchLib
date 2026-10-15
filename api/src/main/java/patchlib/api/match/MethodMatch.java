@@ -7,10 +7,10 @@ import java.lang.annotation.RetentionPolicy;
 public @interface MethodMatch {
     String methodName() default "";
 
-    Class<?>[] parameters() default {};
+    Class<?>[] parameterTypes() default {};
     /**Uses actual class names, with type erasure.
      * Examples: "int", "int[]", "java.lang.Integer", "java.lang.Integer[]", "java.util.List", "void" */
-    String[] parameterNames() default {};
+    String[] parameterTypeNames() default {};
     int parameterCount() default -1;
 
     Class<?> returnType() default Unset.class;
@@ -19,7 +19,7 @@ public @interface MethodMatch {
     String returnTypeName() default "";
 
     MethodType methodType() default MethodType.ANY;
-    boolean staticOnly() default false;
+    StaticType staticType() default StaticType.ANY;
 
     /** Match methods annotated with all of these. Only the annotation's presence is checked, not its values;
      * read the values from inside the patch if you need them. The annotation must have CLASS or RUNTIME retention. */

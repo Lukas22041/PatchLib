@@ -19,15 +19,16 @@ public @interface ClassMatch {
      * Examples: "java.util.List", "com.fs.starfarer.api.campaign.CampaignClockAPI" */
     String subtypeName() default "";
 
-    /** Can be used to filter to a specific package, like "com.fs". */
-    String targetPackage() default "";
-    /** Makes targetPackage recursive, allowing deeper subfolders of the target package */
-    boolean includeSubpackages() default false;
+    /** Can be used to filter to a specific package, like "com.fs.starfarer.api". Only matches classes directly in it, unless packageRecursive is set. */
+    String packageName() default "";
+    /** Makes packageName recursive, also matching deeper subpackages of it. */
+    boolean packageRecursive() default false;
 
-    /** Can be used to exclude a specific package, like "com.fs" to only patch modded classes. */
-    String excludePackage() default "";
-    /** Makes excludePackage recursive, also excluding deeper subfolders of the excluded package */
-    boolean excludeSubpackages() default false;
+    /** Can be used to exclude a specific package. Only excludes classes directly in it, unless excludedPackageRecursive is set.
+     * For example, "com.fs" with excludedPackageRecursive = true excludes all of the game's own classes, so only modded classes are patched. */
+    String excludedPackageName() default "";
+    /** Makes excludedPackageName recursive, also excluding deeper subpackages of it. */
+    boolean excludedPackageRecursive() default false;
 
     /** Match based on the shape of methods within the class */
     MethodMatch[] methodMatches() default {};

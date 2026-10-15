@@ -1,6 +1,7 @@
 package patchlib.api.query;
 
 import patchlib.api.match.MethodType;
+import patchlib.api.match.StaticType;
 import patchlib.api.spec.AnnotationQuerySpec;
 import patchlib.api.spec.FieldQuerySpec;
 import patchlib.api.spec.MethodQuerySpec;
@@ -17,7 +18,7 @@ public class MethodQuery {
     private int parameterCount = -1;
     private String returnTypeName = "";
     private MethodType methodType = MethodType.ANY;
-    private boolean staticOnly = false;
+    private StaticType staticType = StaticType.ANY;
     private List<AnnotationQuery> annotations = new ArrayList<>();
 
     private MethodQuery() { }
@@ -28,7 +29,7 @@ public class MethodQuery {
 
     public MethodQuerySpec build() {
         List<AnnotationQuerySpec> annotationSpecs = annotations.stream().map(AnnotationQuery::build).toList();
-        return new MethodQuerySpec(methodName, parameterTypeNames, containsParameterType, parameterCount, returnTypeName, methodType, staticOnly, annotationSpecs);
+        return new MethodQuerySpec(methodName, parameterTypeNames, containsParameterType, parameterCount, returnTypeName, methodType, staticType, annotationSpecs);
     }
 
     public MethodQuery methodName(String methodName) {
@@ -36,12 +37,12 @@ public class MethodQuery {
         return this;
     }
 
-    public MethodQuery parameters(Class<?>... parameterTypes) {
+    public MethodQuery parameterTypes(Class<?>... parameterTypes) {
         this.parameterTypeNames = Arrays.stream(parameterTypes).map(Class::getTypeName).toList();
         return this;
     }
 
-    public MethodQuery parameterNames(String... parameterTypeNames) {
+    public MethodQuery parameterTypeNames(String... parameterTypeNames) {
         this.parameterTypeNames = Arrays.stream(parameterTypeNames).toList();
         return this;
     }
@@ -76,8 +77,8 @@ public class MethodQuery {
         return this;
     }
 
-    public MethodQuery staticOnly(boolean staticOnly) {
-        this.staticOnly = staticOnly;
+    public MethodQuery staticType(StaticType staticType) {
+        this.staticType = staticType;
         return this;
     }
 

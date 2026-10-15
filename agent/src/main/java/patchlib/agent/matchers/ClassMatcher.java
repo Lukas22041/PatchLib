@@ -18,8 +18,8 @@ public class ClassMatcher {
     public static ElementMatcher.Junction<TypeDescription> fromQuery(ClassQuerySpec query) {
         ElementMatcher.Junction<TypeDescription> matcher = any();
 
-        if (!query.className().isEmpty()) {
-            matcher = matcher.and(named(query.className()));
+        if (!query.typeName().isEmpty()) {
+            matcher = matcher.and(named(query.typeName()));
         }
 
         if (!query.packageName().isEmpty()) {
@@ -53,13 +53,13 @@ public class ClassMatcher {
     }
 
     private static boolean isInPackage(ClassQuerySpec spec, TypeDescription description) {
-        boolean includeSubpackages = spec.includeSubpackages();
+        boolean recursive = spec.packageRecursive();
         String packageName = spec.packageName();
         PackageDescription typePackage = description.getPackage();
         if (typePackage == null) return false;
         String typePackageName = typePackage.getActualName();
 
-        if (includeSubpackages) {
+        if (recursive) {
             return typePackageName.equals(packageName) || typePackageName.startsWith(packageName + ".");
         } else {
             return typePackageName.equals(packageName);
@@ -67,13 +67,13 @@ public class ClassMatcher {
     }
 
     private static boolean isNotInPackage(ClassQuerySpec spec, TypeDescription description) {
-        boolean excludeSubpackages = spec.excludeSubpackages();
+        boolean recursive = spec.excludedPackageRecursive();
         String packageName = spec.excludedPackageName();
         PackageDescription typePackage = description.getPackage();
         if (typePackage == null) return true;
         String typePackageName = typePackage.getActualName();
 
-        if (excludeSubpackages) {
+        if (recursive) {
             return !(typePackageName.equals(packageName) || typePackageName.startsWith(packageName + "."));
         } else {
             return !typePackageName.equals(packageName);

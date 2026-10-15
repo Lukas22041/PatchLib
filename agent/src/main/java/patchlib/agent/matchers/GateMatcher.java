@@ -30,7 +30,7 @@ public class GateMatcher {
 
         for (InstallationData installationData : installationDataList) {
             ClassQuerySpec spec = installationData.spec().targetClass();
-            if (!spec.className().isEmpty()) exactNames.add(spec.className());
+            if (!spec.typeName().isEmpty()) exactNames.add(spec.typeName());
             else if (!spec.subtypeName().isEmpty()) subtypeNames.add(spec.subtypeName());
             else other.add(spec);
         }

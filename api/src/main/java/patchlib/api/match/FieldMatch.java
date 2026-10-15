@@ -19,5 +19,5 @@ public @interface FieldMatch {
      * Examples: "java.util.List", "com.fs.starfarer.api.campaign.CampaignClockAPI" */
     String subtypeName() default "";
 
-    boolean staticOnly() default false;
+    StaticType staticType() default StaticType.ANY;
 }

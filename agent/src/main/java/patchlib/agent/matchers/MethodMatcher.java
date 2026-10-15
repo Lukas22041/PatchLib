@@ -57,8 +57,10 @@ public class MethodMatcher {
             case ANY -> matcher = matcher.and(isMethod().or(isConstructor()));
         }
 
-        if (query.staticOnly()) {
-            matcher = matcher.and(isStatic());
+        switch (query.staticType()) {
+            case STATIC -> matcher = matcher.and(isStatic());
+            case INSTANCE -> matcher = matcher.and(not(isStatic()));
+            case ANY -> { }
         }
 
         for (AnnotationQuerySpec annotation : query.annotations()) {

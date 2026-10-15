@@ -10,12 +10,12 @@ import java.util.List;
 
 public class ClassQuery {
 
-    private String className = "";
+    private String typeName = "";
     private String subtypeName = "";
     private String packageName = "";
-    private boolean includeSubpackages = false;
+    private boolean packageRecursive = false;
     private String excludedPackageName = "";
-    private boolean excludeSubpackages = false;
+    private boolean excludedPackageRecursive = false;
 
     private List<MethodQuery> methods = new ArrayList<>();
     private List<FieldQuery> fields = new ArrayList<>();
@@ -32,12 +32,17 @@ public class ClassQuery {
         List<FieldQuerySpec> fieldSpecs = fields.stream().map(FieldQuery::build).toList();
         List<AnnotationQuerySpec> annotationSpecs = annotations.stream().map(AnnotationQuery::build).toList();
 
-        return new ClassQuerySpec(className, subtypeName, packageName, includeSubpackages, excludedPackageName, excludeSubpackages,
+        return new ClassQuerySpec(typeName, subtypeName, packageName, packageRecursive, excludedPackageName, excludedPackageRecursive,
                 methodSpecs, fieldSpecs, annotationSpecs);
     }
 
-    public ClassQuery className(String className) {
-        this.className = className;
+    public ClassQuery type(Class<?> clazz) {
+        this.typeName = clazz.getTypeName();
+        return this;
+    }
+
+    public ClassQuery typeName(String typeName) {
+        this.typeName = typeName;
         return this;
     }
 
@@ -56,8 +61,8 @@ public class ClassQuery {
         return this;
     }
 
-    public ClassQuery includeSubpackages(boolean includeSubpackages) {
-        this.includeSubpackages = includeSubpackages;
+    public ClassQuery packageRecursive(boolean packageRecursive) {
+        this.packageRecursive = packageRecursive;
         return this;
     }
 
@@ -66,8 +71,8 @@ public class ClassQuery {
         return this;
     }
 
-    public ClassQuery excludeSubpackages(boolean excludeSubpackages) {
-        this.excludeSubpackages = excludeSubpackages;
+    public ClassQuery excludedPackageRecursive(boolean excludedPackageRecursive) {
+        this.excludedPackageRecursive = excludedPackageRecursive;
         return this;
     }
 

@@ -24,16 +24,18 @@ public class FieldMatcher {
             matcher = matcher.and(named(query.fieldName()));
         }
 
-        if (!query.fieldTypeName().isEmpty()) {
-            matcher = matcher.and(fieldType(named(query.fieldTypeName())));
+        if (!query.typeName().isEmpty()) {
+            matcher = matcher.and(fieldType(named(query.typeName())));
         }
 
-        if (!query.fieldSubtypeName().isEmpty()) {
-            matcher = matcher.and(failSafe(fieldType(hasSuperType(named(query.fieldSubtypeName())))));
+        if (!query.subtypeName().isEmpty()) {
+            matcher = matcher.and(failSafe(fieldType(hasSuperType(named(query.subtypeName())))));
         }
 
-        if (query.staticOnly()) {
-            matcher = matcher.and(isStatic());
+        switch (query.staticType()) {
+            case STATIC -> matcher = matcher.and(isStatic());
+            case INSTANCE -> matcher = matcher.and(not(isStatic()));
+            case ANY -> { }
         }
 
         for (AnnotationQuerySpec annotation : query.annotations()) {
