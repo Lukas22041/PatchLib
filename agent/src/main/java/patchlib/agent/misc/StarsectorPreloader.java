@@ -42,6 +42,7 @@ public class StarsectorPreloader {
 
         int loaded = 0;
         int skipped = 0;
+        ClassFormatError formatError = null;
         try {
             List<Future<StarsectorPreloadTask.StarsectorPreloadTaskResult>> futures = executorService.invokeAll(tasks);
             for (Future<StarsectorPreloadTask.StarsectorPreloadTaskResult> future : futures) {
@@ -49,6 +50,7 @@ public class StarsectorPreloader {
                     StarsectorPreloadTask.StarsectorPreloadTaskResult result = future.get();
                     loaded += result.loaded;
                     skipped += result.skipped;
+                    if (formatError == null) formatError = result.formatError;
                 } catch (Throwable ex) {
                     PatchLibLogger.error("Failed to preload a chunk of starsector classes", ex);
                 }
@@ -64,6 +66,17 @@ public class StarsectorPreloader {
         PatchLibLogger.info("Skipped " + skipped + " starsector classes during preload");
         PatchLibLogger.info("Finished starsector class preload in " + diff + " ms");
         PatchLibLogger.blank();
+
+        //Java 25+ always varifies the class format, even with the -noverify flag, and starsectors obf code is full of invalid bytecode named like "class.new"
+        //For now PatchLib is incompatible with newer Java versions, however, Fast-Rendering solves this issue in a way PatchLib can not,
+        //so using it makes newer java ersions work as well.
+        if (formatError != null && Runtime.version().feature() >= 25) {
+            throw new RuntimeException("[PatchLib] A patched class failed to load on Java " + Runtime.version().feature() + ".\n" +
+                    "\n" +
+                    "PatchLib is by default not compatible with mods that upgrade the java version to J25 or higher. However, the \"Fast Rendering\" mod fixes the same issue PatchLib faces here. \n" +
+                    "\n" +
+                    "If you want to use a mod that upgrades your java version, PatchLib will currently only support it if you are also using the \"Fast Rendering\" mod.\n", formatError);
+        }
     }
 
     private ExecutorService createExecutor(int threads) {
@@ -78,7 +91,7 @@ public class StarsectorPreloader {
 
     private static class StarsectorPreloadTask implements Callable<StarsectorPreloadTask.StarsectorPreloadTaskResult> {
 
-        public record StarsectorPreloadTaskResult(int loaded, int skipped) { }
+        public record StarsectorPreloadTaskResult(int loaded, int skipped, ClassFormatError formatError) { }
 
         private List<DiscoveredClass> classes;
         private ClassLoader classLoader;
@@ -92,18 +105,22 @@ public class StarsectorPreloader {
         public StarsectorPreloadTaskResult call() throws Exception {
             int loaded = 0;
             int skipped = 0;
+            ClassFormatError formatError = null;
             for (DiscoveredClass discoveredClass : classes) {
                 try {
                     //Load with "initialize" set to false prevents static blocks from being called early.
                     Class.forName(discoveredClass.type().getName(), false, classLoader);
                     loaded++;
+                } catch (ClassFormatError ex) {
+                    skipped++;
+                    if (formatError == null) formatError = ex;
                 } catch (Throwable ex) {
                     skipped++;
                 }
 
             }
 
-            return new StarsectorPreloadTaskResult(loaded, skipped);
+            return new StarsectorPreloadTaskResult(loaded, skipped, formatError);
         }
     }
 }
