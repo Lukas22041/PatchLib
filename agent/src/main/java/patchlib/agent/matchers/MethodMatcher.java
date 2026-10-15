@@ -20,6 +20,12 @@ import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class MethodMatcher {
 
+    /** Whether a method can receive patches. Bridge methods (generated for covariant returns and generics) just forward to the real method,
+     * patching both would run the handler twice per call. Other synthetic methods (lambda bodies, switch maps, accessors) are compiler generated and skipped as well. */
+    public static boolean isPatchTarget(MethodDescription method) {
+        return !method.isAbstract() && !method.isNative() && !method.isBridge() && !method.isSynthetic();
+    }
+
     public static ElementMatcher.Junction<MethodDescription> fromQuery(MethodQuerySpec query) {
         return fromQuery(query, null);
     }

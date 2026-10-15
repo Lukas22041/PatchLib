@@ -120,7 +120,8 @@ public class PatchReflection {
 
     private static CachedMethod createCachedMethod(Method method) {
         try {
-            MethodHandle handle = LOOKUP.unreflect(method);
+            //Fixed arity, otherwise asType below wraps the varargs array of the caller in to another array.
+            MethodHandle handle = LOOKUP.unreflect(method).asFixedArity();
             int parameterCount = handle.type().parameterCount();
             MethodType type = MethodType.genericMethodType(parameterCount);
 

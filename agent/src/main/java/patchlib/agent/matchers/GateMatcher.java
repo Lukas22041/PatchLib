@@ -75,7 +75,7 @@ public class GateMatcher {
             for (InstallationData data : installationDataList) {
                 if (!data.classMatcher().matches(type)) continue;
                 for (MethodDescription.InDefinedShape method : type.getDeclaredMethods()) {
-                    if (method.isAbstract() || method.isNative()) continue;
+                    if (!MethodMatcher.isPatchTarget(method)) continue;
                     if (data.methodMatcher().matches(method)) return true;
                 }
             }

@@ -84,7 +84,7 @@ public class PatchInstaller {
         for (MethodDescription.InDefinedShape methodDescription : type.getDeclaredMethods()) {
 
             //Skip invalid patch targets
-            if (methodDescription.isAbstract() || methodDescription.isNative()) continue;
+            if (!MethodMatcher.isPatchTarget(methodDescription)) continue;
 
             List<InstallationData> methodMatchedData = classMatchedData.stream().filter(data -> data.methodMatcher().matches(methodDescription)).toList();
 
