@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 
 /** Redirects a field read inside a method. The target picks the host method to instrument, and field picks the
  * field whose read to intercept. A handler can pass the read value through, transform it, or replace it entirely.
- * When several mods redirect the same call they nest as layers, with the patch with the lowest order being outermost. Each layer calls ctx.call()
+ * When several mods redirect the same call they nest as layers, with the patch with the lowest order being outermost. Each layer calls ctx.read()
  * to reach the next layer down (eventually the real call), or never calls it to short circuit. */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
