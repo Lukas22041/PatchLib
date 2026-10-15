@@ -16,8 +16,6 @@ No visual assets were created with generative AI.
 
 All documentation is written by hand, but has grammatical corrections applied through AI tools.
 
----
-
 # For developers
 
 PatchLib provides a relatively simple annotation API for patching the games code.  
