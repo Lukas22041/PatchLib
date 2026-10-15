@@ -3,6 +3,19 @@
 A Starsector library mod that enables patching code at runtime.  
 This can be used to modify the behavior and values from vanilla and modded methods.
 
+## Installation
+
+The mod is installed like any other mod, by dropping it in to your /mods/ folder.
+
+> **INCOMPATIBILITY**: PatchLib is currently incompatible with community made upgrades of the games **java** version to Java25 or higher. However, if you have the [Fast Rendering](https://fractalsoftworks.com/forum/index.php?topic=33870.0) mod installed, it will work fine. This is due to the fact that fast rendering fixes the issue that causes this incompatibility in the first place. 
+
+## AI-Generated Content Disclaimer
+The library has been developed with the use of Claude Code with the models Claude Fable 5, Claude Fable 5.1 and Claude Opus 5.5.  
+The generated code has been heavily tested by real people and the code is understood by the maintainer(s).  
+No visual assets were created with generative AI.
+
+# For Developers
+
 A typical patch is registered through an annotation API like this:
 
 ```java
@@ -20,7 +33,8 @@ This simple patch hooks after the execution of the games clock "getCycle" and mo
 
 ## API Documentation
 
-Full documentation can be found on the [wiki](https://github.com/Lukas22041/PatchLib/wiki).
+Full documentation for mod developers can be found on the [wiki](https://github.com/Lukas22041/PatchLib/wiki).  
+Please mention on discord or the forum post if you find issues/mistakes within it, or if things are unclear.
 
 ## Contribution
 

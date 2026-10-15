@@ -30,10 +30,11 @@ public class PatchLibModPlugin extends BaseModPlugin {
             } catch (Throwable attachEx) {
                 //Self-attach can throw after agentmain already ran, in which case loading it a second time is not needed.
                 if (!checkAlreadyAttached()) {
-                    log.warn("PatchLib: Self-attach failed (" + attachEx + "). Falling back to loading the agent through the JVMs diagnostic command.");
+                    log.warn("[PatchLib] Normal self-attach failed (" + attachEx + ").");
+                    log.warn("[PatchLib] Falling back to loading the agent through the JVMs diagnostic command");
                     try {
                         loadAgentThroughDiagnosticCommand();
-                        log.info("PatchLib: Loaded the agent through the diagnostic command fallback.");
+                        log.info("[PatchLib] Loaded the agent through the diagnostic command fallback.");
                     } catch (Throwable fallbackEx) {
                         //Both attempts failed. The fallbacks error is the cause, the self-attach error is kept as suppressed so both show up in the log.
                         RuntimeException ex = new RuntimeException("PatchLib failed to attach to the game. \n" +
@@ -58,8 +59,7 @@ public class PatchLibModPlugin extends BaseModPlugin {
         AgentMain.releaseScanData();
     }
 
-    /** Check if the agent was already attached by a -javaagent flag in the vmparams.
-     * Can't just check a static check, as*/
+    /** Check if the agent was already attached by a -javaagent flag in the vmparams. */
     public boolean checkAlreadyAttached() {
         String isAttached = System.getProperty("PatchLib_AgentAttached");
         return isAttached != null;
@@ -81,7 +81,7 @@ public class PatchLibModPlugin extends BaseModPlugin {
         vm.detach();
     }
 
-    /** Fallback for when self-attach is not available, i.e. if the bundled JRE lacks the "jdk.attach" module.
+    /** Fallback for when jdk.attach style self-attach is not available, i.e. if the bundled JRE lacks the "jdk.attach" module.
      * Invokes HotSpots "JVMTI.agent_load" diagnostic command on the running JVM, which loads a .jar as a java agent
      * and calls its agentmain before returning. */
     public void loadAgentThroughDiagnosticCommand() throws Exception {
