@@ -17,6 +17,9 @@ public class IgnoreMatcher {
             "org.codehaus.janino.", "org.codehaus.commons.", //Ignore Janino
             "com.intellij.", "org.jetbrains.capture.", //Ignore IntelliJ debugger
 
+            //Ignores Fast-Renderings Javaagent
+            "com.genir.renderer.agent.",
+
             //Block starsectors mod classloader from being patched.
             //Alex (the games developer) prefers reflection & io to not be to easily accessed, and one mod
             //could disable the checks for all other mods by patching the loader.
