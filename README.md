@@ -21,7 +21,7 @@ All documentation is written by hand, but has grammatical corrections applied th
 PatchLib provides a relatively simple annotation API for patching the games code.  
 If you are not used to such patterns in java, it may feel a bit alien, but the concept is simple once you get used to it.  
 
-Following is an example patch, which modifies the return value of the campaign clocks ``getCycle`` method, changing it to always return the original value + 1000.
+Following is an example patch which modifies the return value of the campaign clocks ``getCycle`` method, changing it to always return the original value + 1000.
 
 ```java
 @Patch(target = @ClassMatch(subtype = CampaignClockAPI.class))
