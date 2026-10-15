@@ -19,7 +19,7 @@ public class AgentMain {
     private static Instrumentation instrumentation;
     private static ClassScanner classScanner;
 
-    /** Called if "selfAttachAgent" succeeded from PatchLibModplugin. */
+    /** Called if "selfAttachAgent" or its diagnostic command fallback in PatchLibModPlugin succeeded. */
     public static void agentmain(String args, Instrumentation instrumentation) {
         AgentMain.instrumentation = instrumentation;
         System.setProperty(ATTACHED_PROPERTY, "true");
