@@ -2,7 +2,7 @@
   "id": "patchlib", #Mod ID, should be lowercase
   "name": "! PatchLib !", #Display Name
   "author": "Lukas04", 
-  "utility": false,
+  "utility": true,
   "version": "0.5.0",
   "description": "Provides utilities for mods to patch core starsector code directly, overwriting or appending it",
   "gameVersion": "0.98a-RC8",

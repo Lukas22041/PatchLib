@@ -3,6 +3,8 @@
 A Starsector library mod that enables patching code at runtime.  
 This can be used to modify the behavior and values of vanilla and modded methods.
 
+[Latest Download](https://github.com/Lukas22041/PatchLib/releases/latest/download/PatchLib.zip) | [Older Versions & Changelogs](https://github.com/Lukas22041/PatchLib/releases)
+
 ## Installation
 
 The mod is installed like any other mod, by dropping it into your /mods/ folder.
