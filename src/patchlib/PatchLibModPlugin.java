@@ -24,18 +24,23 @@ public class PatchLibModPlugin extends BaseModPlugin {
     @Override
     public void onApplicationLoad() throws Exception {
 
+        //If the agent is already attached at this point, it was loaded through the -javaagent flag in the vmparams.
+        String attachMethod = "-javaagent";
         if (!checkAlreadyAttached()) {
+            attachMethod = "self-attach";
             try {
                 selfAttachAgent();
             } catch (Throwable attachEx) {
                 //Self-attach can throw after agentmain already ran, in which case loading it a second time is not needed.
                 if (!checkAlreadyAttached()) {
+                    attachMethod = "diagnostic command";
                     log.warn("[PatchLib] Normal self-attach failed (" + attachEx + ").");
                     log.warn("[PatchLib] Falling back to loading the agent through the JVMs diagnostic command");
                     try {
                         loadAgentThroughDiagnosticCommand();
                         log.info("[PatchLib] Loaded the agent through the diagnostic command fallback.");
                     } catch (Throwable fallbackEx) {
+                        logAgentAttach("failed");
                         //Both attempts failed. The fallbacks error is the cause, the self-attach error is kept as suppressed so both show up in the log.
                         RuntimeException ex = new RuntimeException("PatchLib failed to attach to the game. \n" +
                                 "Check PatchLib's forum thread for guidance on this issue.\n", fallbackEx);
@@ -45,6 +50,8 @@ public class PatchLibModPlugin extends BaseModPlugin {
                 }
             }
         }
+
+        logAgentAttach(attachMethod);
 
         //Init the agent if it managed to attach.
         //Pass the mod classloader, as it is needed to bind the patches method handlers later.
@@ -113,6 +120,15 @@ public class PatchLibModPlugin extends BaseModPlugin {
     private String getAgentJarPath() {
         ModSpecAPI modSpec = Global.getSettings().getModManager().getModSpec("patchlib");
         return modSpec.getPath() + "/jars/PatchLibAgent.jar";
+    }
+
+    /** Logs the version, Java runtime, OS and attach method in a single line, so that most issue reports can be narrowed down from the log alone. */
+    private void logAgentAttach(String attachMethod) {
+        String version = Global.getSettings().getModManager().getModSpec("patchlib").getVersion();
+        String java = System.getProperty("java.runtime.version") + " (" + System.getProperty("java.vendor") + ")";
+        String os = System.getProperty("os.name") + " " + System.getProperty("os.version") + " (" + System.getProperty("os.arch") + ")";
+
+        log.info("[PatchLib] Version " + version + " | Java " + java + " | " + os + " | Attach: " + attachMethod);
     }
 
 
