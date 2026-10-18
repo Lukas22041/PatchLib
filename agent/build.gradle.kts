@@ -3,8 +3,6 @@ plugins {
     id("com.gradleup.shadow") version "9.0.0"
 }
 
-val agentVersion = "0.5.0"
-
 repositories {
     mavenCentral()
 }
@@ -57,7 +55,6 @@ tasks.shadowJar {
             "Agent-Class" to "patchlib.agent.AgentMain",
             "Premain-Class" to "patchlib.agent.AgentMain",
             "Can-Retransform-Classes" to "true",
-            "Implementation-Version" to agentVersion,
         )
     }
 }

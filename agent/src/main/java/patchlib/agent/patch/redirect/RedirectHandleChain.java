@@ -47,6 +47,8 @@ public class RedirectHandleChain {
 
     /** Converts the method handle to the original, replaced call to one that fits the exact same typing as the chain, so that it can be seemlessly called from another part of the chain */
     static MethodHandle convertOriginalToChainHandle(PatchHandlerSpec.RedirectType redirectType, MethodHandle original, boolean hasReceiver) {
+        //Handles to varargs methods are variable arity, which would make asType wrap the already created varargs array in to another array
+        original = original.asFixedArity();
         return switch (redirectType) {
             case METHOD_CALL -> convertOriginalToMethodCallChain(original, hasReceiver);
             case CONSTRUCTOR_CALL -> convertOriginalToConstructorCallChain(original);
