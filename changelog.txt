@@ -1,0 +1,80 @@
+Version 0.6.0
+
+- Added methods for enabling/disabling patches in the "PatchLib" class, i.e PatchLib.setEnabled(), ...
+- Added the "TogglePatch" console command.
+--> Toggled patches are only toggled for the current session, the state is not saved.
+- Added improved logging for exceptions that shows which classes involved in the stack trace are patched.
+- Added version checker changelog support.
+
+
+
+Version 0.5.0
+
+- Added an additional fallback for self-attach, which should work even within Starsector 0.98a.
+- Reworked class scanning, now returns just a List of classes instead of its own data object, no longer holds unused data active after game load.
+- Implemented slight performance improvements, mostly to Hooks, but also slight improvements to redirects.
+- Final API renames in places they were inconsistent before things are locked down. Make sure to clear your intellij caches.
+
+
+
+Version 0.4.0
+
+- The mod now uses self-attach, and no longer comes with an installer.
+- Full internal rewrite of the agent side code
+- Added PatchLib.scan(), a new util for scanning for classes within the games and mods jars.
+- Refactored the "_Query" classes with additional methods and variants for Class & Annotation targets
+- The API jar now includes sources, which should display javadocs when you check its classes and methods in your IDE.
+- Implemented some loading time improvements
+- Renamed RedirectNew to RedirectConstructorCall and renamed RedirectCall to RedirectMethodCall
+- Renamed "priority" to "order" on patches.
+- Removed the debug UI for now, will be reimplemented at a later point.
+- Added the MIT License.
+
+
+
+Version 0.3.2
+
+- added "annotation" field to both ``@ClassMatch`` and ``@MethodMatch``, allows matching based on annotation on a target.
+- added "isMostDerivedCall" to before/after/except contexts, true if its called from the highest declaring method.
+- added getLocal/setLocal on before/after/except contexts, for per-method call data. 
+
+
+
+Version 0.3.1
+
+- Added debug UI for checking patches & patch targets, open with CTRL + P in campaign or title screen.
+- Added version checker support.
+
+
+
+Version 0.3.0
+
+- Added @RedirectCall, @RedirectFieldRead, @RedirectFieldWrite and @Redirectnew annotations that allow intercepting calls within a method.
+- Moved the context interfaces from patchlib.api to patchlib.api.context
+- Moved a bunch of implementations from the API jar to the Agent jar.
+- ``@Before``, ``@After``, ``@Except`` now all use the "target" parameter with a @MethodMatch now, instead of just having the individual arguments passed in.
+- ``@Patch`` now takes in the target parameter that requires a ``@ClassMatch`` now.
+- Large performance improvements.
+
+
+
+Version 0.2.0
+
+- Renamed package from "patch_lib" to "patchlib"
+- Added ``@Except``
+- Added BeforeContext, AfterContext and ExceptContext, now requires using the fitting one for your patch type.
+- Changed the structure of get/hasField/Method calls in patch context.
+- Bunch of minor changes
+
+
+
+Version 0.1.1
+
+- Added support for patching janino loaded classes, mostly relevant for hullmods and some shipsystems.
+- PatchLib now preloads starfarer_api and starfarer_obf jars, around 6268 classes during game load. This extends the loading time by around 1 second, but prevents most of the microstutter from patches being installed after load, which came from starsector loading hundreds of classes on each new UI screen and PatchLib having to run its patches right then and there.
+
+
+
+Version 0.1.0
+
+First pre-release of the mod
