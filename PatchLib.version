@@ -11,5 +11,5 @@
 	
 	#Link towards a direct download, fetched from the online version file
 	"directDownloadURL":"https://github.com/Lukas22041/PatchLib/releases/latest/download/PatchLib.zip",
-	"changelogURL":"https://raw.githubusercontent.com/Lukas22041/PatchLib/refs/heads/master/PatchLib.version",
+	"changelogURL":"https://raw.githubusercontent.com/Lukas22041/PatchLib/refs/heads/master/changelog.txt",
 }
