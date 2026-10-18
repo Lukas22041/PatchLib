@@ -14,6 +14,7 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RedirectHandleChain {
 
@@ -38,8 +39,8 @@ public class RedirectHandleChain {
         for (InstallationData layer : layers) {
             //Create a method handle that receives a chain of every deeper layer so far and gets all other patch related parameters pre-configured, so that only
             //the actual runtime parameters need to be provided by the redirect delegate later. Notably each redirect types chain has different parameters,
-            //but those first 4 are shared by all of them.
-            chain = MethodHandles.insertArguments(runHandle, 0, layer.handler(), layer.errorMessage(), chain, hostClass);
+            //but those first 5 are shared by all of them.
+            chain = MethodHandles.insertArguments(runHandle, 0, layer.handler(), layer.errorMessage(), layer.patchEnabled(), chain, hostClass);
         }
         return chain;
     }
@@ -120,8 +121,11 @@ public class RedirectHandleChain {
     }
 
 
-    private static Object runMethodCallLayer(MethodHandle handler, String errorMessage, MethodHandle chain, Class<?> hostClass,
-                                             Object callReceiver, Object[] callArgs, Object hostSelf, Object[] hostArgs) {
+    private static Object runMethodCallLayer(MethodHandle handler, String errorMessage, AtomicBoolean patchEnabled, MethodHandle chain, Class<?> hostClass,
+                                             Object callReceiver, Object[] callArgs, Object hostSelf, Object[] hostArgs) throws Throwable {
+        //Call the next layer if the patch is disabled
+        if (!patchEnabled.get()) return chain.invokeExact(callReceiver, callArgs, hostSelf, hostArgs);
+
         MethodCallContextImpl context = new MethodCallContextImpl(hostClass, hostSelf, hostArgs, callReceiver, callArgs, chain);
         try {
             handler.invokeExact(context);
@@ -134,8 +138,10 @@ public class RedirectHandleChain {
         return context.getResult();
     }
 
-    private static Object runConstructorCallLayer(MethodHandle handler, String errorMessage, MethodHandle chain, Class<?> hostClass,
-                                             Object[] constructorArgs, Object hostSelf, Object[] hostArgs) {
+    private static Object runConstructorCallLayer(MethodHandle handler, String errorMessage, AtomicBoolean patchEnabled, MethodHandle chain, Class<?> hostClass,
+                                             Object[] constructorArgs, Object hostSelf, Object[] hostArgs) throws Throwable {
+        if (!patchEnabled.get()) return chain.invokeExact(constructorArgs, hostSelf, hostArgs);
+
         ConstructorCallContextImpl context = new ConstructorCallContextImpl(hostClass, hostSelf, hostArgs, constructorArgs, chain);
         try {
             handler.invokeExact(context);
@@ -146,8 +152,10 @@ public class RedirectHandleChain {
         return context.getResult();
     }
 
-    private static Object runFieldReadLayer(MethodHandle handler, String errorMessage, MethodHandle chain, Class<?> hostClass,
-                                             Object owner, Object hostSelf, Object[] hostArgs) {
+    private static Object runFieldReadLayer(MethodHandle handler, String errorMessage, AtomicBoolean patchEnabled, MethodHandle chain, Class<?> hostClass,
+                                             Object owner, Object hostSelf, Object[] hostArgs) throws Throwable {
+        if (!patchEnabled.get()) return chain.invokeExact(owner, hostSelf, hostArgs);
+
         FieldReadContextImpl context = new FieldReadContextImpl(hostClass, hostSelf, hostArgs, owner, chain);
         try {
             handler.invokeExact(context);
@@ -158,8 +166,13 @@ public class RedirectHandleChain {
         return context.getResult();
     }
 
-    private static void runFieldWriteLayer(MethodHandle handler, String errorMessage, MethodHandle chain, Class<?> hostClass,
-                                             Object owner, Object writtenValue, Object hostSelf, Object[] hostArgs) {
+    private static void runFieldWriteLayer(MethodHandle handler, String errorMessage, AtomicBoolean patchEnabled, MethodHandle chain, Class<?> hostClass,
+                                             Object owner, Object writtenValue, Object hostSelf, Object[] hostArgs) throws Throwable {
+        if (!patchEnabled.get()) {
+            chain.invokeExact(owner, writtenValue, hostSelf, hostArgs);
+            return;
+        }
+
         FieldWriteContextImpl context = new FieldWriteContextImpl(hostClass, hostSelf, hostArgs, owner, writtenValue, chain);
         try {
             handler.invokeExact(context);
@@ -171,8 +184,8 @@ public class RedirectHandleChain {
 
     private static MethodHandle createRunLayerHandle(String methodName, MethodType chainType) {
         try {
-            //Insert the 4 parameter types that each redirect chain type share
-            MethodType layerType = chainType.insertParameterTypes(0, MethodHandle.class, String.class, MethodHandle.class, Class.class);
+            //Insert the 5 parameter types that each redirect chain type share
+            MethodType layerType = chainType.insertParameterTypes(0, MethodHandle.class, String.class, AtomicBoolean.class, MethodHandle.class, Class.class);
             return MethodHandles.lookup().findStatic(RedirectHandleChain.class, methodName, layerType);
         } catch (NoSuchMethodException|IllegalAccessException ex) {
             throw new RuntimeException("Failed to create handle to redirect run method", ex);

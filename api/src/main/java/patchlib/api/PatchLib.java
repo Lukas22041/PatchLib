@@ -24,6 +24,10 @@ public abstract class PatchLib {
 
     protected abstract List<ClassData> scanImpl(ClassQuerySpec querySpec, boolean excludeGameClasses, boolean excludeModClasses);
 
+    protected abstract boolean isPatchEnabledImpl(Class<?> patchClass);
+
+    protected abstract void setPatchEnabledImpl(Class<?> patchClass, boolean enabled);
+
     //API
 
 
@@ -47,5 +51,38 @@ public abstract class PatchLib {
      * */
     public static List<ClassData> scan(ClassQuerySpec querySpec, boolean excludeGameClasses, boolean excludeModClasses) {
         return getInstance().scanImpl(querySpec, excludeGameClasses, excludeModClasses);
+    }
+
+    /**
+     * Returns if a Patch is enabled or not.
+     * Patches are enabled by default. A disabled patch can still be installed, but is skipped in the dispatcher.
+     * */
+    public static boolean isPatchEnabled(Class<?> patchClass) {
+        return getInstance().isPatchEnabledImpl(patchClass);
+    }
+
+    /**
+     * Sets a Patch as enabled.
+     * Patches are enabled by default. A disabled patch can still be installed, but is skipped in the dispatcher.
+     * */
+    public static void enablePatch(Class<?> patchClass) {
+        getInstance().setPatchEnabledImpl(patchClass, true);
+    }
+
+    /**
+     * Sets a Patch as disabled.
+     * Patches are enabled by default. A disabled patch can still be installed, but is skipped in the dispatcher.
+     * */
+    public static void disablePatch(Class<?> patchClass) {
+        getInstance().setPatchEnabledImpl(patchClass, false);
+    }
+
+    /**
+     * Toggles the enabled state of a patch
+     * Patches are enabled by default. A disabled patch can still be installed, but is skipped in the dispatcher.
+     * */
+    public static void togglePatch(Class<?> patchClass) {
+        if (isPatchEnabled(patchClass)) disablePatch(patchClass);
+        else enablePatch(patchClass);
     }
 }

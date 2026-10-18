@@ -6,12 +6,14 @@ import net.bytebuddy.matcher.ElementMatcher;
 import patchlib.agent.spec.PatchHandlerSpec;
 
 import java.lang.invoke.MethodHandle;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public record InstallationData(
         PatchHandlerSpec spec,
         MethodHandle handler,
         ElementMatcher.Junction<TypeDescription> classMatcher,
         ElementMatcher.Junction<MethodDescription> methodMatcher,
-        String errorMessage
+        String errorMessage,
+        AtomicBoolean patchEnabled
 ) {
 }

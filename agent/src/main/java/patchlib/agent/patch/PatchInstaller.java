@@ -118,7 +118,8 @@ public class PatchInstaller {
                 String errorMessage = "Ran in to some issue while executing " + spec.handlerMethodName() + " in " + spec.handlerClassName() + " from "
                         + spec.sourceMod().getName();
 
-                InstallationData data = new InstallationData(spec, handle, ClassMatcher.fromQuery(spec.targetClass()), MethodMatcher.fromQuery(spec.targetMethod()), errorMessage);
+                InstallationData data = new InstallationData(spec, handle, ClassMatcher.fromQuery(spec.targetClass()), MethodMatcher.fromQuery(spec.targetMethod()), errorMessage,
+                        PatchStateRegistry.getOrCreate(spec.handlerClassName()));
                 dataList.add(data);
             } catch (Throwable ex) {
                 PatchLibLogger.error("Failed creating installation data for handler method" + spec.handlerMethodName() + " in " + spec.handlerClassName() + " from mod " + spec.sourceMod().getName(), ex);

@@ -8,6 +8,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AdviceHandleChain {
 
@@ -18,7 +19,7 @@ public class AdviceHandleChain {
     static {
         try {
             INVOKE_HANDLE = MethodHandles.lookup().findStatic(AdviceHandleChain.class, "invoke",
-                    MethodType.methodType(void.class, MethodHandle.class, String.class, HookContextImpl.class));
+                    MethodType.methodType(void.class, MethodHandle.class, String.class, AtomicBoolean.class, HookContextImpl.class));
         } catch (IllegalAccessException | NoSuchMethodException ex) {
             throw new RuntimeException("Failed to create invoke handle", ex);
         }
@@ -35,16 +36,18 @@ public class AdviceHandleChain {
         return chain;
     }
 
-    /** Create a handle towards "invoke" with the handler and error message pre-provided, so that only the context is needed to invoke it. */
+    /** Create a handle towards "invoke" with the handler, error message and patch state pre-provided, so that only the context is needed to invoke it. */
     private static MethodHandle wrap(InstallationData data) {
-        return MethodHandles.insertArguments(INVOKE_HANDLE, 0, data.handler(), data.errorMessage());
+        return MethodHandles.insertArguments(INVOKE_HANDLE, 0, data.handler(), data.errorMessage(), data.patchEnabled());
     }
 
     /**
      * One step in the invokation chain
      * The error message is pre-provided as a mod patching the games mod specs can cause recursion if it was called after installation time
      * */
-    static void invoke(MethodHandle handler, String errorMessage, HookContextImpl context) {
+    static void invoke(MethodHandle handler, String errorMessage, AtomicBoolean patchEnabled, HookContextImpl context) {
+        if (!patchEnabled.get()) return;
+
         try {
             handler.invokeExact(context);
         } catch (Throwable e) {

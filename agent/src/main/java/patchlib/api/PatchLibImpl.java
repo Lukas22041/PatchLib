@@ -1,5 +1,6 @@
 package patchlib.api;
 
+import patchlib.agent.patch.PatchStateRegistry;
 import patchlib.agent.scan.ClassScanner;
 import patchlib.api.data.ClassData;
 import patchlib.api.query.ClassQuery;
@@ -25,6 +26,16 @@ public class PatchLibImpl extends PatchLib {
     @Override
     protected List<ClassData> scanImpl(ClassQuerySpec querySpec, boolean excludeGameClasses, boolean excludeModClasses) {
         return scanner.scan(querySpec, excludeGameClasses, excludeModClasses);
+    }
+
+    @Override
+    protected boolean isPatchEnabledImpl(Class<?> patchClass) {
+        return PatchStateRegistry.isEnabled(patchClass.getName());
+    }
+
+    @Override
+    protected void setPatchEnabledImpl(Class<?> patchClass, boolean enabled) {
+        PatchStateRegistry.setEnabled(patchClass.getName(), enabled);
     }
 
 }
