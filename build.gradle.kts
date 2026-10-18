@@ -46,7 +46,8 @@ val packageIncludes = listOf(
     "graphics",
     "sounds",
     "src",
-    "LICENSE"
+    "LICENSE",
+    "icon.png"
 )
 
 //File extensions to include from the project root in the packaged zip.
