@@ -1,6 +1,7 @@
 package patchlib.agent;
 
 import patchlib.agent.log.PatchLibLogger;
+import patchlib.agent.log.PatchTraceAppender;
 import patchlib.agent.misc.StarsectorPreloader;
 import patchlib.agent.patch.PatchInstaller;
 import patchlib.agent.scan.ClassDiscoverer;
@@ -56,6 +57,9 @@ public class AgentMain {
         //Patch
         PatchInstaller installer = new PatchInstaller();
         installer.install(instrumentation, modClassLoader, patchSpecs, discoveryData);
+
+        //Log
+        PatchTraceAppender.install();
 
         //Preload
         ClassLoader systemLoader = AgentMain.class.getClassLoader();

@@ -13,6 +13,7 @@ import net.bytebuddy.pool.TypePool;
 import net.bytebuddy.utility.JavaConstant;
 import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.patch.InstallationData;
+import patchlib.agent.patch.PatchedClassRegistry;
 import patchlib.agent.spec.PatchHandlerSpec;
 
 import java.lang.reflect.Method;
@@ -93,6 +94,7 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
             String siteKey = RedirectPatchRegistry.getSiteKey(hostKey, redirectType.toString(), original);
             RedirectPatchSite site = createRedirectSite(matched);
             int siteId = RedirectPatchRegistry.register(siteKey, site);
+            PatchedClassRegistry.register(typeDescription.getName(), matched);
 
             Method delegate = getDelegateMethod(original);
             //The constant dynamic requires a constant-pool valid entry, and booleans aren't a real type there and are just represented as integers.
