@@ -2,7 +2,9 @@ package patchlib.agent.patch;
 
 import patchlib.agent.log.PatchLibLogger;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -28,6 +30,11 @@ public class PatchStateRegistry {
 
         state.set(enabled);
         PatchLibLogger.info((enabled ? "Enabled" : "Disabled") + " the patch " + patchClassName);
+    }
+
+    /** Names of every patch with a state, including patches that have not installed anywhere yet. */
+    public static synchronized List<String> getPatchClassNames() {
+        return new ArrayList<>(PATCH_STATES.keySet());
     }
 
 }

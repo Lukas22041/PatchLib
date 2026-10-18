@@ -1,0 +1,2 @@
+command,class,tags,syntax,help
+TogglePatch,patchlib.console.TogglePatch,patchlib,togglepatch <patchClass>,Enables or disables a PatchLib patch. The change is not saved between launches.

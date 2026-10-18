@@ -28,7 +28,7 @@ val modDependencies = listOf(
 
     //"Graphics.jar", //GraphicsLib
     //"ExerelinCore.jar", //Nexerelin
-    //"lw_Console.jar", //Console Commands
+    "lw_Console.jar", //Console Commands, optional dependency, only used by commands registered in data/console/commands.csv
 
 )
 
