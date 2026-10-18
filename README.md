@@ -12,7 +12,7 @@ The mod is installed like any other mod, by dropping it into your /mods/ folder.
 > **INCOMPATIBILITY**: PatchLib is currently incompatible with community-made upgrades of the game's **Java** version to Java 25 or higher. However, if you have the [Fast Rendering](https://fractalsoftworks.com/forum/index.php?topic=33870.0) mod installed, it will work fine. This is because Fast Rendering fixes the issue that causes this incompatibility in the first place. 
 
 ## AI-generated content disclaimer
-The library has been developed with the help of Claude Code and the models Claude Fable 5, Claude Fable 5.1 and Claude Opus 5.5. 
+The library has been co-developed with the help of Claude Code and the models Claude Fable 5, Claude Fable 5.1 and Claude Opus 5.5. 
 The generated code has been heavily tested by real people and is understood by the maintainer(s). 
 No visual assets were created with generative AI.
 
