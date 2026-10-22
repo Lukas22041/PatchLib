@@ -7,7 +7,7 @@
         "patch":0 # Can be a number, character or string (1, 2, a, b, "-RC2", etc)
     },
     "modName":"PatchLib",
-	#"modThreadId":25658,
+	"modThreadId":36191,
 	
 	#Link towards a direct download, fetched from the online version file
 	"directDownloadURL":"https://github.com/Lukas22041/PatchLib/releases/latest/download/PatchLib.zip",
