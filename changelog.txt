@@ -1,3 +1,9 @@
+Version 1.0.0
+
+- Mod release
+
+
+
 Version 0.6.0
 
 - Added methods for enabling/disabling patches in the "PatchLib" class, i.e PatchLib.setEnabled(), ...
