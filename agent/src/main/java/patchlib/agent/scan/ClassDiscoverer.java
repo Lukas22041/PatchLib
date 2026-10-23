@@ -2,6 +2,7 @@ package patchlib.agent.scan;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModSpecAPI;
+import com.fs.starfarer.api.SettingsAPI;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.pool.TypePool;
 import patchlib.agent.log.PatchLibLogger;
@@ -117,7 +118,12 @@ public class ClassDiscoverer {
     }
 
     private List<JarSource> getAllJars() {
-        List<ModSpecAPI> mods = Global.getSettings().getModManager().getEnabledModsCopy();
+        //Older versions of Fast-Rendering have an issue where java agents receive different class loads, and as such, different statics. Requires the user to update
+        SettingsAPI settings = Global.getSettings();
+        if (settings == null) {
+            throw new RuntimeException("The games settings are null. This can be an indication that your fast rendering version is outdated and needs to be updated to work with PatchLib.");
+        }
+        List<ModSpecAPI> mods = settings.getModManager().getEnabledModsCopy();
 
         List<JarSource> jars = new ArrayList<>();
 

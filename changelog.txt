@@ -1,3 +1,10 @@
+Version 1.0.1
+
+- The "TogglePatch" command now allows toggling multiple patches at once
+- Made a specific crash provide a better error message.
+
+
+
 Version 1.0.0
 
 - Mod release
