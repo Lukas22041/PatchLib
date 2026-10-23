@@ -1,2 +1,2 @@
 command,class,tags,syntax,help
-TogglePatch,patchlib.console.TogglePatch,patchlib,togglepatch <patchClass>,Enables or disables a PatchLib patch. The change is not saved between launches.
+TogglePatch,patchlib.console.TogglePatch,patchlib,togglepatch <patchClass> <patchClass> <patchClass> <patchClass> <patchClass> <patchClass> <patchClass> <patchClass> <patchClass> <patchClass> ,Enables or disables one or more PatchLib patches. The change is not saved between launches.
