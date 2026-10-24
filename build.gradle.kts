@@ -195,6 +195,12 @@ tasks.test {
     enabled = false
 }
 
+allprojects {
+    tasks.withType<AbstractArchiveTask>().configureEach {
+        isPreserveFileTimestamps = true
+    }
+}
+
 tasks.jar {
     dependsOn(":agent:shadowJar")
     dependsOn(":api:jar")
