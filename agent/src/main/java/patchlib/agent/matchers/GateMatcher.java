@@ -5,6 +5,8 @@ import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.matcher.ElementMatcher;
+import net.bytebuddy.pool.TypePool;
+import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.patch.InstallationData;
 import patchlib.agent.spec.PatchHandlerSpec;
 import patchlib.agent.spec.PatchSpec;
@@ -49,7 +51,7 @@ public class GateMatcher {
             if (!subtypeNames.isEmpty()) {
                 if (subtypeIndex.contains(type.getName())) return true;
                 //Script classes are never in the jar index; do the (scoped) live check for them instead.
-                if (liveSubtype != null && isScriptLoader(classLoader) && liveSubtype.matches(type) && declaresPatchedMethod(type, installationDataList)) return true;
+                if (liveSubtype != null && isScriptLoader(classLoader) && matchesLiveSubtype(liveSubtype, type) && declaresPatchedMethod(type, installationDataList)) return true;
             }
 
             for (ElementMatcher<TypeDescription> matcher : otherMatchers) {
@@ -59,6 +61,17 @@ public class GateMatcher {
         };
     }
 
+
+    private static boolean matchesLiveSubtype(ElementMatcher<TypeDescription> liveSubtype, TypeDescription type) {
+        try {
+            return liveSubtype.matches(type);
+        } catch (TypePool.Resolution.NoSuchTypeException e) {
+            //Janino classes have no class files, so a supertype that is also a script can not be described by the type pool.
+            PatchLibLogger.warn("Skipping subtype matching for janino loaded class \"" + type.getName() + "\". It inherits from \"" + e.getName()
+                    + "\", which is also loaded by Janino, and is as such not a viable target for subtype matches.");
+            return false;
+        }
+    }
 
     private static boolean isScriptLoader(ClassLoader loader) {
         if (loader == null) return false;
