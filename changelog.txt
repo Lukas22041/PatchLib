@@ -1,3 +1,10 @@
+Version 1.0.2
+
+- Added a warning for subtype matches on janino loaded classes that themself extend from janino loaded classes.
+- Improved the crash message when crashing due to using an old version of FR (0.6.8 and older)
+
+
+
 Version 1.0.1
 
 - The "TogglePatch" command now allows toggling multiple patches at once

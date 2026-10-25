@@ -42,8 +42,13 @@ public class PatchLibModPlugin extends BaseModPlugin {
                     } catch (Throwable fallbackEx) {
                         logAgentAttach("failed");
                         //Both attempts failed. The fallbacks error is the cause, the self-attach error is kept as suppressed so both show up in the log.
-                        RuntimeException ex = new RuntimeException("PatchLib failed to attach to the game. \n" +
-                                "Check PatchLib's forum thread for guidance on this issue.\n", fallbackEx);
+                        String message = "PatchLib failed to attach to the game. \n";
+                        //More specific error warning for crash due to issues with pre 0.7.0 Fast rendering.
+                        if (String.valueOf(fallbackEx.getMessage()).contains("return code: 101")) {
+                            message = "PatchLib self attach with the diagnostic command failed with error code 101.\n\n" +
+                                    "This may be because you are on an older version of the \"Fast Rendering\" mod. Try updating it before reporting an issue.\n";
+                        }
+                        RuntimeException ex = new RuntimeException(message, fallbackEx);
                         ex.addSuppressed(attachEx);
                         throw ex;
                     }
