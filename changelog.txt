@@ -1,3 +1,10 @@
+Version 1.0.3
+
+- Fixed an issue where ashes jar replacement broke most patches after anything tries to patch the "BaseIndustry" class.
+-> The "BaseIndustry" issue itself is not fixed, and likely wont be until the starsector update, but should have far less consequences
+
+
+
 Version 1.0.2
 
 - Added a warning for subtype matches on janino loaded classes that themself extend from janino loaded classes.

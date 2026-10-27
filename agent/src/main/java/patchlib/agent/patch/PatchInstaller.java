@@ -46,6 +46,10 @@ public class PatchInstaller {
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 //POOL_FIRST can cause classes to be initialised, those classes might be patch targets, but the default byte buddy discovery strategy would skip them.
                 .with(AgentBuilder.RedefinitionStrategy.DiscoveryStrategy.Reiterating.INSTANCE)
+                //Log redefinition batch failures
+                .with(new RedefinitionListener())
+                //Retries batch redefinitions in halves on errors to prevent one issue from preventing all other patches
+                .with(AgentBuilder.RedefinitionStrategy.Listener.BatchReallocator.splitting())
                 //Read from the read bytes first, use reflection as a fallback for classes that can not be read that way, which is mostly Janino classes.
                 //The reflection approach causes class loads and can run in to issues in annotated classes, so it's just a fallback, not the main approach.
                 .with(AgentBuilder.DescriptionStrategy.Default.POOL_FIRST)
