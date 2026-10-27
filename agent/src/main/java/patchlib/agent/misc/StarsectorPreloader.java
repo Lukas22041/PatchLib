@@ -75,7 +75,7 @@ public class StarsectorPreloader {
                     "\n" +
                     "PatchLib is by default not compatible with mods that upgrade the java version to J25 or higher. However, the \"Fast Rendering\" mod fixes the same issue PatchLib faces here. \n" +
                     "\n" +
-                    "If you want to use a mod that upgrades your java version, PatchLib will currently only support it if you are also using the \"Fast Rendering\" mod.\n", formatError);
+                    "If you want to use a mod that upgrades your java version, PatchLib will currently only support it if you are also using the \"Fast Rendering\" mod. If you already use Fast Rendering, your version might be outdated, or you havent configured the java conversion to launch with it. \n", formatError);
         }
     }
 
