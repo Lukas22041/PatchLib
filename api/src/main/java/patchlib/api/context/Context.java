@@ -32,10 +32,18 @@ public interface Context {
     /** Reflection utility for reading/writing a typed field from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
     <T> Ref<T> getField(FieldQuerySpec query, Object instance);
 
-    /** Reflection utility for reading/writing a typed field from the instance. Most useful for private members of a class, since reflection is otherwise blocked. */
+    /** Reflection utility for reading/writing a typed field from the instance. Most useful for private members of a class, since reflection is otherwise blocked.
+     *
+     * @deprecated Use {@link #getField(FieldQuerySpec query) } instead, and use a static final FieldQuerySpec that is stored at the class level.
+     * */
+    @Deprecated
     <T> Ref<T> getField(String name);
 
-    /** Reflection utility for reading/writing a typed field from the given object. Most useful for private members of a class, since reflection is otherwise blocked. */
+    /** Reflection utility for reading/writing a typed field from the given object. Most useful for private members of a class, since reflection is otherwise blocked.
+     *
+     * @deprecated Use {@link #getField(FieldQuerySpec query, Object instance) } instead, and use a static final FieldQuerySpec that is stored at the class level.
+     * */
+    @Deprecated
     <T> Ref<T> getField(String name, Object instance);
 
     /** Reflection utility for receiving a method from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
@@ -44,10 +52,18 @@ public interface Context {
     /** Reflection utility for receiving a method from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
     MethodRef getMethod(MethodQuerySpec query, Object instance);
 
-    /** Reflection utility for receiving a method from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
+    /** Reflection utility for receiving a method from the instance. Most useful for private members of a class, since reflection is otherwise blocked. First match wins.
+     *
+     * @deprecated Use {@link #getMethod(MethodQuerySpec query) } instead, and use a static final MethodQuerySpec that is stored at the class level.
+     * */
+    @Deprecated
     MethodRef getMethod(String name);
 
-    /** Reflection utility for receiving a method from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins. */
+    /** Reflection utility for receiving a method from the given object. Most useful for private members of a class, since reflection is otherwise blocked. First match wins.
+     *
+     * @deprecated Use {@link #getMethod(MethodQuerySpec query, Object instance) } instead, and use a static final MethodQuerySpec that is stored at the class level.
+     * */
+    @Deprecated
     MethodRef getMethod(String name, Object instance);
 
     /** Reflection utility for checking if the patched class has a specific method */
@@ -56,10 +72,18 @@ public interface Context {
     /** Reflection utility for checking if a specific instance has a specific method */
     boolean hasMethod(MethodQuerySpec query, Object instance);
 
-    /** Reflection utility for checking if the patched class has a specific method */
+    /** Reflection utility for checking if the patched class has a specific method
+     *
+     * @deprecated Use {@link #hasMethod(MethodQuerySpec query) } instead, and use a static final MethodQuerySpec that is stored at the class level.
+     * */
+    @Deprecated
     boolean hasMethod(String name);
 
-    /** Reflection utility for checking if a specific instance has a specific method */
+    /** Reflection utility for checking if a specific instance has a specific method
+     *
+     * @deprecated Use {@link #hasMethod(MethodQuerySpec query, Object instance) } instead, and use a static final MethodQuerySpec that is stored at the class level.
+     * */
+    @Deprecated
     boolean hasMethod(String name, Object instance);
 
     /** Reflection utility for checking if the patched class has a specific field */
@@ -68,10 +92,18 @@ public interface Context {
     /** Reflection utility for checking if a specific instance has a specific field */
     boolean hasField(FieldQuerySpec query, Object instance);
 
-    /** Reflection utility for checking if the patched class has a specific field */
+    /** Reflection utility for checking if the patched class has a specific field
+     *
+     * @deprecated Use {@link #hasField(FieldQuerySpec query) } instead, and use a static final FieldQuerySpec that is stored at the class level.
+     * */
+    @Deprecated
     boolean hasField(String name);
 
-    /** Reflection utility for checking if a specific instance has a specific field */
+    /** Reflection utility for checking if a specific instance has a specific field
+     *
+     * @deprecated Use {@link #hasField(FieldQuerySpec query, Object instance) } instead, and use a static final FieldQuerySpec that is stored at the class level.
+     * */
+    @Deprecated
     boolean hasField(String name, Object instance);
 
     /**A transient data store for per-instance data. This data is not stored in the save. It is shared across all patches with access to this instance.
