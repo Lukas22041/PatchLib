@@ -87,26 +87,23 @@ public class PatchTraceAppender extends AppenderSkeleton {
                     .add(data.spec().handlerMethodName());
         }
 
-        int modIndex = 0;
         for (Map.Entry<String, Map<String, List<String>>> mod : mods.entrySet()) {
-            String modIndent = appendBranch(builder, "", mod.getKey(), ++modIndex == mods.size());
+            String modIndent = appendBranch(builder, "", mod.getKey());
 
-            int classIndex = 0;
             for (Map.Entry<String, List<String>> handlerClass : mod.getValue().entrySet()) {
-                String classIndent = appendBranch(builder, modIndent, handlerClass.getKey(), ++classIndex == mod.getValue().size());
+                String classIndent = appendBranch(builder, modIndent, handlerClass.getKey());
 
-                List<String> handlerMethods = handlerClass.getValue();
-                for (int i = 0; i < handlerMethods.size(); i++) {
-                    appendBranch(builder, classIndent, handlerMethods.get(i), i == handlerMethods.size() - 1);
+                for (String handlerMethod : handlerClass.getValue()) {
+                    appendBranch(builder, classIndent, handlerMethod);
                 }
             }
         }
     }
 
     /** Appends a tree line and returns the indent for its children. */
-    private String appendBranch(StringBuilder builder, String indent, String label, boolean isLast) {
-        appendLine(builder, indent + (isLast ? "└─ " : "├─ ") + label);
-        return indent + (isLast ? "   " : "│  ");
+    private String appendBranch(StringBuilder builder, String indent, String label) {
+        appendLine(builder, indent + "- " + label);
+        return indent + "   ";
     }
 
     private void appendLine(StringBuilder builder, String line) {
