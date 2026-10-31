@@ -1,6 +1,6 @@
 {
   "id": "patchlib", #Mod ID, should be lowercase
-  "name": "! PatchLib !", #Display Name
+  "name": " ! PatchLib ! ", #Display Name
   "author": "Lukas04", 
   "utility": true,
   "version": "1.0.3",
