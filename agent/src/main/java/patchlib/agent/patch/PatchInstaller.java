@@ -35,6 +35,7 @@ public class PatchInstaller {
         long start = System.currentTimeMillis();
 
         List<InstallationData> installationData = createInstallationData(specs, modClassLoader);
+        PatchSiteRegistry.registerHandlers(installationData);
 
         SubtypeIndex subtypeIndex = new SubtypeIndex(discoveryData, installationData);
         AgentBuilder.RawMatcher gateMatcher = GateMatcher.create(installationData, subtypeIndex);

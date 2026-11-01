@@ -12,6 +12,7 @@ import patchlib.agent.context.HookContextImpl;
 import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.patch.InstallationData;
 import patchlib.agent.patch.PatchInstaller;
+import patchlib.agent.patch.PatchSiteRegistry;
 import patchlib.agent.patch.PatchedClassRegistry;
 import patchlib.agent.patch.SiteIdMarker;
 import patchlib.agent.patch.advice.templates.*;
@@ -65,6 +66,7 @@ public class AdviceInstaller {
 
         builder = builder.visit(advice.on(ElementMatchers.is(methodDescription)));
         PatchedClassRegistry.register(typeDescription.getName(), installationDataList);
+        PatchSiteRegistry.addSite(installationDataList, typeDescription.getName(), methodDescription.getName(), methodDescription.getDescriptor());
 
         PatchLibLogger.info("Installed a hook patch site at " + typeDescription.getActualName() + " on method " + methodDescription.getActualName() + " " + methodDescription.getParameters() + "");
 

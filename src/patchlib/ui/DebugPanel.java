@@ -6,13 +6,12 @@ import com.fs.starfarer.api.campaign.BaseCustomUIPanelPlugin;
 import com.fs.starfarer.api.graphics.SpriteAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
-import com.fs.starfarer.api.ui.CutStyle;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
 import com.fs.starfarer.api.util.Misc;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
-import patchlib.ui.elements.ButtonElement;
+import patchlib.ui.components.PatchListComponent;
 
 import java.awt.Color;
 import java.util.List;
@@ -25,6 +24,8 @@ public class DebugPanel extends BaseCustomUIPanelPlugin {
     private static final float BACKGROUND_DIM = 0.66f;
     private static final float FILL_ALPHA = 0.8f;
     private static final float BACKGROUND_INSET = 3f;
+    private static final float CONTENT_PAD = 20f;
+    private static final float PATCH_LIST_WIDTH = 350f;
     private static final Color BACKGROUND_COLOR = new Color(0, 0, 0, 125);
     private static final Color BACKGROUND_OFFSET_COLOR = new Color(0, 0, 0, 175);
 
@@ -65,6 +66,9 @@ public class DebugPanel extends BaseCustomUIPanelPlugin {
 
         panel = Global.getSettings().createCustom(width, height, this);
         parent.addComponent(panel).inMid();
+
+        PatchListComponent patchList = new PatchListComponent(panel, PATCH_LIST_WIDTH, height - CONTENT_PAD * 2f);
+        patchList.getPosition().inTL(CONTENT_PAD, CONTENT_PAD);
 
         unpauseOnClose = Global.getCurrentState() == GameState.CAMPAIGN && !Global.getSector().isPaused();
         if (unpauseOnClose) Global.getSector().setPaused(true);

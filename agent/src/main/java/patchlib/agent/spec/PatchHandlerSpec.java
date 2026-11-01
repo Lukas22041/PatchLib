@@ -29,6 +29,22 @@ public record PatchHandlerSpec(
         return !isAdvice();
     }
 
+    public String getAnnotationName() {
+        if (patchSpec instanceof AdviceSpec adviceSpec) {
+            return switch (adviceSpec.adviceType()) {
+                case BEFORE -> "@Before";
+                case AFTER -> "@After";
+                case EXCEPT -> "@Except";
+            };
+        }
+        return switch (getRedirectType()) {
+            case METHOD_CALL -> "@RedirectMethodCall";
+            case CONSTRUCTOR_CALL -> "@RedirectConstructorCall";
+            case FIELD_READ -> "@RedirectFieldRead";
+            case FIELD_WRITE -> "@RedirectFieldWrite";
+        };
+    }
+
     public RedirectType getRedirectType() {
         if (patchSpec instanceof RedirectMethodCallSpec) return RedirectType.METHOD_CALL;
         else if (patchSpec instanceof RedirectConstructorCallSpec) return RedirectType.CONSTRUCTOR_CALL;
