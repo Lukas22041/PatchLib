@@ -18,7 +18,7 @@ import com.fs.starfarer.api.util.Misc;
 import patchlib.agent.patch.PatchSiteRegistry;
 import patchlib.agent.patch.PatchStateRegistry;
 import patchlib.agent.spec.PatchHandlerSpec;
-import patchlib.ui.ModIcons;
+import patchlib.ui.ModIconsUtils;
 import patchlib.ui.elements.BaseElement;
 import patchlib.ui.elements.ButtonElement;
 import patchlib.ui.elements.CheckboxElement;
@@ -247,7 +247,7 @@ public class PatchListComponent extends BaseCustomUIPanelPlugin {
     }
 
     private void addIcon(CustomPanelAPI rowPanel, ModSpecAPI mod) {
-        SpriteAPI sprite = Global.getSettings().getSprite(ModIcons.getIcon(mod));
+        SpriteAPI sprite = Global.getSettings().getSprite(ModIconsUtils.getIcon(mod));
         sprite.setSize(ICON_SIZE, ICON_SIZE);
 
         BaseElement icon = new BaseElement(rowPanel, ICON_SIZE, ICON_SIZE);

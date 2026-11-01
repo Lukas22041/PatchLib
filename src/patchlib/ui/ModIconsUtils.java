@@ -8,7 +8,7 @@ import java.util.Map;
 
 /** Finds and loads the icons of mods. Either the one from a mods LunaLib settings config, or the icon.png in its root folder that TriOS uses.
  * Mods with neither use the codex icon for mod content. */
-public class ModIcons {
+public class ModIconsUtils {
 
     private static final String LUNA_CONFIG = "data/config/LunaSettingsConfig.json";
 
