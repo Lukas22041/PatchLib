@@ -2,6 +2,7 @@ package patchlib.ui.components;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.BaseCustomUIPanelPlugin;
+import com.fs.starfarer.api.input.InputEventAPI;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.CutStyle;
 import com.fs.starfarer.api.ui.Fonts;
@@ -11,6 +12,7 @@ import com.fs.starfarer.api.ui.ScrollPanelAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
+import com.fs.starfarer.api.util.FaderUtil;
 import com.fs.starfarer.api.util.Misc;
 import org.apache.log4j.Level;
 import org.lwjgl.input.Mouse;
@@ -41,7 +43,7 @@ public class LogComponent extends BaseCustomUIPanelPlugin {
         }
     }
 
-    private record Row(LabelAPI label, float height) { }
+    private record Row(LabelAPI label, float width, float height) { }
 
     private static final float TEXT_BRIGHTNESS = 0.92f;
 
@@ -51,6 +53,13 @@ public class LogComponent extends BaseCustomUIPanelPlugin {
     private static final float BOX_PAD = 10f;
     private static final float TEXT_RIGHT_PAD = 10f;
     private static final float ROW_PAD = 2f;
+    private static final float SCROLLER_CONTENT_INSET = 5f;
+    private static final float MAX_WIDTH_MULT = 6f;
+    private static final float HORIZONTAL_SCROLL_STEP = 100f;
+    private static final float SCROLL_EASING = 3f;
+    private static final float SCROLL_MIN_SPEED = 200f;
+    private static final float RAIL_HEIGHT = 4f;
+    private static final float RAIL_PREVIEW_ALPHA = 0.5f;
     private static final float RECREATE_INTERVAL = 0.25f;
     private static final float BOTTOM_TOLERANCE = 5f;
 
@@ -64,26 +73,33 @@ public class LogComponent extends BaseCustomUIPanelPlugin {
     private final Map<Tab, ButtonElement> tabButtons = new EnumMap<>(Tab.class);
     private final Deque<Row> rows = new ArrayDeque<>();
     private final Deque<LogBuffer.Entry> backlog = new ArrayDeque<>();
+    private final FaderUtil railPreview = new FaderUtil(0f, 0.1f, 0.1f);
     private final float width;
     private final float height;
     private final float listWidth;
     private final float listHeight;
-    private final float textWidth;
+    private final float maxTextWidth;
 
     private CustomPanelAPI subpanel;
     private TooltipMakerAPI subelement;
     private PositionAPI position;
     private long lastIndex = 0;
     private float contentHeight = 0f;
+    private float minXOffset = 0f;
+    private float targetXOffset = 0f;
+    private boolean scrollingX = false;
+    private boolean overRail = false;
+    private boolean draggingRail = false;
     private float sinceRecreate = 0f;
     private boolean needsTabChange = false;
 
     public LogComponent(UIPanelAPI parent, float width, float height) {
         this.width = width;
         this.height = height;
-        this.listWidth = width - BOX_PAD - 1f; //Places the scrollbar right next to the boxes border.
-        this.listHeight = height - TAB_HEIGHT - BOX_PAD * 2f;
-        this.textWidth = listWidth - TEXT_RIGHT_PAD;
+        //Places both scrollbars right next to the boxes border.
+        this.listWidth = width - BOX_PAD - 1f;
+        this.listHeight = height - TAB_HEIGHT - BOX_PAD - 1f;
+        this.maxTextWidth = listWidth * MAX_WIDTH_MULT;
 
         panel = Global.getSettings().createCustom(width, height, this);
         parent.addComponent(panel);
@@ -117,6 +133,7 @@ public class LogComponent extends BaseCustomUIPanelPlugin {
         backlog.clear();
         contentHeight = 0f;
         lastIndex = 0;
+        scrollingX = false;
 
         List<LogBuffer.Entry> entries = currentTab.channel.getEntriesAfter(lastIndex);
         if (!entries.isEmpty()) lastIndex = entries.get(entries.size() - 1).index();
@@ -127,7 +144,7 @@ public class LogComponent extends BaseCustomUIPanelPlugin {
             addRow(entry);
         }
 
-        recreatePanel(getMaxScroller());
+        recreatePanel(0f, getMaxScroller());
     }
 
     private void addRow(LogBuffer.Entry entry) {
@@ -168,11 +185,18 @@ public class LogComponent extends BaseCustomUIPanelPlugin {
     }
 
     private Row createRow(LogBuffer.Entry entry) {
-        LabelAPI label = Global.getSettings().createLabel(entry.loggerName() + " - " + entry.text(), Fonts.DEFAULT_SMALL);
+        String text = entry.loggerName() + " - " + entry.text();
+
+        LabelAPI label = Global.getSettings().createLabel(text, Fonts.DEFAULT_SMALL);
         label.setColor(getColor(entry.level()));
         label.setHighlightColor(Misc.getBasePlayerColor());
         label.highlightFirst(entry.loggerName());
-        return new Row(label, label.autoSizeToWidth(textWidth).getHeight() + ROW_PAD);
+
+        float width = 0f;
+        for (String line : text.split("\n")) {
+            width = Math.max(width, label.computeTextWidth(line));
+        }
+        return new Row(label, Math.min(width, maxTextWidth), label.autoSizeToWidth(maxTextWidth).getHeight() + ROW_PAD);
     }
 
     private static Color getColor(Level level) {
@@ -183,17 +207,29 @@ public class LogComponent extends BaseCustomUIPanelPlugin {
     }
 
     private float getMaxScroller() {
-        return Math.max(0f, contentHeight - listHeight);
+        return Math.max(0f, contentHeight + BOX_PAD - listHeight);
     }
 
-    private void recreatePanel(float scroller) {
+    private float clampXOffset(float xOffset) {
+        return Math.max(minXOffset, Math.min(xOffset, 0f));
+    }
+
+    private void recreatePanel(float xOffset, float yOffset) {
         if (subpanel != null) panel.removeComponent(subpanel);
+
+        float elementWidth = listWidth;
+        for (Row row : rows) {
+            elementWidth = Math.max(elementWidth, row.width() + TEXT_RIGHT_PAD + SCROLLER_CONTENT_INSET);
+        }
+        minXOffset = listWidth - (elementWidth - SCROLLER_CONTENT_INSET);
 
         subpanel = panel.createCustomPanel(listWidth, listHeight, null);
         panel.addComponent(subpanel).inTL(BOX_PAD, TAB_HEIGHT + BOX_PAD);
-        subelement = subpanel.createUIElement(listWidth, listHeight, true);
-        subelement.addSpacer(contentHeight);
-        subpanel.addUIElement(subelement).inTL(0f, 0f);
+        subelement = subpanel.createUIElement(elementWidth, listHeight, true);
+        subelement.addSpacer(contentHeight + BOX_PAD);
+        //The scroller is sized to the element, shrinking it afterwards is what makes the stock horizontal scrollbar appear.
+        subpanel.addUIElement(subelement).setSize(listWidth, listHeight).inTL(0f, 0f);
+        addHorizontalScrollInput();
 
         //The scroller only renders children that are in view, but a tooltip counts as a single child, which is why the labels are not placed in to it.
         ScrollPanelAPI externalScroller = subelement.getExternalScroller();
@@ -203,7 +239,110 @@ public class LogComponent extends BaseCustomUIPanelPlugin {
             y += row.height();
         }
 
-        externalScroller.setYOffset(Math.max(0f, Math.min(scroller, getMaxScroller())));
+        externalScroller.setXOffset(clampXOffset(xOffset));
+        externalScroller.setYOffset(Math.max(0f, Math.min(yOffset, getMaxScroller())));
+    }
+
+    /** The scroller uses the wheel for its vertical scrolling, so this is added after it, as the last added component gets input first.
+     * Its preview of the horizontal thumb is not limited to the rail and shows for any input on it, so this takes over all input on the rail and renders a limited preview instead. */
+    private void addHorizontalScrollInput() {
+        CustomPanelAPI inputPanel = Global.getSettings().createCustom(listWidth, listHeight, new BaseCustomUIPanelPlugin() {
+            @Override
+            public void processInput(List<InputEventAPI> events) {
+                for (InputEventAPI event : events) {
+                    if (event.isConsumed()) continue;
+
+                    if (event.isMouseScrollEvent() && event.isShiftDown() && subpanel.getPosition().containsEvent(event)) {
+                        float xOffset = scrollingX ? targetXOffset : subelement.getExternalScroller().getXOffset();
+                        targetXOffset = clampXOffset(xOffset + HORIZONTAL_SCROLL_STEP * Math.signum(event.getEventValue()));
+                        scrollingX = true;
+                        event.consume();
+                    } else if (!event.isMouseScrollEvent()) {
+                        processRailInput(event);
+                    }
+                }
+            }
+
+            @Override
+            public void render(float alphaMult) {
+                renderRailPreview(alphaMult);
+            }
+        });
+        subpanel.addComponent(inputPanel).inTL(0f, 0f);
+    }
+
+    private float getThumbWidth() {
+        return listWidth * listWidth / (listWidth - minXOffset);
+    }
+
+    private float getThumbX() {
+        float progress = -subelement.getExternalScroller().getXOffset() / (listWidth - minXOffset);
+        return subpanel.getPosition().getX() + progress * listWidth;
+    }
+
+    private boolean isOverRail(InputEventAPI event) {
+        PositionAPI list = subpanel.getPosition();
+        return minXOffset < 0f && list.containsEvent(event) && event.getY() <= list.getY() + RAIL_HEIGHT;
+    }
+
+    private void processRailInput(InputEventAPI event) {
+        if (!event.isMouseEvent()) return;
+
+        ScrollPanelAPI scroller = subelement.getExternalScroller();
+        float contentPerPixel = (listWidth - minXOffset) / listWidth;
+
+        if (draggingRail) {
+            if (event.isLMBUpEvent()) draggingRail = false;
+            else if (event.isMouseMoveEvent()) scroller.setXOffset(clampXOffset(scroller.getXOffset() - event.getDX() * contentPerPixel));
+            event.consume();
+            return;
+        }
+
+        overRail = isOverRail(event);
+        if (!overRail) return;
+
+        if (event.isLMBDownEvent()) {
+            draggingRail = true;
+            scrollingX = false;
+
+            //Clicking next to the thumb centers it on the click, same as with the vertical scrollbar.
+            float x = event.getX();
+            if (x < getThumbX() || x > getThumbX() + getThumbWidth()) {
+                float thumbX = x - subpanel.getPosition().getX() - getThumbWidth() / 2f;
+                scroller.setXOffset(clampXOffset(-thumbX * contentPerPixel));
+            }
+        }
+        event.consume();
+    }
+
+    private void renderRailPreview(float alphaMult) {
+        float brightness = railPreview.getBrightness();
+        if (brightness <= 0f) return;
+
+        PositionAPI list = subpanel.getPosition();
+        float thumbWidth = getThumbWidth();
+        float x = draggingRail ? getThumbX() : Global.getSettings().getMouseX() - thumbWidth / 2f;
+        x = Math.max(list.getX(), Math.min(x, list.getX() + listWidth - thumbWidth));
+
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        Misc.renderQuad(x, list.getY(), thumbWidth, RAIL_HEIGHT - 1f, Global.getSettings().getColor("buttonText"), alphaMult * brightness * RAIL_PREVIEW_ALPHA);
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
+    }
+
+    /** The API can only set the offset instantly, so this eases it with the same curve the scroller uses for the wheel. */
+    private void advanceHorizontalScroll(float amount) {
+        if (!scrollingX) return;
+
+        ScrollPanelAPI scroller = subelement.getExternalScroller();
+        float difference = clampXOffset(targetXOffset) - scroller.getXOffset();
+        float step = Math.signum(difference) * amount * (Math.abs(difference * SCROLL_EASING) + SCROLL_MIN_SPEED);
+        if (Math.abs(step) >= Math.abs(difference)) {
+            step = difference;
+            scrollingX = false;
+        }
+        scroller.setXOffset(scroller.getXOffset() + step);
     }
 
     @Override
@@ -238,20 +377,28 @@ public class LogComponent extends BaseCustomUIPanelPlugin {
             return;
         }
 
+        advanceHorizontalScroll(amount);
+
+        if (overRail) railPreview.fadeIn();
+        else railPreview.fadeOut();
+        railPreview.advance(amount);
+
         sinceRecreate += amount;
 
         //Recreating drops the scrollers input state, which would end a drag of its thumb.
         boolean loadingBacklog = !backlog.isEmpty();
         if ((sinceRecreate < RECREATE_INTERVAL && !loadingBacklog) || Mouse.isButtonDown(0)) return;
 
-        float scroller = subelement.getExternalScroller().getYOffset();
-        boolean atBottom = scroller >= getMaxScroller() - BOTTOM_TOLERANCE;
+        ScrollPanelAPI scroller = subelement.getExternalScroller();
+        float xOffset = scroller.getXOffset();
+        float yOffset = scroller.getYOffset();
+        boolean atBottom = yOffset >= getMaxScroller() - BOTTOM_TOLERANCE;
         long previousIndex = lastIndex;
 
         float heightAbove = readBacklog() - readNewEntries();
         if (lastIndex == previousIndex && !loadingBacklog) return;
 
         sinceRecreate = 0f;
-        recreatePanel(atBottom ? getMaxScroller() : scroller + heightAbove);
+        recreatePanel(xOffset, atBottom ? getMaxScroller() : yOffset + heightAbove);
     }
 }
