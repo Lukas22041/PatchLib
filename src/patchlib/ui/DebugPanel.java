@@ -13,6 +13,7 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 import patchlib.ui.components.LogComponent;
 import patchlib.ui.components.PatchListComponent;
+import patchlib.ui.components.ProfilerComponent;
 
 import java.awt.Color;
 import java.util.List;
@@ -30,8 +31,7 @@ public class DebugPanel extends BaseCustomUIPanelPlugin {
     private static final float SEPARATOR_PAD = 15f;
     private static final float SEPARATOR_X = CONTENT_PAD + PATCH_LIST_WIDTH - PatchListComponent.HEADER_RIGHT_PAD + SEPARATOR_PAD;
     private static final float LOG_X = SEPARATOR_X + SEPARATOR_PAD;
-    private static final float OTHER_SECTION_HEIGHT = 180f;
-    private static final float OTHER_SECTION_PAD = 10f;
+    private static final float PROFILER_PAD = 10f;
     private static final Color BACKGROUND_COLOR = new Color(0, 0, 0, 125);
     private static final Color BACKGROUND_OFFSET_COLOR = new Color(0, 0, 0, 175);
 
@@ -76,9 +76,14 @@ public class DebugPanel extends BaseCustomUIPanelPlugin {
         PatchListComponent patchList = new PatchListComponent(panel, PATCH_LIST_WIDTH, height - CONTENT_PAD * 2f);
         patchList.getPosition().inTL(CONTENT_PAD, CONTENT_PAD);
 
-        float logHeight = height - CONTENT_PAD * 2f - OTHER_SECTION_HEIGHT - OTHER_SECTION_PAD;
-        LogComponent log = new LogComponent(panel, width - LOG_X - CONTENT_PAD, logHeight);
-        log.getPosition().inTL(LOG_X, CONTENT_PAD);
+        float rightWidth = width - LOG_X - CONTENT_PAD;
+        ProfilerComponent profiler = new ProfilerComponent(panel, rightWidth);
+        profiler.getPosition().inTL(LOG_X, CONTENT_PAD);
+
+        float profilerHeight = profiler.getPosition().getHeight();
+        float logHeight = height - CONTENT_PAD * 2f - profilerHeight - PROFILER_PAD;
+        LogComponent log = new LogComponent(panel, rightWidth, logHeight);
+        log.getPosition().inTL(LOG_X, CONTENT_PAD + profilerHeight + PROFILER_PAD);
 
         unpauseOnClose = Global.getCurrentState() == GameState.CAMPAIGN && !Global.getSector().isPaused();
         if (unpauseOnClose) Global.getSector().setPaused(true);

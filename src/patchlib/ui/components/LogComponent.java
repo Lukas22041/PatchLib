@@ -18,6 +18,7 @@ import org.apache.log4j.Level;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import patchlib.agent.log.LogBuffer;
+import patchlib.ui.elements.BoxElement;
 import patchlib.ui.elements.ButtonElement;
 
 import java.awt.Color;
@@ -74,15 +75,12 @@ public class LogComponent extends BaseCustomUIPanelPlugin {
     private final Deque<Row> rows = new ArrayDeque<>();
     private final Deque<LogBuffer.Entry> backlog = new ArrayDeque<>();
     private final FaderUtil railPreview = new FaderUtil(0f, 0.1f, 0.1f);
-    private final float width;
-    private final float height;
     private final float listWidth;
     private final float listHeight;
     private final float maxTextWidth;
 
     private CustomPanelAPI subpanel;
     private TooltipMakerAPI subelement;
-    private PositionAPI position;
     private long lastIndex = 0;
     private float contentHeight = 0f;
     private float minXOffset = 0f;
@@ -94,8 +92,6 @@ public class LogComponent extends BaseCustomUIPanelPlugin {
     private boolean needsTabChange = false;
 
     public LogComponent(UIPanelAPI parent, float width, float height) {
-        this.width = width;
-        this.height = height;
         //Places both scrollbars right next to the boxes border.
         this.listWidth = width - BOX_PAD - 1f;
         this.listHeight = height - TAB_HEIGHT - BOX_PAD - 1f;
@@ -116,6 +112,8 @@ public class LogComponent extends BaseCustomUIPanelPlugin {
             tabButtons.put(tab, button);
             tabX += TAB_WIDTH + TAB_PAD;
         }
+
+        new BoxElement(panel, width, height - TAB_HEIGHT).getPosition().inTL(0f, TAB_HEIGHT);
 
         showCurrentTab();
     }
@@ -343,30 +341,6 @@ public class LogComponent extends BaseCustomUIPanelPlugin {
             scrollingX = false;
         }
         scroller.setXOffset(scroller.getXOffset() + step);
-    }
-
-    @Override
-    public void positionChanged(PositionAPI position) {
-        this.position = position;
-    }
-
-    @Override
-    public void renderBelow(float alphaMult) {
-        if (position == null) return;
-
-        float x = position.getX();
-        float y = position.getY();
-        float boxHeight = height - TAB_HEIGHT;
-        Color color = Misc.getDarkPlayerColor();
-
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        Misc.renderQuad(x, y, width, 1f, color, alphaMult);
-        Misc.renderQuad(x, y + boxHeight - 1f, width, 1f, color, alphaMult);
-        Misc.renderQuad(x, y, 1f, boxHeight, color, alphaMult);
-        Misc.renderQuad(x + width - 1f, y, 1f, boxHeight, color, alphaMult);
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
     }
 
     @Override

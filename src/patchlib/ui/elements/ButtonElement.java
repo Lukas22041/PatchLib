@@ -12,6 +12,7 @@ import java.awt.Color;
 public class ButtonElement extends BaseElement {
 
     private final ButtonAPI button;
+    private final TooltipMakerAPI element;
 
     private Runnable pressListener;
 
@@ -21,7 +22,7 @@ public class ButtonElement extends BaseElement {
         Color textColor = Global.getSettings().getColor("buttonText");
         Color fillColor = Global.getSettings().getColor("buttonBgDark");
 
-        TooltipMakerAPI element = elementPanel.createUIElement(width, height, false);
+        element = elementPanel.createUIElement(width, height, false);
         button = element.addButton(text, this, textColor, fillColor, Alignment.MID, cutStyle, width, height, 0f);
         button.getPosition().inTL(0f, 0f).setXAlignOffset(0f);
         elementPanel.addUIElement(element).inTL(0f, 0f);
@@ -29,6 +30,14 @@ public class ButtonElement extends BaseElement {
 
     public void onPressed(Runnable listener) {
         pressListener = listener;
+    }
+
+    public void setText(String text) {
+        button.setText(text);
+    }
+
+    public void addTooltip(TooltipMakerAPI.TooltipCreator tooltip, TooltipMakerAPI.TooltipLocation location) {
+        element.addTooltipTo(tooltip, button, location, false);
     }
 
     public void setHighlighted(boolean highlighted) {
