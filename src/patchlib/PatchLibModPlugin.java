@@ -9,6 +9,7 @@ import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.VirtualMachine;
 import org.apache.log4j.Logger;
 import patchlib.agent.AgentMain;
+import patchlib.agent.log.LogBuffer;
 import patchlib.test.PatchLibTests;
 
 import javax.management.ObjectName;
@@ -56,6 +57,7 @@ public class PatchLibModPlugin extends BaseModPlugin {
             }
         }
 
+        LogBuffer.install();
         logAgentAttach(attachMethod);
 
         //Init the agent if it managed to attach.

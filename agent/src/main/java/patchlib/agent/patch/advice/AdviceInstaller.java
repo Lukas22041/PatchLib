@@ -66,7 +66,7 @@ public class AdviceInstaller {
 
         builder = builder.visit(advice.on(ElementMatchers.is(methodDescription)));
         PatchedClassRegistry.register(typeDescription.getName(), installationDataList);
-        PatchSiteRegistry.addSite(installationDataList, typeDescription.getName(), methodDescription.getName(), methodDescription.getDescriptor());
+        PatchSiteRegistry.addSite(installationDataList, typeDescription.getName(), methodDescription.getInternalName(), methodDescription.getDescriptor());
 
         PatchLibLogger.info("Installed a hook patch site at " + typeDescription.getActualName() + " on method " + methodDescription.getActualName() + " " + methodDescription.getParameters() + "");
 

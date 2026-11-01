@@ -18,7 +18,6 @@ import com.fs.starfarer.api.util.Misc;
 import patchlib.agent.patch.PatchSiteRegistry;
 import patchlib.agent.patch.PatchStateRegistry;
 import patchlib.agent.spec.PatchHandlerSpec;
-import patchlib.ui.ModIconsUtils;
 import patchlib.ui.elements.BaseElement;
 import patchlib.ui.elements.ButtonElement;
 import patchlib.ui.elements.CheckboxElement;
@@ -27,6 +26,7 @@ import patchlib.ui.elements.ListRowElement;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,8 +37,9 @@ import java.util.Set;
 public class PatchListComponent extends BaseCustomUIPanelPlugin {
 
     private static final String PATCHLIB_ID = "patchlib";
+    private static final String LUNA_CONFIG = "data/config/LunaSettingsConfig.json";
 
-    private static final float HEADER_RIGHT_PAD = 10f;
+    public static final float HEADER_RIGHT_PAD = 10f;
     private static final float BUTTON_SIZE = 24f;
     private static final float SEARCH_TEXT_PAD = 6f;
     private static final float COLUMN_HEADING_Y = 30f;
@@ -58,8 +59,10 @@ public class PatchListComponent extends BaseCustomUIPanelPlugin {
     private static final float HANDLER_BRIGHTNESS = 0.8f;
     private static final float SITE_BRIGHTNESS = 0.65f;
 
+    private static final Map<String, String> modIcons = new HashMap<>();
     private static final Set<String> expandedKeys = new HashSet<>();
     private static float lastScroller = 0f;
+    private static String lastSearch = "";
 
     private final CustomPanelAPI panel;
     private final TextFieldAPI searchField;
@@ -83,16 +86,14 @@ public class PatchListComponent extends BaseCustomUIPanelPlugin {
 
         ButtonElement collapseAll = new ButtonElement(panel, "-", BUTTON_SIZE, BUTTON_SIZE, CutStyle.NONE);
         collapseAll.getPosition().inTR(HEADER_RIGHT_PAD, 0f);
-        collapseAll.onClick(event -> {
-            Global.getSoundPlayer().playUISound("ui_button_pressed", 1f, 1f);
+        collapseAll.onPressed(() -> {
             expandedKeys.clear();
             needsRecreate = true;
         });
 
         ButtonElement expandAll = new ButtonElement(panel, "+", BUTTON_SIZE, BUTTON_SIZE, CutStyle.NONE);
         expandAll.getPosition().inTR(HEADER_RIGHT_PAD + BUTTON_SIZE + COLUMN_PAD, 0f);
-        expandAll.onClick(event -> {
-            Global.getSoundPlayer().playUISound("ui_button_pressed", 1f, 1f);
+        expandAll.onPressed(() -> {
             for (PatchHandlerSpec handler : PatchSiteRegistry.getHandlers()) {
                 expandedKeys.add(handler.handlerClassName());
                 expandedKeys.add(getKey(handler));
@@ -106,6 +107,8 @@ public class PatchListComponent extends BaseCustomUIPanelPlugin {
         searchField = headerElement.addTextField(searchWidth, BUTTON_SIZE, Fonts.DEFAULT_SMALL, 0f);
         searchField.setUndoOnEscape(false);
         searchField.getPosition().setXAlignOffset(0f);
+        searchField.setText(lastSearch);
+        query = lastSearch.trim().toLowerCase();
         panel.addUIElement(headerElement).inTL(0f, 0f);
 
         searchLabel = Global.getSettings().createLabel("Search", Fonts.DEFAULT_SMALL);
@@ -247,7 +250,7 @@ public class PatchListComponent extends BaseCustomUIPanelPlugin {
     }
 
     private void addIcon(CustomPanelAPI rowPanel, ModSpecAPI mod) {
-        SpriteAPI sprite = Global.getSettings().getSprite(ModIconsUtils.getIcon(mod));
+        SpriteAPI sprite = Global.getSettings().getSprite(modIcons.computeIfAbsent(mod.getId(), id -> findIcon(mod)));
         sprite.setSize(ICON_SIZE, ICON_SIZE);
 
         BaseElement icon = new BaseElement(rowPanel, ICON_SIZE, ICON_SIZE);
@@ -257,6 +260,33 @@ public class PatchListComponent extends BaseCustomUIPanelPlugin {
             sprite.render(icon.getPosition().getX(), icon.getPosition().getY());
         });
         addTooltip(icon, "Mod", "Name:", mod.getName().trim(), "ID:", mod.getId(), "Version:", mod.getVersion());
+    }
+
+    /** Either the icon from a mods LunaLib settings config, or the icon.png in its root folder that TriOS uses. Mods with neither use the codex icon for mod content. */
+    private static String findIcon(ModSpecAPI mod) {
+        String lunaIcon = getLunaIcon(mod.getId());
+        if (lunaIcon != null && loadTexture(lunaIcon)) return lunaIcon;
+
+        //All icons are named the same, so this needs the full path, as relative ones resolve to the first mod that has the file.
+        String rootIcon = mod.getPath() + "/icon.png";
+        return loadTexture(rootIcon) ? rootIcon : Global.getSettings().getSpriteName("codex", "manual_other");
+    }
+
+    private static String getLunaIcon(String modId) {
+        try {
+            return Global.getSettings().loadJSON(LUNA_CONFIG, modId).getJSONObject(modId).getString("iconPath");
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private static boolean loadTexture(String path) {
+        try {
+            Global.getSettings().loadTexture(path);
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
     private void addHandlerRow(PatchHandlerSpec handler, float indent) {
@@ -330,7 +360,8 @@ public class PatchListComponent extends BaseCustomUIPanelPlugin {
 
     @Override
     public void advance(float amount) {
-        String text = searchField.getText().trim().toLowerCase();
+        lastSearch = searchField.getText();
+        String text = lastSearch.trim().toLowerCase();
         boolean queryChanged = !text.equals(query);
         query = text;
 

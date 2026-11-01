@@ -11,6 +11,7 @@ import com.fs.starfarer.api.ui.UIPanelAPI;
 import com.fs.starfarer.api.util.Misc;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
+import patchlib.ui.components.LogComponent;
 import patchlib.ui.components.PatchListComponent;
 
 import java.awt.Color;
@@ -26,6 +27,11 @@ public class DebugPanel extends BaseCustomUIPanelPlugin {
     private static final float BACKGROUND_INSET = 3f;
     private static final float CONTENT_PAD = 20f;
     private static final float PATCH_LIST_WIDTH = 350f;
+    private static final float SEPARATOR_PAD = 15f;
+    private static final float SEPARATOR_X = CONTENT_PAD + PATCH_LIST_WIDTH - PatchListComponent.HEADER_RIGHT_PAD + SEPARATOR_PAD;
+    private static final float LOG_X = SEPARATOR_X + SEPARATOR_PAD;
+    private static final float OTHER_SECTION_HEIGHT = 180f;
+    private static final float OTHER_SECTION_PAD = 10f;
     private static final Color BACKGROUND_COLOR = new Color(0, 0, 0, 125);
     private static final Color BACKGROUND_OFFSET_COLOR = new Color(0, 0, 0, 175);
 
@@ -70,6 +76,10 @@ public class DebugPanel extends BaseCustomUIPanelPlugin {
         PatchListComponent patchList = new PatchListComponent(panel, PATCH_LIST_WIDTH, height - CONTENT_PAD * 2f);
         patchList.getPosition().inTL(CONTENT_PAD, CONTENT_PAD);
 
+        float logHeight = height - CONTENT_PAD * 2f - OTHER_SECTION_HEIGHT - OTHER_SECTION_PAD;
+        LogComponent log = new LogComponent(panel, width - LOG_X - CONTENT_PAD, logHeight);
+        log.getPosition().inTL(LOG_X, CONTENT_PAD);
+
         unpauseOnClose = Global.getCurrentState() == GameState.CAMPAIGN && !Global.getSector().isPaused();
         if (unpauseOnClose) Global.getSector().setPaused(true);
     }
@@ -104,13 +114,19 @@ public class DebugPanel extends BaseCustomUIPanelPlugin {
         float backgroundHeight = height - BACKGROUND_INSET * 2f;
         renderScanlines(backgroundX, backgroundY, backgroundWidth, backgroundHeight, BACKGROUND_COLOR, alphaMult);
         renderScanlines(backgroundX, backgroundY + 1f, backgroundWidth, backgroundHeight - 1f, BACKGROUND_OFFSET_COLOR, alphaMult);
+
+        renderQuad(x + SEPARATOR_X, y + CONTENT_PAD, 1f, height - CONTENT_PAD * 2f, Misc.getDarkPlayerColor(), alphaMult);
     }
 
     private void renderDarkQuad(PositionAPI position, float alpha) {
+        renderQuad(position.getX(), position.getY(), position.getWidth(), position.getHeight(), Color.black, alpha);
+    }
+
+    private void renderQuad(float x, float y, float width, float height, Color color, float alpha) {
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        Misc.renderQuad(position.getX(), position.getY(), position.getWidth(), position.getHeight(), Color.black, alpha);
+        Misc.renderQuad(x, y, width, height, color, alpha);
         GL11.glEnable(GL11.GL_TEXTURE_2D);
     }
 
