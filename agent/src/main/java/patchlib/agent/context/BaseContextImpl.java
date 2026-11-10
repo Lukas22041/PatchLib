@@ -253,6 +253,6 @@ public abstract class BaseContextImpl implements Context {
      */
     @Override
     public PatchData getData() {
-        return new PatchData(PatchTransientDataStore.getOrCreate(self));
+        return PatchTransientDataStore.getOrCreate(self);
     }
 }

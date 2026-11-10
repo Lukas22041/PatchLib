@@ -26,23 +26,27 @@ public class PatchReflection {
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    private record MethodCacheKey(Class<?> owner, MethodQuerySpec querySpec) { }
-    private record FieldCacheKey(Class<?> owner, FieldQuerySpec querySpec) { }
-
     private record CachedMethod(Method method, MethodHandle handle, MethodHandle spreadHandle) { }
 
-    private static final ConcurrentHashMap<MethodCacheKey, Optional<CachedMethod>> METHOD_CACHE = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<FieldCacheKey, Optional<Field>> FIELD_CACHE = new ConcurrentHashMap<>();
+    //One map per class, keyed by the query itself, so that a lookup does not need to create a key object
+    private static final ClassValue<ConcurrentHashMap<MethodQuerySpec, Optional<CachedMethod>>> METHOD_CACHE = new ClassValue<>() {
+        @Override
+        protected ConcurrentHashMap<MethodQuerySpec, Optional<CachedMethod>> computeValue(Class<?> type) {
+            return new ConcurrentHashMap<>();
+        }
+    };
+    private static final ClassValue<ConcurrentHashMap<FieldQuerySpec, Optional<Field>>> FIELD_CACHE = new ClassValue<>() {
+        @Override
+        protected ConcurrentHashMap<FieldQuerySpec, Optional<Field>> computeValue(Class<?> type) {
+            return new ConcurrentHashMap<>();
+        }
+    };
 
     public static MethodRef getMethod(Class<?> owner, Object instance, MethodQuerySpec query) {
 
-        MethodCacheKey key = new MethodCacheKey(owner, query);
-
-        CachedMethod cached = METHOD_CACHE.computeIfAbsent(key, cacheKey -> {
-            Method method = findMethod(cacheKey.owner, cacheKey.querySpec);
-            if (method == null) return Optional.empty();
-            return Optional.of(createCachedMethod(method));
-        }).orElseThrow(() -> new RuntimeException("No method matching the query on " + owner.getName() + " with the query " + query));
+        Optional<CachedMethod> found = lookupMethod(owner, query);
+        if (found.isEmpty()) throw new RuntimeException("No method matching the query on " + owner.getName() + " with the query " + query);
+        CachedMethod cached = found.get();
 
         boolean isStatic = Modifier.isStatic(cached.method.getModifiers());
         //Static methods have no instance
@@ -53,27 +57,37 @@ public class PatchReflection {
 
     public static <T> Ref<T> getField(Class<?> owner, Object instance, FieldQuerySpec query) {
 
-        FieldCacheKey key = new FieldCacheKey(owner, query);
+        Optional<Field> found = lookupField(owner, query);
+        if (found.isEmpty()) throw new RuntimeException("No field matching the query on " + owner.getName() + " with the query " + query);
 
-        Field field = FIELD_CACHE.computeIfAbsent(key, cacheKey -> {
-            return Optional.ofNullable(findField(cacheKey.owner, cacheKey.querySpec));
-        }).orElseThrow(() -> new RuntimeException("No field matching the query on " + owner.getName() + " with the query " + query));
-
-        return new FieldRef<>(field, instance);
+        return new FieldRef<>(found.get(), instance);
     }
 
     public static boolean hasMethod(Class<?> owner, Object instance, MethodQuerySpec query) {
-        MethodCacheKey key = new MethodCacheKey(owner, query);
-        return METHOD_CACHE.computeIfAbsent(key, cacheKey -> {
-            Method method = findMethod(cacheKey.owner, cacheKey.querySpec);
-            if (method == null) return Optional.empty();
-            return Optional.of(createCachedMethod(method));
-        }).isPresent();
+        return lookupMethod(owner, query).isPresent();
     }
 
     public static boolean hasField(Class<?> owner, Object instance, FieldQuerySpec query) {
-        FieldCacheKey key = new FieldCacheKey(owner, query);
-        return FIELD_CACHE.computeIfAbsent(key, cacheKey -> Optional.ofNullable(findField(cacheKey.owner, cacheKey.querySpec))).isPresent();
+        return lookupField(owner, query).isPresent();
+    }
+
+    /** get() first, as computeIfAbsent locks the bin when the key is not its first entry. */
+    private static Optional<CachedMethod> lookupMethod(Class<?> owner, MethodQuerySpec query) {
+        ConcurrentHashMap<MethodQuerySpec, Optional<CachedMethod>> cache = METHOD_CACHE.get(owner);
+        Optional<CachedMethod> cached = cache.get(query);
+        if (cached != null) return cached;
+        return cache.computeIfAbsent(query, key -> {
+            Method method = findMethod(owner, key);
+            if (method == null) return Optional.empty();
+            return Optional.of(createCachedMethod(method));
+        });
+    }
+
+    private static Optional<Field> lookupField(Class<?> owner, FieldQuerySpec query) {
+        ConcurrentHashMap<FieldQuerySpec, Optional<Field>> cache = FIELD_CACHE.get(owner);
+        Optional<Field> cached = cache.get(query);
+        if (cached != null) return cached;
+        return cache.computeIfAbsent(query, key -> Optional.ofNullable(findField(owner, key)));
     }
 
     private static Method findMethod(Class<?> owner, MethodQuerySpec query) {

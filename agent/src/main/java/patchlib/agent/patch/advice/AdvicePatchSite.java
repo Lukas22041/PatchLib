@@ -6,9 +6,7 @@ import patchlib.agent.patch.InstallationData;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class AdvicePatchSite {
 
@@ -25,7 +23,12 @@ public class AdvicePatchSite {
     private final String methodDescriptor;
     private final boolean isVirtualMethod;
 
-    private final ConcurrentHashMap<Class<?>, Boolean> mostDerivedCache = new ConcurrentHashMap<>();
+    private final ClassValue<Boolean> mostDerivedCache = new ClassValue<>() {
+        @Override
+        protected Boolean computeValue(Class<?> type) {
+            return computeMostDerived(type);
+        }
+    };
 
     public AdvicePatchSite(MethodHandle beforeChain, MethodHandle afterChain, MethodHandle exceptChain, List<InstallationData> before, List<InstallationData> after, List<InstallationData> except,
                            String hostClass, String methodName, String methodDescriptor, boolean isVirtualMethod) {
@@ -42,7 +45,7 @@ public class AdvicePatchSite {
     }
 
     public boolean isMostDerived(Class<?> clazz) {
-        return mostDerivedCache.computeIfAbsent(clazz, this::computeMostDerived);
+        return mostDerivedCache.get(clazz);
     }
 
     private Boolean computeMostDerived(Class<?> clazz) {
