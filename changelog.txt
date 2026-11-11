@@ -1,3 +1,12 @@
+Version 1.1.0
+
+- Updated to 0.98.5a
+- Added a debug menu that can be opened with CTRL+P in the title and campaign.
+- Very slightly improved the performance of context reflection utils, context.getData() and context.isMostDerivedCall().
+- Deprecated the name based reflection methods, they will continue to function, but are recommended against use mostly for performance.
+
+
+
 Version 1.0.3
 
 - Fixed an issue where ashes jar replacement broke most patches after anything tries to patch the "BaseIndustry" class.
