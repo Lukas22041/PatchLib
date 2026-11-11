@@ -1,6 +1,5 @@
 package patchlib.agent.patch;
 
-import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
@@ -64,7 +63,7 @@ public class PatchInstaller {
                 .ignore(IgnoreMatcher.create())
                 .type(gateMatcher)
                 .transform((builder, type, loader, module, protectionDomain) ->
-                        transform(builder, type, installationData));
+                        transform(builder, type, loader, installationData));
 
 
         agentBuilder.installOn(instrumentation);
@@ -75,7 +74,7 @@ public class PatchInstaller {
 
     }
 
-    private DynamicType.Builder<?> transform(DynamicType.Builder<?> builder, TypeDescription type, List<InstallationData> installationDataList) {
+    private DynamicType.Builder<?> transform(DynamicType.Builder<?> builder, TypeDescription type, ClassLoader classLoader, List<InstallationData> installationDataList) {
 
         List<InstallationData> classMatchedData = new ArrayList<>();
         for (InstallationData installationData : installationDataList) {
@@ -101,16 +100,11 @@ public class PatchInstaller {
             }
 
             if (!redirectPatches.isEmpty()) {
-                builder = RedirectInstaller.transform(builder, type, methodDescription, redirectPatches);
+                builder = RedirectInstaller.transform(builder, type, classLoader, methodDescription, redirectPatches);
             }
         }
 
         return builder;
-    }
-
-    public static boolean supportsConstantDynamic(TypeDescription typeDescription) {
-        ClassFileVersion version = typeDescription.getClassFileVersion();
-        return version != null && version.isAtLeast(ClassFileVersion.JAVA_V11);
     }
 
     private List<InstallationData> createInstallationData(List<PatchHandlerSpec> specs, ClassLoader modClassLoader) {

@@ -15,8 +15,10 @@ import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.patch.InstallationData;
 import patchlib.agent.patch.PatchSiteRegistry;
 import patchlib.agent.patch.PatchedClassRegistry;
+import patchlib.agent.patch.holder.HandleHolders;
 import patchlib.agent.spec.PatchHandlerSpec;
 
+import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -27,12 +29,14 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
     private final PatchHandlerSpec.RedirectType redirectType;
     private final String hostKey;
     private final TypeDescription typeDescription;
+    private final ClassLoader classLoader;
     private final List<RedirectCandidate> candidates;
 
-    public RedirectSubstitutionFactory(PatchHandlerSpec.RedirectType redirectType, String hostKey, TypeDescription typeDescription, List<RedirectCandidate> candidates) {
+    public RedirectSubstitutionFactory(PatchHandlerSpec.RedirectType redirectType, String hostKey, TypeDescription typeDescription, ClassLoader classLoader, List<RedirectCandidate> candidates) {
         this.redirectType = redirectType;
         this.hostKey = hostKey;
         this.typeDescription = typeDescription;
+        this.classLoader = classLoader;
         this.candidates = candidates;
     }
 
@@ -93,15 +97,12 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
             //Create the redirect site & register it. Re-registers will return the existing patch-site
             //Takes in the redirect type as otherwise field read & write may get the same site key.
             String siteKey = RedirectPatchRegistry.getSiteKey(hostKey, redirectType.toString(), original);
-            RedirectPatchSite site = createRedirectSite(matched);
+            RedirectPatchSite site = createRedirectSite(matched, original, methodHandle);
             int siteId = RedirectPatchRegistry.register(siteKey, site);
             PatchedClassRegistry.register(typeDescription.getName(), matched);
             PatchSiteRegistry.addSite(matched, typeDescription.getName(), instrumentedMethod.getInternalName(), instrumentedMethod.getDescriptor());
 
             Method delegate = getDelegateMethod(original);
-            //The constant dynamic requires a constant-pool valid entry, and booleans aren't a real type there and are just represented as integers.
-            int hasReceiver = hasReceiver(original) ? 1 : 0;
-
             PatchLibLogger.info("Installed a redirect patch site at " + typeDescription.getActualName() + " on method " + instrumentedMethod.getActualName() + " " + instrumentedMethod.getParameters()
                     + " with " + matched.size() + " " + redirectType.toString() + " patches");
 
@@ -109,7 +110,8 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
             return MemberSubstitution.Substitution.Chain.with(Assigner.DEFAULT, Assigner.Typing.DYNAMIC)
                     .executing(MemberSubstitution.Substitution.Chain.Step.ForDelegation
                             .withCustomMapping()
-                            .bind(RedirectHandleMarker.class, JavaConstant.Dynamic.bootstrap(redirectType.name(), RedirectBootstrap.BOOTSTRAP_METHOD, siteId, methodHandle, hasReceiver))
+                            //The handle chain is read from the static final field of a class generated for this site.
+                            .bind(RedirectHandleMarker.class, HandleHolders.getRedirectField(siteId))
                             .to(delegate))
                     .make(instrumentedType, instrumentedMethod, typePool)
                     .resolve(target, parameters, result, methodHandle, stackManipulation, freeOffset);
@@ -130,7 +132,7 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
             throw new IllegalArgumentException("Called getBridge with unknown redirect type");
         }
 
-        /** Checks if the replaced element has a receiver, needed for the constant dynamic bootstrap */
+        /** Checks if the replaced element has a receiver, needed to fit its handle in to the chain */
         private boolean hasReceiver(ByteCodeElement.Member original) {
             if (redirectType.equals(PatchHandlerSpec.RedirectType.METHOD_CALL)) return original instanceof MethodDescription methodDescription && !methodDescription.isStatic();
             else if (redirectType.equals(PatchHandlerSpec.RedirectType.CONSTRUCTOR_CALL)) return false;
@@ -145,8 +147,10 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
             return candidates.stream().filter(candidate -> candidate.matcher.matches(original)).map(candidate -> candidate.data).toList();
         }
 
-        private RedirectPatchSite createRedirectSite(List<InstallationData> matched) {
-            return new RedirectPatchSite(matched, redirectType);
+        /** The site keeps a description of the replaced element instead of a handle to it, as the classes involved may not be loaded yet. */
+        private RedirectPatchSite createRedirectSite(List<InstallationData> matched, ByteCodeElement.Member original, JavaConstant.MethodHandle methodHandle) {
+            DirectMethodHandleDesc originalDescription = (DirectMethodHandleDesc) methodHandle.toDescription();
+            return new RedirectPatchSite(matched, redirectType, classLoader, typeDescription.getName(), originalDescription, hasReceiver(original));
         }
     }
 }

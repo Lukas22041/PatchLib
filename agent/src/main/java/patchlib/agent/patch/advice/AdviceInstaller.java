@@ -4,18 +4,16 @@ import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
-import net.bytebuddy.implementation.bytecode.constant.NullConstant;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
-import net.bytebuddy.utility.JavaConstant;
 import patchlib.agent.context.HookContextImpl;
 import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.patch.InstallationData;
-import patchlib.agent.patch.PatchInstaller;
 import patchlib.agent.patch.PatchSiteRegistry;
 import patchlib.agent.patch.PatchedClassRegistry;
 import patchlib.agent.patch.SiteIdMarker;
 import patchlib.agent.patch.advice.templates.*;
+import patchlib.agent.patch.holder.HandleHolders;
 import patchlib.agent.spec.AdviceSpec;
 
 import java.lang.invoke.MethodHandle;
@@ -32,24 +30,12 @@ public class AdviceInstaller {
         AdvicePatchSite site = createAdvicePatchSite(typeDescription, methodDescription, installationDataList);
         int patchId = AdvicePatchRegistry.register(memberKey, site);
 
-        boolean supportsConstantDynamics = PatchInstaller.supportsConstantDynamic(typeDescription);
-
+        //The handle chains are read from the static final fields of a class generated for this site.
+        //This allows the Just-in-Time compiler to optimise the code, and works for every class file version, including janino compiled classes.
         Advice.WithCustomMapping mapping = Advice.withCustomMapping()
-                .bind(SiteIdMarker.class, patchId);
-
-
-        //By default, use constant dynamics, which involves having bytebuddy register them in the classes constant pool,
-        //which then calls the refered to bootstrap method. This allows the Just-in-Time compiler to optimise the code.
-        if (supportsConstantDynamics) {
-            mapping = mapping.bind(BeforeHandleMarker.class, JavaConstant.Dynamic.bootstrap(AdviceBootstrap.BEFORE, AdviceBootstrap.BOOTSTRAP_METHOD, patchId))
-                    .bind(AfterHandleMarker.class, JavaConstant.Dynamic.bootstrap(AdviceBootstrap.AFTER, AdviceBootstrap.BOOTSTRAP_METHOD, patchId));
-        }
-        //Older versions of classes do not yet support constant dynamics, and janino is marked as an older class file format, so
-        //for the fallback just use the passed in SiteIdMarker to grab the handle chain at runtime.
-        else {
-            mapping = mapping.bind(BeforeHandleMarker.class, NullConstant.INSTANCE, MethodHandle.class)
-                    .bind(AfterHandleMarker.class, NullConstant.INSTANCE, MethodHandle.class);
-        }
+                .bind(SiteIdMarker.class, patchId)
+                .bind(BeforeHandleMarker.class, HandleHolders.getAdviceField(patchId, HandleHolders.BEFORE))
+                .bind(AfterHandleMarker.class, HandleHolders.getAdviceField(patchId, HandleHolders.AFTER));
 
         if (methodDescription.isConstructor()) {
             warnAboutConstructorExcepts(typeDescription, site);

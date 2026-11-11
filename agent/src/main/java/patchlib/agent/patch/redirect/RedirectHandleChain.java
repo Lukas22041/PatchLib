@@ -29,6 +29,27 @@ public class RedirectHandleChain {
     private static final MethodHandle FIELD_READ_CHAIN_RUN = createRunLayerHandle("runFieldReadLayer", FIELD_READ_CHAIN_TYPE);
     private static final MethodHandle FIELD_WRITE_CHAIN_RUN = createRunLayerHandle("runFieldWriteLayer", FIELD_WRITE_CHAIN_TYPE);
 
+    /**
+     * Creates the chain of a redirect site. Called when the redirected code runs for the first time, not during installation,
+     * as the host class and the classes of the replaced element may not be loaded yet at that point.
+     */
+    public static MethodHandle createHandleChain(int siteId) throws ReflectiveOperationException {
+        RedirectPatchSite site = RedirectPatchRegistry.getSite(siteId);
+        Class<?> hostClass = Class.forName(site.hostClassName(), false, site.hostLoader());
+
+        //A lookup with the access rights of the host class, so that the replaced element resolves the same way it did within the hosts own code.
+        MethodHandles.Lookup hostLookup = MethodHandles.privateLookupIn(hostClass, MethodHandles.lookup());
+        MethodHandle original = (MethodHandle) site.original().resolveConstantDesc(hostLookup);
+
+        MethodHandle converted = convertOriginalToChainHandle(site.redirectType(), original, site.hasReceiver());
+        try {
+            return wrapLayers(site, converted, hostClass);
+        } catch (Throwable ex) {
+            PatchLibLogger.error("Failed to create the redirect chain for site " + siteId + ", the patches are not applied. (" + site + ")", ex);
+            return converted;
+        }
+    }
+
     static MethodHandle wrapLayers(RedirectPatchSite site, MethodHandle convertedOriginal, Class<?> hostClass) {
         MethodHandle chain = convertedOriginal;
         List<InstallationData> layers = new ArrayList<>(site.installationDataList());
