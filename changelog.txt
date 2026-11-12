@@ -3,6 +3,8 @@ Version 1.1.1
 - Fixed a performance problem that caused some classes to not be C1 compiled
 - Slightly changed the wording of the stack trace appending error message.
 
+
+
 Version 1.1.0
 
 - Updated to 0.98.5a
