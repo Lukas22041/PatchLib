@@ -1,11 +1,9 @@
 Version 1.1.0
 
+- Updated to 0.98.5a
 - Added a debug menu that can be opened with CTRL+P in the title and campaign.
 - Very slightly improved the performance of context reflection utils, context.getData() and context.isMostDerivedCall().
 - Deprecated the name based reflection methods, they will continue to function, but are recommended against use mostly for performance.
-- Fixed an issue where patched methods could end up never being compiled by the JVM, making them run several times slower. Mostly affected large methods in combat and methods with redirects.
-- Redirect patches can now target classes of any class file version, including janino loaded classes and mods compiled for older java versions.
-- Hook patches on janino loaded classes and on mods compiled for java 10 or older now perform the same as on any other class.
 
 
 
