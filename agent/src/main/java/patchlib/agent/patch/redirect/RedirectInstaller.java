@@ -1,6 +1,5 @@
 package patchlib.agent.patch.redirect;
 
-import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.asm.AsmVisitorWrapper;
 import net.bytebuddy.asm.MemberSubstitution;
 import net.bytebuddy.description.field.FieldDescription;
@@ -9,11 +8,9 @@ import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
-import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.matchers.FieldMatcher;
 import patchlib.agent.matchers.MethodMatcher;
 import patchlib.agent.patch.InstallationData;
-import patchlib.agent.patch.PatchInstaller;
 import patchlib.agent.spec.*;
 
 import java.util.ArrayList;
@@ -23,22 +20,13 @@ import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class RedirectInstaller {
 
-    public static DynamicType.Builder<?> transform(DynamicType.Builder<?> builder, TypeDescription typeDescription,
+    public static DynamicType.Builder<?> transform(DynamicType.Builder<?> builder, TypeDescription typeDescription, ClassLoader classLoader,
                                                    MethodDescription.InDefinedShape methodDescription, List<InstallationData> installationDataList) {
 
-        if (!PatchInstaller.supportsConstantDynamic(typeDescription)) {
-            ClassFileVersion version = typeDescription.getClassFileVersion();
-            PatchLibLogger.error("One or multiple redirect patches tried modifying the class " + typeDescription.getActualName() + " on method " + methodDescription.getActualName() +
-                    "that is compiled with an unsupported classfile version (" + version.getMajorVersion() + "), which potentialy comes from being janino compiled code or not yet compiled for java17. Those patches are being skipped for this target.");
-
-
-            return builder;
-        }
-
-        AsmVisitorWrapper callVisitor = createRedirectVisitor(PatchHandlerSpec.RedirectType.METHOD_CALL, installationDataList, typeDescription, methodDescription);
-        AsmVisitorWrapper constructorVisitor = createRedirectVisitor(PatchHandlerSpec.RedirectType.CONSTRUCTOR_CALL, installationDataList, typeDescription, methodDescription);
-        AsmVisitorWrapper fieldReadVisitor = createRedirectVisitor(PatchHandlerSpec.RedirectType.FIELD_READ, installationDataList, typeDescription, methodDescription);
-        AsmVisitorWrapper fieldWriteVisitor = createRedirectVisitor(PatchHandlerSpec.RedirectType.FIELD_WRITE, installationDataList, typeDescription, methodDescription);
+        AsmVisitorWrapper callVisitor = createRedirectVisitor(PatchHandlerSpec.RedirectType.METHOD_CALL, installationDataList, typeDescription, classLoader, methodDescription);
+        AsmVisitorWrapper constructorVisitor = createRedirectVisitor(PatchHandlerSpec.RedirectType.CONSTRUCTOR_CALL, installationDataList, typeDescription, classLoader, methodDescription);
+        AsmVisitorWrapper fieldReadVisitor = createRedirectVisitor(PatchHandlerSpec.RedirectType.FIELD_READ, installationDataList, typeDescription, classLoader, methodDescription);
+        AsmVisitorWrapper fieldWriteVisitor = createRedirectVisitor(PatchHandlerSpec.RedirectType.FIELD_WRITE, installationDataList, typeDescription, classLoader, methodDescription);
 
         if (callVisitor != null) builder = builder.visit(callVisitor);
         if (constructorVisitor != null) builder = builder.visit(constructorVisitor);
@@ -49,20 +37,20 @@ public class RedirectInstaller {
     }
 
     private static AsmVisitorWrapper createRedirectVisitor(PatchHandlerSpec.RedirectType redirectType, List<InstallationData> installationDataList,
-                                                           TypeDescription typeDescription, MethodDescription.InDefinedShape methodDescription) {
+                                                           TypeDescription typeDescription, ClassLoader classLoader, MethodDescription.InDefinedShape methodDescription) {
 
         List<InstallationData> typeData = filterDataByType(redirectType, installationDataList);
         if (typeData.isEmpty()) return null;
 
         return switch (redirectType) {
-            case METHOD_CALL -> createCallVisitor(typeData, typeDescription, methodDescription);
-            case CONSTRUCTOR_CALL -> createConstructorVisitor(typeData, typeDescription, methodDescription);
-            case FIELD_READ -> createFieldReadVisitor(typeData, typeDescription, methodDescription);
-            case FIELD_WRITE -> createFieldWriteVisitor(typeData, typeDescription, methodDescription);
+            case METHOD_CALL -> createCallVisitor(typeData, typeDescription, classLoader, methodDescription);
+            case CONSTRUCTOR_CALL -> createConstructorVisitor(typeData, typeDescription, classLoader, methodDescription);
+            case FIELD_READ -> createFieldReadVisitor(typeData, typeDescription, classLoader, methodDescription);
+            case FIELD_WRITE -> createFieldWriteVisitor(typeData, typeDescription, classLoader, methodDescription);
         };
     }
 
-    private static AsmVisitorWrapper createCallVisitor(List<InstallationData> callDataList, TypeDescription typeDescription, MethodDescription.InDefinedShape methodDescription) {
+    private static AsmVisitorWrapper createCallVisitor(List<InstallationData> callDataList, TypeDescription typeDescription, ClassLoader classLoader, MethodDescription.InDefinedShape methodDescription) {
         List<RedirectSubstitutionFactory.RedirectCandidate> candidates = new ArrayList<>();
         //The matcher that decides which calls are processed by the factory
         ElementMatcher.Junction<MethodDescription> anyMatcher = ElementMatchers.none();
@@ -76,7 +64,7 @@ public class RedirectInstaller {
             candidates.add(candidate);
         }
 
-        RedirectSubstitutionFactory factory = createSubstitutionFactory(PatchHandlerSpec.RedirectType.METHOD_CALL, typeDescription, methodDescription, candidates);
+        RedirectSubstitutionFactory factory = createSubstitutionFactory(PatchHandlerSpec.RedirectType.METHOD_CALL, typeDescription, classLoader, methodDescription, candidates);
 
         return MemberSubstitution.relaxed() //Relaxed allows skipping safely over undecipherable elements
                 .method(anyMatcher) //Process any method call that matches any of the patches that affect this method
@@ -85,7 +73,7 @@ public class RedirectInstaller {
 
     }
 
-    private static AsmVisitorWrapper createConstructorVisitor(List<InstallationData> constructorDataList, TypeDescription typeDescription, MethodDescription.InDefinedShape methodDescription) {
+    private static AsmVisitorWrapper createConstructorVisitor(List<InstallationData> constructorDataList, TypeDescription typeDescription, ClassLoader classLoader, MethodDescription.InDefinedShape methodDescription) {
         List<RedirectSubstitutionFactory.RedirectCandidate> candidates = new ArrayList<>();
         //The matcher that decides which calls are processed by the factory
         ElementMatcher.Junction<MethodDescription> anyMatcher = ElementMatchers.none();
@@ -108,7 +96,7 @@ public class RedirectInstaller {
             if (superClass != null) anyMatcher = anyMatcher.and(not(isDeclaredBy(superClass.asErasure())));
         }
 
-        RedirectSubstitutionFactory factory = createSubstitutionFactory(PatchHandlerSpec.RedirectType.CONSTRUCTOR_CALL, typeDescription, methodDescription, candidates);
+        RedirectSubstitutionFactory factory = createSubstitutionFactory(PatchHandlerSpec.RedirectType.CONSTRUCTOR_CALL, typeDescription, classLoader, methodDescription, candidates);
 
         return MemberSubstitution.relaxed()
                 .constructor(anyMatcher)
@@ -117,7 +105,7 @@ public class RedirectInstaller {
 
     }
 
-    private static AsmVisitorWrapper createFieldReadVisitor(List<InstallationData> fieldReadDataList, TypeDescription typeDescription, MethodDescription.InDefinedShape methodDescription) {
+    private static AsmVisitorWrapper createFieldReadVisitor(List<InstallationData> fieldReadDataList, TypeDescription typeDescription, ClassLoader classLoader, MethodDescription.InDefinedShape methodDescription) {
         List<RedirectSubstitutionFactory.RedirectCandidate> candidates = new ArrayList<>();
         ElementMatcher.Junction<FieldDescription> anyMatcher = ElementMatchers.none();
 
@@ -130,7 +118,7 @@ public class RedirectInstaller {
             candidates.add(candidate);
         }
 
-        RedirectSubstitutionFactory factory = createSubstitutionFactory(PatchHandlerSpec.RedirectType.FIELD_READ, typeDescription, methodDescription, candidates);
+        RedirectSubstitutionFactory factory = createSubstitutionFactory(PatchHandlerSpec.RedirectType.FIELD_READ, typeDescription, classLoader, methodDescription, candidates);
 
         return MemberSubstitution.relaxed()
                 .field(anyMatcher).onRead()
@@ -138,7 +126,7 @@ public class RedirectInstaller {
                 .on(ElementMatchers.is(methodDescription));
     }
 
-    private static AsmVisitorWrapper createFieldWriteVisitor(List<InstallationData> fieldWriteDataList, TypeDescription typeDescription, MethodDescription.InDefinedShape methodDescription) {
+    private static AsmVisitorWrapper createFieldWriteVisitor(List<InstallationData> fieldWriteDataList, TypeDescription typeDescription, ClassLoader classLoader, MethodDescription.InDefinedShape methodDescription) {
         List<RedirectSubstitutionFactory.RedirectCandidate> candidates = new ArrayList<>();
         ElementMatcher.Junction<FieldDescription> anyMatcher = ElementMatchers.none();
 
@@ -151,7 +139,7 @@ public class RedirectInstaller {
             candidates.add(candidate);
         }
 
-        RedirectSubstitutionFactory factory = createSubstitutionFactory(PatchHandlerSpec.RedirectType.FIELD_WRITE, typeDescription, methodDescription, candidates);
+        RedirectSubstitutionFactory factory = createSubstitutionFactory(PatchHandlerSpec.RedirectType.FIELD_WRITE, typeDescription, classLoader, methodDescription, candidates);
 
         return MemberSubstitution.relaxed()
                 .field(anyMatcher).onWrite()
@@ -159,11 +147,11 @@ public class RedirectInstaller {
                 .on(ElementMatchers.is(methodDescription));
     }
 
-    private static RedirectSubstitutionFactory createSubstitutionFactory(PatchHandlerSpec.RedirectType redirectType, TypeDescription typeDescription,
+    private static RedirectSubstitutionFactory createSubstitutionFactory(PatchHandlerSpec.RedirectType redirectType, TypeDescription typeDescription, ClassLoader classLoader,
                                                                          MethodDescription.InDefinedShape methodDescription, List<RedirectSubstitutionFactory.RedirectCandidate> candidates) {
 
         String hostKey = RedirectPatchRegistry.getMemberKey(methodDescription);
-        return new RedirectSubstitutionFactory(redirectType, hostKey, typeDescription, candidates);
+        return new RedirectSubstitutionFactory(redirectType, hostKey, typeDescription, classLoader, candidates);
     }
 
     private static List<InstallationData> filterDataByType(PatchHandlerSpec.RedirectType redirectType, List<InstallationData> installationDataList) {

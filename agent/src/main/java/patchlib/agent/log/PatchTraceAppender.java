@@ -69,7 +69,8 @@ public class PatchTraceAppender extends AppenderSkeleton {
         //Every line starts with a line break, which keeps the note off the line with the logs header.
         StringBuilder builder = new StringBuilder();
         appendLine(builder, "Some classes in the stack trace above were patched by mods.");
-        appendLine(builder, "The following patches may be involved. Note that they may also be unrelated to the issue.");
+        appendLine(builder, "In most cases those patches may not be related to the issue. Do not assume any of the mods below to automatically be at fault.");
+        appendLine(builder, "They are listed for debugging purposes only. The main cause is often to be found in above stack trace. ");
         for (Map.Entry<String, Set<InstallationData>> entry : patchedClasses.entrySet()) {
             appendLine(builder, "");
             appendLine(builder, entry.getKey());
