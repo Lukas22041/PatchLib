@@ -13,7 +13,7 @@ import patchlib.agent.patch.PatchSiteRegistry;
 import patchlib.agent.patch.PatchedClassRegistry;
 import patchlib.agent.patch.SiteIdMarker;
 import patchlib.agent.patch.advice.templates.*;
-import patchlib.agent.patch.holder.HandleHolders;
+import patchlib.agent.patch.holder.AdviceHolders;
 import patchlib.agent.spec.AdviceSpec;
 
 import java.lang.invoke.MethodHandle;
@@ -34,8 +34,8 @@ public class AdviceInstaller {
         //This allows the Just-in-Time compiler to optimise the code, and works for every class file version, including janino compiled classes.
         Advice.WithCustomMapping mapping = Advice.withCustomMapping()
                 .bind(SiteIdMarker.class, patchId)
-                .bind(BeforeHandleMarker.class, HandleHolders.getAdviceField(patchId, HandleHolders.BEFORE))
-                .bind(AfterHandleMarker.class, HandleHolders.getAdviceField(patchId, HandleHolders.AFTER));
+                .bind(BeforeHandleMarker.class, AdviceHolders.getBeforeField(patchId))
+                .bind(AfterHandleMarker.class, AdviceHolders.getAfterField(patchId));
 
         if (methodDescription.isConstructor()) {
             warnAboutConstructorExcepts(typeDescription, site);

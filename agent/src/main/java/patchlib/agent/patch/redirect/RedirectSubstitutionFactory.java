@@ -15,7 +15,7 @@ import patchlib.agent.log.PatchLibLogger;
 import patchlib.agent.patch.InstallationData;
 import patchlib.agent.patch.PatchSiteRegistry;
 import patchlib.agent.patch.PatchedClassRegistry;
-import patchlib.agent.patch.holder.HandleHolders;
+import patchlib.agent.patch.holder.RedirectHolders;
 import patchlib.agent.spec.PatchHandlerSpec;
 
 import java.lang.constant.DirectMethodHandleDesc;
@@ -111,7 +111,7 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
                     .executing(MemberSubstitution.Substitution.Chain.Step.ForDelegation
                             .withCustomMapping()
                             //The handle chain is read from the static final field of a class generated for this site.
-                            .bind(RedirectHandleMarker.class, HandleHolders.getRedirectField(siteId))
+                            .bind(RedirectHandleMarker.class, RedirectHolders.getRedirectField(siteId))
                             .to(delegate))
                     .make(instrumentedType, instrumentedMethod, typePool)
                     .resolve(target, parameters, result, methodHandle, stackManipulation, freeOffset);
