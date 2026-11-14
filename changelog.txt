@@ -1,3 +1,9 @@
+Version 1.1.2
+
+- Adjusted the stacktrace patch appending to only show when a specific patched method is part of the trace.
+
+
+
 Version 1.1.1
 
 - Janino loaded classes can now also be patched with redirect patches.

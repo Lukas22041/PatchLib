@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** Logs a note below logged stack traces that contain patched classes. */
+/** Logs a note below logged stack traces that contain patched methods. */
 public class PatchTraceAppender extends AppenderSkeleton {
 
     private static final Logger log = Global.getLogger(PatchTraceAppender.class);
@@ -44,7 +44,9 @@ public class PatchTraceAppender extends AppenderSkeleton {
     }
 
     private String createNote(Throwable throwable) {
-        Map<String, Set<InstallationData>> patchedClasses = new LinkedHashMap<>();
+        //Only methods that are in the stack trace themselves are listed, other patches in the same class are left out.
+        //Matched by name only, so a patch on an overload of a method in the stack trace is listed as well.
+        Map<String, Set<InstallationData>> patchedMethods = new LinkedHashMap<>();
 
         //Recursively check the causes (in case there are multiple exceptions)
         //Need to check for which exceptions were already visited as an exception referring to a prior exception could cause an infinite loop
@@ -54,24 +56,24 @@ public class PatchTraceAppender extends AppenderSkeleton {
             visited.add(current);
 
             for (StackTraceElement element : current.getStackTrace()) {
-                String className = element.getClassName();
-                if (patchedClasses.containsKey(className)) continue;
+                String methodKey = element.getClassName() + "." + element.getMethodName();
+                if (patchedMethods.containsKey(methodKey)) continue;
 
-                Set<InstallationData> patches = PatchedClassRegistry.getPatches(className);
-                if (!patches.isEmpty()) patchedClasses.put(className, patches);
+                Set<InstallationData> patches = PatchedClassRegistry.getPatches(element.getClassName(), element.getMethodName());
+                if (!patches.isEmpty()) patchedMethods.put(methodKey, patches);
             }
 
             current = current.getCause();
         }
 
-        if (patchedClasses.isEmpty()) return null;
+        if (patchedMethods.isEmpty()) return null;
 
         //Every line starts with a line break, which keeps the note off the line with the logs header.
         StringBuilder builder = new StringBuilder();
-        appendLine(builder, "Some classes in the stack trace above were patched by mods.");
+        appendLine(builder, "Some methods in the stack trace above were patched by mods.");
         appendLine(builder, "In most cases those patches may not be related to the issue. Do not assume any of the mods below to automatically be at fault.");
         appendLine(builder, "They are listed for debugging purposes only. The main cause is often to be found in above stack trace. ");
-        for (Map.Entry<String, Set<InstallationData>> entry : patchedClasses.entrySet()) {
+        for (Map.Entry<String, Set<InstallationData>> entry : patchedMethods.entrySet()) {
             appendLine(builder, "");
             appendLine(builder, entry.getKey());
             appendPatchTree(builder, entry.getValue());

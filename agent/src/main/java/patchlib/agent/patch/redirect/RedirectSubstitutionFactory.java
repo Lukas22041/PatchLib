@@ -99,7 +99,7 @@ public class RedirectSubstitutionFactory implements MemberSubstitution.Substitut
             String siteKey = RedirectPatchRegistry.getSiteKey(hostKey, redirectType.toString(), original);
             RedirectPatchSite site = createRedirectSite(matched, original, methodHandle);
             int siteId = RedirectPatchRegistry.register(siteKey, site);
-            PatchedClassRegistry.register(typeDescription.getName(), matched);
+            PatchedClassRegistry.register(typeDescription.getName(), instrumentedMethod.getInternalName(), matched);
             PatchSiteRegistry.addSite(matched, typeDescription.getName(), instrumentedMethod.getInternalName(), instrumentedMethod.getDescriptor());
 
             Method delegate = getDelegateMethod(original);
